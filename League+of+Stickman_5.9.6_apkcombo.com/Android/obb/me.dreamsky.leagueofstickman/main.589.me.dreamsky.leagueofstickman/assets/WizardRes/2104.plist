@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>fenghuang cemian0001.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,108},{118,122}}</string>
+                <key>offset</key>
+                <string>{5,-7}</string>
+                <key>rotated</key>
+                <true/>
+                <key>sourceColorRect</key>
+                <string>{{426,266},{118,122}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0002.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,414},{118,102}}</string>
+                <key>offset</key>
+                <string>{5,5}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{426,264},{118,102}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0003.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,226},{120,100}}</string>
+                <key>offset</key>
+                <string>{4,6}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{424,264},{120,100}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0004.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,326},{120,88}}</string>
+                <key>offset</key>
+                <string>{3,2}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{423,274},{120,88}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0005.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,616},{114,96}}</string>
+                <key>offset</key>
+                <string>{1,-2}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{424,274},{114,96}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0006.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,712},{112,112}}</string>
+                <key>offset</key>
+                <string>{3,-8}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{427,272},{112,112}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0007.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,516},{118,100}}</string>
+                <key>offset</key>
+                <string>{5,-18}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{426,288},{118,100}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+            <key>fenghuang cemian0008.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,0},{108,126}}</string>
+                <key>offset</key>
+                <string>{0,-5}</string>
+                <key>rotated</key>
+                <true/>
+                <key>sourceColorRect</key>
+                <string>{{426,262},{108,126}}</string>
+                <key>sourceSize</key>
+                <string>{960,640}</string>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>2</integer>
+            <key>realTextureFileName</key>
+            <string>2104.png</string>
+            <key>size</key>
+            <string>{126,824}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:4f7a3eae84997e4180a34aacdeb842fc:f745fefa5ebea115ba58fda70399d681:5db805790cafd157d488d59e4abd070b$</string>
+            <key>textureFileName</key>
+            <string>2104.png</string>
+        </dict>
+    </dict>
+</plist>

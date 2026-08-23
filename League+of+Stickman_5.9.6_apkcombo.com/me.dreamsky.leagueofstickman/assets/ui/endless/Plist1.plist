@@ -1,0 +1,247 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>frames</key>
+		<dict>
+			<key>Res1/jiesuan20001.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{799,546},{416,418}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200010.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1362,692},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200011.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1389,839},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200012.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{0,0},{658,458}}</string>
+				<key>offset</key>
+				<string>{0,0}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200013.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{458,0},{546,380}}</string>
+				<key>offset</key>
+				<string>{-1,-2}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200014.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{0,658},{442,308}}</string>
+				<key>offset</key>
+				<string>{-2,-4}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200015.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{838,299},{345,240}}</string>
+				<key>offset</key>
+				<string>{-3,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200016.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1183,244},{255,178}}</string>
+				<key>offset</key>
+				<string>{-4,-7}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200017.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1361,244},{174,147}}</string>
+				<key>offset</key>
+				<string>{-4,-6}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200018.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1376,0},{174,147}}</string>
+				<key>offset</key>
+				<string>{-4,-6}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200019.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1215,692},{174,147}}</string>
+				<key>offset</key>
+				<string>{-4,-6}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20002.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{442,658},{357,358}}</string>
+				<key>offset</key>
+				<string>{-14,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan200020.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1215,866},{174,147}}</string>
+				<key>offset</key>
+				<string>{-4,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20003.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{838,0},{299,298}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20004.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1136,0},{244,240}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<true />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20005.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1215,499},{193,193}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20006.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1408,418},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20007.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1508,174},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20008.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1523,0},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+			<key>Res1/jiesuan20009.png</key>
+			<dict>
+				<key>frame</key>
+				<string>{{1508,565},{146,147}}</string>
+				<key>offset</key>
+				<string>{-13,-6}</string>
+				<key>rotated</key>
+				<false />
+				<key>sourceSize</key>
+				<string>{658,458}</string>
+			</dict>
+		</dict>
+		<key>metadata</key>
+		<dict>
+			<key>format</key>
+			<integer>2</integer>
+			<key>textureFileName</key>
+			<string>Plist1.png</string>
+			<key>realTextureFileName</key>
+			<string>Plist1.png</string>
+			<key>size</key>
+			<string>{2048,1024}</string>
+		</dict>
+		<key>texture</key>
+		<dict>
+			<key>width</key>
+			<integer>2048</integer>
+			<key>height</key>
+			<integer>1024</integer>
+		</dict>
+	</dict>
+</plist>

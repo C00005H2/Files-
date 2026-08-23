@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="left-down" width="50" height="30" tilewidth="75" tileheight="75">
+ <tileset firstgid="1" name="wakuangtukuai" tilewidth="75" tileheight="75">
+  <image source="wakuangtukuai.png" width="75" height="300"/>
+ </tileset>
+ <layer name="pitLayer" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJztw0ENAAAMA6Grf9MTsS8krJqqqqqqqvp60UQF3Q==
+  </data>
+ </layer>
+ <layer name="floorLayer" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzNklEKBCEMQ8vc/9D7sSwMi9UkTVVBEGzTvGjEdz2LHckZqUdqmXp15uhe6cn8OxhWc2czlB7Gv8I30kUz7fgjKkcla5fvnbruvJm8bs6I4VBmMz0VNvd7xKAX0Rr1ODKocLB6Dg9OjlXP6F7pyd5P9aXUx6sOre96q9Nb8XUby2/t6u3kr2ozPN0cSrYoTyRn17/oymmWC8J6C4djfsZ7M8dstsqz06O7BtH4X2hurixdHGpdxnfiXzAcM5bTTM7ZLMtJbod/RtOljWh059qRUyW7Tj9u3RUPwuvIsiuv7vwq+wOlxwpr
+  </data>
+ </layer>
+ <layer name="chestLayer" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt1TEKADAIBEEL//9m65QJREFmXnBcsxkAp5wesIAPAdjgV890EoBu2nPPZ/CmAIJfAB0=
+  </data>
+ </layer>
+ <layer name="wallLayer" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzdV0kSwCAIY8b//7mn3lwgJFDLqVOREA2KZmbDzjYW3x5/j2/EH8WcjSNzZj4sDifcHQYy5x335I/wm8VF9MNcX6XWEI2xc2DFZa43qk0GdkW8Dm1mMNk8uupcwSMaj5EDk0flPRjZ8yiXyr6kqu6UptZohWX6EKRHUPLP9skRPmoerJ6pcm8j8dFYq7x2/1nYncbqzzt5sGpPaay3NrN+b9d95kz9ki4iPHZcujkpzuRbTZF/xz5XvOsruHjXTpmPUg/IOAP3T1qM2AMl4QHn
+  </data>
+ </layer>
+ <objectgroup name="role">
+  <object name="role_start" x="826" y="828" width="75" height="75"/>
+ </objectgroup>
+</map>
