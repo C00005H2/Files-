@@ -75,9 +75,8 @@ def f5c10(s, key, loopbound):
 def mac(password: bytes, iters=1000):
     """Compute the MAC for a password. Returns (mac16, state).
 
-    Driver (VERIFIED: 12000 x 0x5E20 + 1000 x 0x5C10 for test123):
-      per iteration: 6x 0x5E20(ctr=0..5); then 0x5C10(key=buf[16..31], lb=6)
-                     which is state^=key + 6x 0x5E20(lv=0..5).
+    Driver (VERIFIED: 12000 x 0x5E20 + 1000 x 0x5C10 for test123;
+      each iter = 6x 0x5E20(ctr=0..5) @0x6636 + 0x5C10 + 6x 0x5E20(ctr=0..5) @0x66d8):
     """
     buf = bytearray(40)
     n = len(password)
@@ -90,6 +89,8 @@ def mac(password: bytes, iters=1000):
         for ctr in range(6):
             state = f5e20(state, ctr)
         state = f5c10(state, buf[16:32], 6)
+        for ctr in range(6):
+            state = f5e20(state, ctr)
     return state[:16], state
 
 if __name__ == '__main__':
