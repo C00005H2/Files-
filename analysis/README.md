@@ -254,10 +254,31 @@ closed:
    is 2⁶⁴ candidate passwords, each 1 000 sponge iterations ≈ 2⁷⁸ operations.
    The keystretcher is doing exactly its job.
 
+   Measured, not estimated — `tools/oracle.c` is a native implementation of the
+   whole check (sponge + the three password-dependent rounds) and reproduces the
+   Python oracle byte-for-byte:
+
+   ```
+   $ gcc -O2 -o /tmp/oracle analysis/tools/oracle.c
+   $ /tmp/oracle analysis/data/gate_rounds.bin -bench 100000
+   100000 passwords in 31.035 s  ->  3222 /s  (310.4 us each), hits=0
+   ```
+
+   3 222 candidates/s on this 2-core sandbox ⇒ 2⁶⁴ candidates ≈ **1.8 × 10⁸ years**
+   of single-machine time. For scale: a full day of this covers 2.8 × 10⁸
+   candidates, which is every printable password up to 4 characters (95⁴ ≈ 8.2 × 10⁷)
+   with room to spare — and 95¹⁰ ≈ 2⁶⁵·⁷, the length at which a solution starts to
+   exist in expectation, is 27 000 times further out than 95⁵.
+
 There is also nothing hidden to find: the `.text`/`.rdata`/`.data` string scan
 yields only encrypted API names, `frida` and debugger names; the 1 162 program
 immediates contain no printable run of 5 or more; `A⁻¹` of each table block is
 not a padded password; the tables are a plain XOR of `.rdata` with a linear key.
+The whole run makes exactly **two** API calls — `WriteConsoleW` then
+`ReadConsoleW` — so there is no alternate input path and no side channel to read
+the answer from. The decoded program is byte-identical for every password, so the
+correct password cannot reach a different code path either: the only thing it can
+change is the eight fail bits.
 
 **Conclusion:** the check is a genuine keyed-hash preimage, deliberately built so
 that neither patching nor brute force works. The password is not recoverable from
@@ -274,11 +295,14 @@ verified ~10 ms oracle for testing candidates.
 | `tools/sponge.py` | byte-exact sponge / MAC |
 | `tools/sponge_inv.py` | inverse of every sponge round (self-tested) |
 | `tools/reduce.py` | derives the round permutations, `s4`, `required_mac(U)`; verifies against a capture |
-| `tools/verify.py` | password → verdict oracle (~10 ms) |
+| `tools/verify.py` | password → verdict oracle, pure Python (~10 ms) |
+| `tools/oracle.c` | native oracle (~3 222 /s), byte-identical to `verify.py` |
+| `tools/emit_rounds.py` | writes `data/gate_rounds.bin` from the decoded program, asserting the absorb structure |
 | `tools/solve.py` | stage-1 replay validation + backward requirement propagation |
 | `tools/dasm.py` | capstone RVA disassembler: `dasm.py <rva> <len>` |
 | `tools/make_fake_dll.py`, `work/fake.dll` | stub kernel32 (185 exports) for the harness |
 | `data/vm_program.json` | the decoded 7 915-instruction program + constant table |
+| `data/gate_rounds.bin` | `s4`, `C` and the three password-dependent rounds (13 KB) |
 | `disasm/*.txt` | sponge and gate disassembly |
 
 Reproduce:
@@ -286,7 +310,9 @@ Reproduce:
 ```
 python3 analysis/tools/emu.py test123 -o /tmp/t123.json      # ~0.3 s, full trace
 python3 analysis/tools/reduce.py                             # closed form + proof
-python3 analysis/tools/verify.py test123                     # oracle
+python3 analysis/tools/verify.py test123                     # oracle (python)
+gcc -O2 -o /tmp/oracle analysis/tools/oracle.c && \
+  /tmp/oracle analysis/data/gate_rounds.bin test123 -bench 100000
 python3 analysis/tools/emu.py test123 \
         --inject-mac 11045e5eb14d48c63723eae8e06d70b2 -v     # exit=0
 ```
