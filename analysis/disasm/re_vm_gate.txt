@@ -1,0 +1,74 @@
+# crackme.exe VM + GATE analysis (password check)
+#
+# ARCHITECTURE (verified in emulator):
+#   1. Read password (ReadConsoleW).
+#   2. Sponge keystretcher 0x65A0 (1000 iters) -> MAC block + scratch context.
+#      (see re_65a0.txt; MAC byte-exact model in tools/sponge.py)
+#   3. VM setup 0xB0B0 (after sponge call @0xB0AB): builds shuffle-per-run
+#      bytecode, zeros dispatch table, r9=7, edi=2.
+#   4. VM loop 0xB2A0-0xB36D (~15557 iterations for test123, NOT 200K).
+#      Hot inner body 0xB310-0xB355. Dispatch table r14=0x4000.
+#   5. GATE: checks R[0..7] == C  where C = E6 A0 EF 22 84 73 41 65.
+#   6. ExitProcess(1) iff any gate check failed (exitflag set).
+#
+# STATE LAYOUT (state = 0x2B650, rcx in handlers):
+#   +0x08 limit          +0x0C counter(r9)   +0x10 acc
+#   +0x28 R[0..]  (qwords, 8 bytes each; R[k] @ +0x28+k*8)
+#   +0xB8 exitflag       +0xC0 c0  +0xC1 c1  +0xC2 c2  +0xC3 c3  +0xC4 c4
+#   +0xD0 scratch base (0x2B720)
+#   NOTE: R[17]@+0xB0, R[18]@+0xB8(=exitflag), R[19]@+0xC0(=c0) -- the R
+#         array and the c0/c1/.../exitflag fields OVERLAP by design.
+#
+# MAC block (sponge output, rdi=0x2B7A0):
+#   rdi+0x140 (0x2B8E0) MAC16
+#   rdi+0x150 (0x2B8F0) key16  = buf[16..31]
+#   rdi+0x160 (0x2B900) tail8  = buf[32..39]
+#   rdi+0x168 (0x2B908) 0x80
+#   ADDITIONALLY the sponge writes scratch context rdi+0x60..0xA0
+#   (0x2B800-0x2B84F) + rdi+0x100.. that the VM reads. A fast oracle that
+#   only injects the MAC block is INVALID (VM diverges). See sponge epilogue.
+#
+# ============================ GATE ============================
+# The gate is 8 checks, executed as handler-16 then handler-18 pairs.
+# Before check i (i=0..7): the VM sets R[17] = C[i] and c1=17, c2=i.
+#
+#   Handler 16 @0x1270:  c0 = (R[c1] == R[c2])
+#       001270: movzx eax, byte [rcx+0xc2]      ; eax=c2
+#       001277: movzx edx, byte [rcx+0xc1]      ; edx=c1
+#       00127e: mov   rax, qword [rcx+rax*8+0x28]  ; rax=R[c2]
+#       001283: cmp   qword [rcx+rdx*8+0x28], rax  ; R[c1] == R[c2]?
+#       001288: sete  al
+#       00128b: mov   byte [rcx+0xc0], al       ; c0
+#       001291: ret
+#   Handler 18 @0x12C0:  if !c0: exitflag |= 1
+#       0012c0: cmp byte [rcx+0xc0], 0
+#       0012c7: jne 0x12d1
+#       0012c9: or  qword [rcx+0xb8], 1        ; exitflag |= 1
+#       0012d1: ret
+#
+# Since R[17]=C[i] and c1=17,c2=i, each check is: C[i] == R[i].
+# => GATE PASSES  <=>  R[0]==C[0] && R[1]==C[1] && ... && R[7]==C[7].
+#    C = E6 A0 EF 22 84 73 41 65.
+#
+# GROUND TRUTH (test123, FAIL): at gate, R[0..7]=b2 e4 96 25 ed f6 0e 69
+#    (R[17]=e6 a0 ef 22 84 73 41 65 = C, set per-check). All 8 checks fail.
+#    acc set to 1 @0x1380 (handler 23); exitflag set @0x12c9 (x8).
+#    MAC=cc32b406bbfcacc658bcf662cca61c23.
+#
+# R[0..7] is derived from the MAC block + sponge scratch context via the VM.
+# It is NOT a simple per-byte function of MAC[0..7] (checked: no const XOR/add).
+#
+# ============================ OTHER HANDLERS ============================
+# 0x12a0 (h17): c0 = (R[c1] == c2)      [cmp qword R[c1], c2]
+# 0x12e0:       if [rcx+0x148] != c1: exitflag|=1
+# 0x1300 (h20): R[9] ^= rdtsc
+# 0x1310 (h22): buf[(c3<<8)|c2] = R[c1] ^ c4      (buf=rcx+0xd0)
+# 0x1350 (h21): if !c0 { counter += c1; if counter>limit: acc=1 }
+# 0x1380 (h23): acc = 1
+# 0x1262 (h0?): R[c1] = r8   (mov qword [rcx+rax*8+0x28], r8)
+#
+# ============================ NOTES ============================
+# - A decoy comparison R[7]==0x7b (123) fires once @0x12ae (handler 17) and
+#   PASSES for test123 -- it is NOT the gate.
+# - The 8 real gate checks are the handler-16/18 pairs (c1=17, c2=0..7).
+# - exit code 1 = fail (test123). Success requires all 8 gate checks pass.
