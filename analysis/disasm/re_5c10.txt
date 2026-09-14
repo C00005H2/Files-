@@ -1,0 +1,129 @@
+0x140005C10: mov      qword ptr [rsp + 0x10], rbx
+0x140005C15: mov      qword ptr [rsp + 0x18], rbp
+0x140005C1A: mov      qword ptr [rsp + 0x20], rsi
+0x140005C1F: push     rdi
+0x140005C20: push     r12
+0x140005C22: push     r14
+0x140005C24: sub      rsp, 0x60
+0x140005C28: mov      rbx, rcx
+0x140005C2B: lea      rax, [rdx + 0xf]
+0x140005C2F: add      rcx, 0xf
+0x140005C33: xor      r12d, r12d
+0x140005C36: mov      rsi, r9
+0x140005C39: mov      rbp, r8
+0x140005C3C: mov      r10, rdx
+0x140005C3F: cmp      rbx, rax
+0x140005C42: ja       0x140005c73
+0x140005C44: cmp      rcx, rdx
+0x140005C47: jb       0x140005c73
+0x140005C49: sub      r10, rbx
+0x140005C4C: lea      rcx, [r12 + rbx]
+0x140005C50: mov      edx, 0x10
+0x140005C55: sub      rdx, r12
+0x140005C58: nop      dword ptr [rax + rax]
+0x140005C60: movzx    eax, byte ptr [r10 + rcx]
+0x140005C65: xor      byte ptr [rcx], al
+0x140005C67: lea      rcx, [rcx + 1]
+0x140005C6B: sub      rdx, 1
+0x140005C6F: jne      0x140005c60
+0x140005C71: jmp      0x140005c82
+0x140005C73: movdqu   xmm1, xmmword ptr [rbx]
+0x140005C77: movdqu   xmm0, xmmword ptr [rdx]
+0x140005C7B: xorps    xmm1, xmm0
+0x140005C7E: movdqu   xmmword ptr [rbx], xmm1
+0x140005C82: mov      r14d, dword ptr [rsp + 0xa0]
+0x140005C8A: mov      edi, r12d
+0x140005C8D: test     r14d, r14d
+0x140005C90: jle      0x140005df7
+0x140005C96: mov      qword ptr [rsp + 0x80], r15
+0x140005C9E: mov      r15d, dword ptr [rip + 0x43d0b]
+0x140005CA5: movaps   xmmword ptr [rsp + 0x50], xmm6
+0x140005CAA: movdqa   xmm6, xmmword ptr [rip + 0x6ade]
+0x140005CB2: movaps   xmmword ptr [rsp + 0x40], xmm7
+0x140005CB7: movdqa   xmm7, xmmword ptr [rip + 0x6b11]
+0x140005CBF: movaps   xmmword ptr [rsp + 0x30], xmm8
+0x140005CC5: movdqa   xmm8, xmmword ptr [rip + 0x6af2]
+0x140005CCE: nop      
+0x140005CD0: mov      r9d, edi
+0x140005CD3: mov      dword ptr [rsp + 0x20], r12d
+0x140005CD8: mov      r8, rsi
+0x140005CDB: mov      rdx, rbp
+0x140005CDE: mov      rcx, rbx
+0x140005CE1: call     0x1400060b0
+0x140005CE6: mov      r9d, edi
+0x140005CE9: mov      dword ptr [rsp + 0x20], 8
+0x140005CF1: mov      r8, rsi
+0x140005CF4: mov      rdx, rbp
+0x140005CF7: mov      rcx, rbx
+0x140005CFA: call     0x1400060b0
+0x140005CFF: mov      rax, rbx
+0x140005D02: cmp      r15d, 5
+0x140005D06: jl       0x140005d76
+0x140005D08: mov      ecx, 2
+0x140005D0D: nop      dword ptr [rax]
+0x140005D10: pmovzxbd xmm5, dword ptr [rax]
+0x140005D15: pmovzxbd xmm2, dword ptr [rax + 8]
+0x140005D1B: lea      rax, [rax + 4]
+0x140005D1F: movdqa   xmm3, xmm5
+0x140005D23: andps    xmm3, xmm8
+0x140005D27: movdqa   xmm1, xmm7
+0x140005D2B: psubd    xmm1, xmm3
+0x140005D2F: vpsravd  xmm4, xmm2, xmm1
+0x140005D34: vpsllvd  xmm0, xmm2, xmm3
+0x140005D39: orps     xmm4, xmm0
+0x140005D3C: movdqa   xmm0, xmm7
+0x140005D40: pshufb   xmm4, xmm6
+0x140005D45: movd     dword ptr [rax + 4], xmm4
+0x140005D4A: pmovzxbd xmm1, xmm4
+0x140005D4F: andps    xmm1, xmm8
+0x140005D53: psubd    xmm0, xmm1
+0x140005D57: vpsravd  xmm2, xmm5, xmm0
+0x140005D5C: vpsllvd  xmm0, xmm5, xmm1
+0x140005D61: orps     xmm2, xmm0
+0x140005D64: pshufb   xmm2, xmm6
+0x140005D69: movd     dword ptr [rax - 4], xmm2
+0x140005D6E: sub      rcx, 1
+0x140005D72: jne      0x140005d10
+0x140005D74: jmp      0x140005dd4
+0x140005D76: mov      r11d, 8
+0x140005D7C: nop      dword ptr [rax]
+0x140005D80: movzx    r10d, byte ptr [rax]
+0x140005D84: mov      ecx, 8
+0x140005D89: movzx    r9d, byte ptr [rax + 8]
+0x140005D8E: lea      rax, [rax + 1]
+0x140005D92: movzx    r8d, r9b
+0x140005D96: mov      edx, r10d
+0x140005D99: and      edx, 7
+0x140005D9C: sub      cl, dl
+0x140005D9E: shr      r8b, cl
+0x140005DA1: mov      ecx, edx
+0x140005DA3: shl      r9b, cl
+0x140005DA6: mov      edx, r10d
+0x140005DA9: or       r8b, r9b
+0x140005DAC: mov      ecx, 8
+0x140005DB1: movzx    r9d, r8b
+0x140005DB5: mov      byte ptr [rax + 7], r9b
+0x140005DB9: and      r9d, 7
+0x140005DBD: sub      ecx, r9d
+0x140005DC0: sar      edx, cl
+0x140005DC2: mov      ecx, r9d
+0x140005DC5: shl      r10b, cl
+0x140005DC8: or       dl, r10b
+0x140005DCB: mov      byte ptr [rax - 1], dl
+0x140005DCE: sub      r11, 1
+0x140005DD2: jne      0x140005d80
+0x140005DD4: inc      edi
+0x140005DD6: cmp      edi, r14d
+0x140005DD9: jl       0x140005cd0
+0x140005DDF: movaps   xmm8, xmmword ptr [rsp + 0x30]
+0x140005DE5: movaps   xmm7, xmmword ptr [rsp + 0x40]
+0x140005DEA: movaps   xmm6, xmmword ptr [rsp + 0x50]
+0x140005DEF: mov      r15, qword ptr [rsp + 0x80]
+0x140005DF7: lea      r11, [rsp + 0x60]
+0x140005DFC: mov      rbx, qword ptr [r11 + 0x28]
+0x140005E00: mov      rbp, qword ptr [r11 + 0x30]
+0x140005E04: mov      rsi, qword ptr [r11 + 0x38]
+0x140005E08: mov      rsp, r11
+0x140005E0B: pop      r14
+0x140005E0D: pop      r12
+0x140005E0F: pop      rdi

@@ -1,0 +1,202 @@
+0x140005E20: mov      qword ptr [rsp + 8], rbx
+0x140005E25: mov      qword ptr [rsp + 0x10], rbp
+0x140005E2A: mov      qword ptr [rsp + 0x18], rsi
+0x140005E2F: mov      qword ptr [rsp + 0x20], rdi
+0x140005E34: push     r14
+0x140005E36: sub      rsp, 0x30
+0x140005E3A: mov      ebx, r9d
+0x140005E3D: mov      dword ptr [rsp + 0x20], 0
+0x140005E45: mov      rdi, r8
+0x140005E48: mov      rsi, rdx
+0x140005E4B: mov      r14, rcx
+0x140005E4E: call     0x1400060b0
+0x140005E53: mov      ebp, 8
+0x140005E58: mov      r9d, ebx
+0x140005E5B: mov      r8, rdi
+0x140005E5E: mov      dword ptr [rsp + 0x20], ebp
+0x140005E62: mov      rdx, rsi
+0x140005E65: mov      rcx, r14
+0x140005E68: call     0x1400060b0
+0x140005E6D: movzx    r9d, byte ptr [r14]
+0x140005E71: mov      ecx, ebp
+0x140005E73: movzx    r8d, byte ptr [r14 + 8]
+0x140005E78: mov      eax, r9d
+0x140005E7B: and      eax, 7
+0x140005E7E: movzx    edx, r8b
+0x140005E82: sub      cl, al
+0x140005E84: shr      dl, cl
+0x140005E86: mov      ecx, eax
+0x140005E88: shl      r8b, cl
+0x140005E8B: mov      eax, r9d
+0x140005E8E: or       dl, r8b
+0x140005E91: mov      ecx, ebp
+0x140005E93: movzx    r8d, dl
+0x140005E97: mov      byte ptr [r14 + 8], r8b
+0x140005E9B: and      r8d, 7
+0x140005E9F: sub      ecx, r8d
+0x140005EA2: sar      eax, cl
+0x140005EA4: mov      ecx, r8d
+0x140005EA7: movzx    r8d, byte ptr [r14 + 9]
+0x140005EAC: shl      r9b, cl
+0x140005EAF: movzx    edx, r8b
+0x140005EB3: or       al, r9b
+0x140005EB6: mov      ecx, ebp
+0x140005EB8: movzx    r9d, byte ptr [r14 + 1]
+0x140005EBD: mov      byte ptr [r14], al
+0x140005EC0: mov      eax, r9d
+0x140005EC3: and      eax, 7
+0x140005EC6: sub      cl, al
+0x140005EC8: shr      dl, cl
+0x140005ECA: mov      ecx, eax
+0x140005ECC: shl      r8b, cl
+0x140005ECF: mov      eax, r9d
+0x140005ED2: or       dl, r8b
+0x140005ED5: mov      ecx, ebp
+0x140005ED7: movzx    r8d, dl
+0x140005EDB: mov      byte ptr [r14 + 9], r8b
+0x140005EDF: and      r8d, 7
+0x140005EE3: sub      ecx, r8d
+0x140005EE6: sar      eax, cl
+0x140005EE8: mov      ecx, r8d
+0x140005EEB: movzx    r8d, byte ptr [r14 + 0xa]
+0x140005EF0: shl      r9b, cl
+0x140005EF3: movzx    edx, r8b
+0x140005EF7: or       al, r9b
+0x140005EFA: mov      ecx, ebp
+0x140005EFC: movzx    r9d, byte ptr [r14 + 2]
+0x140005F01: mov      byte ptr [r14 + 1], al
+0x140005F05: mov      eax, r9d
+0x140005F08: and      eax, 7
+0x140005F0B: sub      cl, al
+0x140005F0D: shr      dl, cl
+0x140005F0F: mov      ecx, eax
+0x140005F11: shl      r8b, cl
+0x140005F14: mov      eax, r9d
+0x140005F17: or       dl, r8b
+0x140005F1A: mov      ecx, ebp
+0x140005F1C: movzx    r8d, dl
+0x140005F20: mov      byte ptr [r14 + 0xa], r8b
+0x140005F24: and      r8d, 7
+0x140005F28: sub      ecx, r8d
+0x140005F2B: sar      eax, cl
+0x140005F2D: mov      ecx, r8d
+0x140005F30: movzx    r8d, byte ptr [r14 + 0xb]
+0x140005F35: shl      r9b, cl
+0x140005F38: or       al, r9b
+0x140005F3B: movzx    r9d, byte ptr [r14 + 3]
+0x140005F40: mov      byte ptr [r14 + 2], al
+0x140005F44: movzx    edx, r8b
+0x140005F48: mov      eax, r9d
+0x140005F4B: and      eax, 7
+0x140005F4E: mov      ecx, ebp
+0x140005F50: sub      cl, al
+0x140005F52: shr      dl, cl
+0x140005F54: mov      ecx, eax
+0x140005F56: shl      r8b, cl
+0x140005F59: mov      eax, r9d
+0x140005F5C: or       dl, r8b
+0x140005F5F: mov      ecx, ebp
+0x140005F61: movzx    r8d, dl
+0x140005F65: mov      byte ptr [r14 + 0xb], r8b
+0x140005F69: and      r8d, 7
+0x140005F6D: sub      ecx, r8d
+0x140005F70: sar      eax, cl
+0x140005F72: mov      ecx, r8d
+0x140005F75: movzx    r8d, byte ptr [r14 + 0xc]
+0x140005F7A: shl      r9b, cl
+0x140005F7D: movzx    edx, r8b
+0x140005F81: or       al, r9b
+0x140005F84: mov      ecx, ebp
+0x140005F86: movzx    r9d, byte ptr [r14 + 4]
+0x140005F8B: mov      byte ptr [r14 + 3], al
+0x140005F8F: mov      eax, r9d
+0x140005F92: and      eax, 7
+0x140005F95: sub      cl, al
+0x140005F97: shr      dl, cl
+0x140005F99: mov      ecx, eax
+0x140005F9B: shl      r8b, cl
+0x140005F9E: mov      eax, r9d
+0x140005FA1: or       dl, r8b
+0x140005FA4: mov      ecx, ebp
+0x140005FA6: movzx    r8d, dl
+0x140005FAA: mov      byte ptr [r14 + 0xc], r8b
+0x140005FAE: and      r8d, 7
+0x140005FB2: sub      ecx, r8d
+0x140005FB5: sar      eax, cl
+0x140005FB7: mov      ecx, r8d
+0x140005FBA: movzx    r8d, byte ptr [r14 + 0xd]
+0x140005FBF: shl      r9b, cl
+0x140005FC2: movzx    edx, r8b
+0x140005FC6: or       al, r9b
+0x140005FC9: mov      ecx, ebp
+0x140005FCB: movzx    r9d, byte ptr [r14 + 5]
+0x140005FD0: mov      byte ptr [r14 + 4], al
+0x140005FD4: mov      eax, r9d
+0x140005FD7: and      eax, 7
+0x140005FDA: sub      cl, al
+0x140005FDC: shr      dl, cl
+0x140005FDE: mov      ecx, eax
+0x140005FE0: shl      r8b, cl
+0x140005FE3: mov      eax, r9d
+0x140005FE6: or       dl, r8b
+0x140005FE9: mov      ecx, ebp
+0x140005FEB: movzx    r8d, dl
+0x140005FEF: mov      byte ptr [r14 + 0xd], r8b
+0x140005FF3: and      r8d, 7
+0x140005FF7: sub      ecx, r8d
+0x140005FFA: sar      eax, cl
+0x140005FFC: mov      ecx, r8d
+0x140005FFF: movzx    r8d, byte ptr [r14 + 0xe]
+0x140006004: shl      r9b, cl
+0x140006007: movzx    edx, r8b
+0x14000600B: or       al, r9b
+0x14000600E: mov      ecx, ebp
+0x140006010: movzx    r9d, byte ptr [r14 + 6]
+0x140006015: mov      byte ptr [r14 + 5], al
+0x140006019: mov      eax, r9d
+0x14000601C: and      eax, 7
+0x14000601F: sub      cl, al
+0x140006021: shr      dl, cl
+0x140006023: mov      ecx, eax
+0x140006025: shl      r8b, cl
+0x140006028: mov      eax, r9d
+0x14000602B: or       dl, r8b
+0x14000602E: mov      ecx, ebp
+0x140006030: movzx    r8d, dl
+0x140006034: mov      byte ptr [r14 + 0xe], r8b
+0x140006038: and      r8d, 7
+0x14000603C: sub      ecx, r8d
+0x14000603F: mov      rbx, qword ptr [rsp + 0x40]
+0x140006044: mov      rsi, qword ptr [rsp + 0x50]
+0x140006049: mov      rdi, qword ptr [rsp + 0x58]
+0x14000604E: sar      eax, cl
+0x140006050: mov      ecx, r8d
+0x140006053: movzx    r8d, byte ptr [r14 + 0xf]
+0x140006058: shl      r9b, cl
+0x14000605B: movzx    edx, r8b
+0x14000605F: or       al, r9b
+0x140006062: mov      ecx, ebp
+0x140006064: movzx    r9d, byte ptr [r14 + 7]
+0x140006069: mov      byte ptr [r14 + 6], al
+0x14000606D: mov      eax, r9d
+0x140006070: and      eax, 7
+0x140006073: sub      cl, al
+0x140006075: shr      dl, cl
+0x140006077: mov      ecx, eax
+0x140006079: shl      r8b, cl
+0x14000607C: mov      eax, r9d
+0x14000607F: or       dl, r8b
+0x140006082: movzx    r8d, dl
+0x140006086: mov      byte ptr [r14 + 0xf], r8b
+0x14000608A: and      r8d, 7
+0x14000608E: sub      ebp, r8d
+0x140006091: movzx    ecx, bpl
+0x140006095: mov      rbp, qword ptr [rsp + 0x48]
+0x14000609A: sar      eax, cl
+0x14000609C: mov      ecx, r8d
+0x14000609F: shl      r9b, cl
+0x1400060A2: or       al, r9b
+0x1400060A5: mov      byte ptr [r14 + 7], al
+0x1400060A9: add      rsp, 0x30
+0x1400060AD: pop      r14
+0x1400060AF: ret      
