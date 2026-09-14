@@ -21,13 +21,20 @@
 #         s[8+i]=rotl8(s[8+i], s[i]&7); s[i]=rotl8(s[i], s[8+i]&7)  (NEW s[8+i])
 #   0x5C10(state, key16, loopbound):  (key = buf[16..31])
 #     - state ^= key16
-#     - for lv in 0..loopbound-1: 0x5E20(state, lv)   [to verify]
-#   0x65A0 driver (1000 iters):
-#     - 6x 0x5E20(counter=0..5)
-#     - 0x5C10(key=buf[16..31])
-#     - state[0..7] ^= buf[32..39]
-#     - 6x 0x5E20(counter=0..5)
-#     - (repeat 1000x); MAC = state -> scratch+0x140
+#     - for lv in 0..loopbound-1: 0x5E20(state, lv)
+#   0x65A0 driver (VERIFIED byte-exact, r14=0x3e8=1000 iters):
+#     buf40 = pw + 0x80 + zeros(40-n-1)          (built by 0x9b80 into [rsp+0x60])
+#     prev = 0 (16B; xmm1 cleared pre-loop)
+#     for i in 0..999:
+#       state = buf40[0..15] ^ prev              (0x6611: xmm0=xmm6; 0x6617: xmm0^=xmm1; xmm6=buf40[0..15] const)
+#       6x 0x5E20(state, ctr=0..5)               (0x6620 loop, ret 0x663b)
+#       0x5C10(state, key=buf40[16..31], lb=6)   (0x6662; state^=key then 6x 0x5E20)
+#       state[0..7] ^= buf40[32..39]             (0x6667-0x66bc; upper 8B ^= 0, see 0x660c)
+#       6x 0x5E20(state, ctr=0..5)               (0x66c2 loop, ret 0x66dd)
+#       prev = state                             (0x66ea: xmm1=[rsp+0x40])
+#     MAC = prev -> [rdi+0x140]                  (0x6703 xmm6=state; 0x6937 movups [rdi+0x140],xmm6)
+#     Also stored: [rdi+0x150]=buf40[16..31], [rdi+0x160]=buf40[32..39], [rdi+0x168]=0x80
+#   => MAC(pw) byte-exact: test123 -> cc32b406bbfcacc658bcf662cca61c23, aaaaaaaa -> 8929fc1347a4b5db644e5ba5f47067cf
 
 # Tables (CONFIRMED, dumped at runtime 0x2B628 / 0x2B630)
 T1 = bytes.fromhex('6c9f1ab735e3487d51132bc78eb24f63')
@@ -73,10 +80,19 @@ def f5c10(s, key, loopbound):
     return s
 
 def mac(password: bytes, iters=1000):
-    """Compute the MAC for a password. Returns (mac16, state).
+    """Compute the MAC for a password. Returns (mac16, prev).
 
-    Driver (VERIFIED: 12000 x 0x5E20 + 1000 x 0x5C10 for test123;
-      each iter = 6x 0x5E20(ctr=0..5) @0x6636 + 0x5C10 + 6x 0x5E20(ctr=0..5) @0x66d8):
+    Driver (VERIFIED byte-exact vs emulator: test123, aaaaaaaa):
+      buf40 = pw + 0x80 + zeros;  prev = 0
+      for i in 0..iters-1:
+        state = buf40[0..15] ^ prev        (Feistel feedback, 0x6611-0x661a)
+        6x 0x5E20(ctr=0..5)
+        0x5C10(key=buf40[16..31], lb=6)
+        state[0..7] ^= buf40[32..39]
+        6x 0x5E20(ctr=0..5)
+        prev = state
+      MAC = prev
+    Total work per password: iters x (12 x 0x5E20 + 6 x 0x5E20) = iters x 18 rounds.
     """
     buf = bytearray(40)
     n = len(password)
@@ -84,14 +100,24 @@ def mac(password: bytes, iters=1000):
         raise ValueError("password too long")
     buf[:n] = password
     buf[n] = 0x80
-    state = bytes(buf[0:16])
+    head = bytes(buf[0:16])
+    key = bytes(buf[16:32])
+    tail = buf[32:40]
+    prev = bytes(16)
     for _ in range(iters):
+        state = bytes(a ^ b for a, b in zip(head, prev))
         for ctr in range(6):
             state = f5e20(state, ctr)
-        state = f5c10(state, buf[16:32], 6)
+        state = f5c10(state, key, 6)
+        if any(tail):
+            tb = bytearray(state)
+            for k in range(8):
+                tb[k] ^= tail[k]
+            state = bytes(tb)
         for ctr in range(6):
             state = f5e20(state, ctr)
-    return state[:16], state
+        prev = state
+    return prev[:16], prev
 
 if __name__ == '__main__':
     # Self-test against the captured trace (test123, iter 1).
@@ -111,6 +137,8 @@ if __name__ == '__main__':
         ok = ok and m
         print(f"round {i}: {'OK' if m else 'MISMATCH'} got={s.hex()}")
     print("ALL 6 ROUNDS MATCH:", ok)
-    # Full MAC for test123
-    m, _ = mac(b'test123')
-    print(f"MAC(test123) = {m.hex()} (want cc32b406bbfcacc658bcf662cca61c23)")
+    # Full MAC (byte-exact vs emulator captures)
+    for pw, want in [(b'test123', 'cc32b406bbfcacc658bcf662cca61c23'),
+                     (b'aaaaaaaa', '8929fc1347a4b5db644e5ba5f47067cf')]:
+        m, _ = mac(pw)
+        print(f"MAC({pw.decode()}) = {m.hex()} ({'OK' if m.hex()==want else 'MISMATCH, want '+want})")
