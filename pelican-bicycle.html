@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pelican on a Bicycle 🚲</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#b6e5ff;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow:hidden;
+  }
+  .wrap{
+    width:min(960px, 96vw);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    padding:16px 0 10px;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  h1{
+    font-size: clamp(22px, 3.2vw, 32px);
+    letter-spacing:-0.03em;
+    color:#123047;
+    display:flex;align-items:center;gap:10px;
+    font-weight:900;
+  }
+  h1 span{font-weight:700;font-size:.62em;color:#2a6b8a;background:#fff;padding:4px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .controls{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:rgba(255,255,255,.9);
+    backdrop-filter:blur(8px);
+    padding:8px 10px;
+    border-radius:999px;
+    box-shadow:0 8px 24px rgba(18,48,71,.12);
+    border:1px solid rgba(255,255,255,.8);
+  }
+  .controls label{font-size:13px;font-weight:700;color:#123047;display:flex;align-items:center;gap:8px}
+  input[type=range]{accent-color:#e63946;width:120px}
+  button{
+    appearance:none;border:0;cursor:pointer;
+    background:#123047;color:#fff;
+    padding:9px 14px;border-radius:999px;
+    font-weight:800;font-size:13px;
+    display:inline-flex;align-items:center;gap:6px;
+    box-shadow:0 6px 16px rgba(18,48,71,.18);
+    transition:transform .08s, background .15s;
+  }
+  button:active{transform:scale(.97)}
+  button.bell{background:#e63946}
+  button.bell:hover{background:#d92e3b}
+  button.secondary{background:#fff;color:#123047;border:1px solid #dbeaf3}
+  .stage{
+    position:relative;
+    background: linear-gradient(#87ceeb 0%, #dff4ff 55%, #bfe8a8 55%, #7ac74f 56%);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(18,48,71,.22), 0 2px 0 rgba(255,255,255,.8) inset;
+    border:4px solid #fff;
+    aspect-ratio: 960 / 540;
+    isolation:isolate;
+  }
+  canvas{width:100%;height:100%;display:block}
+  .hud{
+    position:absolute;left:14px;bottom:12px;
+    background:rgba(255,255,255,.92);
+    padding:8px 12px;border-radius:999px;
+    font-size:12.5px;font-weight:700;color:#123047;
+    box-shadow:0 6px 18px rgba(0,0,0,.12);
+    display:flex;gap:12px;align-items:center;
+  }
+  .hud b{color:#e63946}
+  .tip{
+    text-align:center;
+    font-size:13px;color:#16425b;opacity:.8;
+    font-weight:600;
+  }
+  kbd{background:#fff;border:1px solid #cfe4f0;border-bottom-width:2px;padding:2px 6px;border-radius:6px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🦤 Pelican Parcour <span>single-file joyride</span></h1>
+    <div class="controls">
+      <label>Speed <input id="speed" type="range" min="0" max="100" value="48"></label>
+      <button class="bell" id="bell">🔔 Ring Bell</button>
+      <button class="secondary" id="honk">📯 Honk</button>
+      <button id="trick">✨ Trick!</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" width="960" height="540"></canvas>
+    <div class="hud" id="hud"> <span>🚲 <b id="km">0.0</b> km</span> <span>•</span> <span id="mph">18 km/h</span> <span>•</span> <span id="mood">cruising ~</span></div>
+  </div>
+  <div class="tip">Use <kbd>←</kbd> <kbd>→</kbd> or slider to change speed • <kbd>Space</kbd> to ring • <kbd>T</kbd> for trick — all in one HTML file, no images, just code.</div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const speedSlider = document.getElementById('speed');
+const kmEl = document.getElementById('km');
+const mphEl = document.getElementById('mph');
+const moodEl = document.getElementById('mood');
+const stage = document.getElementById('stage');
+
+let W = canvas.width, H = canvas.height;
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+function resize(){
+  // keep internal resolution fixed for crisp illustration, but support DPR
+  const rect = canvas.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = 960 * DPR;
+  canvas.height = 540 * DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  W = 960; H = 540;
+}
+resize();
+addEventListener('resize', resize);
+
+// state
+let t = 0;
+let distance = 0;
+let targetSpeed = 0.48; // 0..1
+let speed = targetSpeed;
+let wheelAngle = 0;
+let crankAngle = 0;
+let trickT = 0; // trick animation timer
+let trickActive = 0;
+let bobPhase = 0;
+
+speedSlider.addEventListener('input', e=> targetSpeed = e.target.value/100);
+
+// audio - tiny bell & honk via WebAudio (no files)
+let audioCtx = null;
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
+function ringBell(){
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  [987, 1318, 1568].forEach((f,i)=>{
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const filt = audioCtx.createBiquadFilter();
+    filt.type='bandpass'; filt.frequency.value=2200; filt.Q.value=1.2;
+    o.type='triangle'; o.frequency.value=f;
+    o.connect(filt); filt.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.45/(i+1), now+0.01+i*0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, now+1.1+i*0.1);
+    o.start(now+i*0.06); o.stop(now+1.2+i*0.1);
+  });
+  // visual ping
+  bellPing=1;
+}
+function honk(){
+  ensureAudio();
+  const now=audioCtx.currentTime;
+  const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(220, now); o.frequency.linearRampToValueAtTime(180, now+0.18);
+  const g=audioCtx.createGain(); g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.5, now+0.02); g.gain.exponentialRampToValueAtTime(0.001, now+0.4);
+  const f=audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1200;
+  o.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  o.start(now); o.stop(now+0.45);
+  // second honk
+  setTimeout(()=>{
+    const o2=audioCtx.createOscillator(); o2.type='square'; o2.frequency.value=165;
+    const g2=audioCtx.createGain(); g2.gain.setValueAtTime(0,audioCtx.currentTime); g2.gain.linearRampToValueAtTime(0.45,audioCtx.currentTime+0.02); g2.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.35);
+    o2.connect(g2); g2.connect(audioCtx.destination); o2.start(); o2.stop(audioCtx.currentTime+0.4);
+  },120);
+  moodEl.textContent='HONK HONK!';
+  setTimeout(()=>moodEl.textContent='cruising ~',900);
+  bellPing=0.7;
+}
+let bellPing=0;
+
+document.getElementById('bell').onclick=ringBell;
+document.getElementById('honk').onclick=honk;
+document.getElementById('trick').onclick=()=>{ trickActive=1; trickT=0; };
+addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); ringBell(); }
+  if(e.key==='ArrowRight') targetSpeed=Math.min(1, targetSpeed+0.07), speedSlider.value=targetSpeed*100;
+  if(e.key==='ArrowLeft') targetSpeed=Math.max(0, targetSpeed-0.07), speedSlider.value=targetSpeed*100;
+  if(e.key.toLowerCase()==='t'){ trickActive=1; trickT=0; }
+  if(e.key.toLowerCase()==='h'){ honk(); }
+});
+
+// helpers
+function lerp(a,b,t){return a+(b-a)*t}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+// clouds
+const clouds = Array.from({length:6}, (_,i)=>({
+  x: Math.random()*W,
+  y: 50+ Math.random()*90,
+  s: 0.8+Math.random()*0.9,
+  w: 70+Math.random()*80
+}));
+const hills = [
+  {x:0, w:500, h:90, col:'#8bd36a'},
+  {x:300, w:600, h:70, col:'#a8e48a'},
+  {x:650, w:500, h:85, col:'#7ac74f'},
+];
+
+let roadOffset=0;
+let dashOffset=0;
+
+function drawBackground(dt){
+  // sky gradient
+  const g = ctx.createLinearGradient(0,0,0, H*0.58);
+  g.addColorStop(0,'#6ec6f0');
+  g.addColorStop(0.5,'#a7e1ff');
+  g.addColorStop(1,'#dff4ff');
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W, H*0.62);
+
+  // sun
+  ctx.save();
+  ctx.fillStyle='#ffe27a';
+  ctx.shadowColor='rgba(255,226,122,0.9)';
+  ctx.shadowBlur=22;
+  ctx.beginPath(); ctx.arc(820, 86, 36, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.arc(812, 78, 9, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // distant sun rays
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=2;
+  for(let i=0;i<8;i++){
+    const a = -0.3 + i*0.09;
+    ctx.beginPath(); ctx.moveTo(820,86); ctx.lineTo(820+Math.cos(a)*220, 86+Math.sin(a)*220); ctx.stroke();
+  }
+
+  // clouds - parallax
+  clouds.forEach(cl=>{
+    cl.x -= dt*0.02 * cl.s * (0.3+speed*0.7);
+    if(cl.x < -120) cl.x = W+80;
+    drawCloud(cl.x, cl.y, cl.s, cl.w);
+  });
+
+  // hills
+  hills.forEach(h=>{
+    // subtle parallax
+    let hx = (h.x - roadOffset*0.08) % (W+600);
+    if(hx < -600) hx+=W+600;
+    if(hx > W) hx-=W+600;
+    // draw 2 copies for wrapping
+    [hx, hx-(W+600), hx+(W+600)].forEach(x=>{
+      ctx.fillStyle=h.col;
+      ctx.beginPath();
+      ctx.moveTo(x-100, H*0.62);
+      ctx.bezierCurveTo(x+ h.w*0.25, H*0.62 - h.h, x+ h.w*0.6, H*0.62 - h.h*0.9, x+ h.w+80, H*0.62);
+      ctx.lineTo(x+ h.w+80, H*0.62); ctx.lineTo(x-100, H*0.62); ctx.closePath(); ctx.fill();
+      // hill highlight
+      ctx.fillStyle='rgba(255,255,255,0.18)';
+      ctx.beginPath();
+      ctx.ellipse(x+h.w*0.35, H*0.62 - h.h*0.45, h.w*0.18, h.h*0.32, -0.18, 0, Math.PI*2); ctx.fill();
+    });
+  });
+
+  // small birds far
+  ctx.strokeStyle='rgba(18,48,71,0.5)'; ctx.lineWidth=1.6; ctx.lineCap='round';
+  const birdT = t*0.001;
+  for(let i=0;i<4;i++){
+    const bx = (W*0.15 + i*170 + Math.sin(birdT*0.3+i)*20 - roadOffset*0.12) % W;
+    const by = 58 + Math.sin(birdT*0.7+i*1.3)*6 + i*8;
+    ctx.beginPath();
+    const flap = Math.sin(birdT*4+i)*6;
+    ctx.moveTo(bx-7, by); ctx.quadraticCurveTo(bx-3, by-3-flap*0.1, bx, by);
+    ctx.quadraticCurveTo(bx+3, by-3-flap*0.1, bx+7, by);
+    ctx.stroke();
+  }
+}
+
+function drawCloud(x,y,s,w){
+  ctx.fillStyle='rgba(255,255,255,0.95)';
+  ctx.beginPath();
+  const h= w*0.42;
+  // puffy cloud via circles
+  const parts = [
+    [0,0, w*0.32], [ -w*0.22, 8, w*0.24], [ w*0.22, 10, w*0.26], [ -w*0.08, -10, w*0.22], [ w*0.08, -6, w*0.20]
+  ];
+  parts.forEach(([dx,dy,r])=>{
+    ctx.moveTo(x+dx+r,y+dy);
+    ctx.arc(x+dx,y+dy,r,0,Math.PI*2);
+  });
+  ctx.fill();
+  ctx.fillStyle='rgba(18,48,71,0.07)';
+  ctx.beginPath();
+  ctx.ellipse(x, y+ h*0.28, w*0.38, h*0.18, 0,0,Math.PI*2); ctx.fill();
+}
+
+function drawRoad(){
+  const groundY = H*0.62;
+  const roadTop = groundY;
+  const roadH = H - roadTop;
+
+  // grass strip
+  ctx.fillStyle='#7ac74f';
+  ctx.fillRect(0, roadTop, W, 18);
+  // darker grass edge
+  ctx.fillStyle='#6ab63f';
+  ctx.fillRect(0, roadTop+12, W, 6);
+
+  // asphalt
+  ctx.fillStyle='#3a3f45';
+  ctx.fillRect(0, roadTop+18, W, roadH-18);
+  // texture noise
+  ctx.fillStyle='rgba(255,255,255,0.06)';
+  for(let i=0;i<120;i++){
+    const rx = (i*73 + roadOffset*0.5)%W;
+    const ry = roadTop+28 + (i*37)%(roadH-32);
+    ctx.fillRect(rx, ry, 18, 1.2);
+  }
+  // curbs
+  ctx.fillStyle='#2b2f33';
+  ctx.fillRect(0, roadTop+18, W, 3);
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fillRect(0, roadTop+18, W, 1);
+
+  // dashed center line
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=4;
+  ctx.setLineDash([26, 28]);
+  ctx.lineDashOffset = -dashOffset;
+  ctx.beginPath(); ctx.moveTo(0, roadTop+ 18 + (roadH-18)/2); ctx.lineTo(W, roadTop+ 18 + (roadH-18)/2); ctx.stroke();
+  ctx.setLineDash([]);
+  // side lines
+  ctx.strokeStyle='rgba(255,255,255,0.95)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0, roadTop+22); ctx.lineTo(W, roadTop+22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H-10); ctx.lineTo(W, H-10); ctx.stroke();
+
+  // roadside flowers / posts
+  for(let i=-2;i<12;i++){
+    const px = (i*140 - (roadOffset*1.1)%140);
+    // post
+    ctx.fillStyle='#e8eef3';
+    ctx.fillRect(px, roadTop-18, 6, 36);
+    ctx.fillStyle='#123047'; ctx.fillRect(px-1, roadTop-18, 8, 4);
+    // flowers in grass
+    if(i%2===0){
+      drawFlower(px+34, roadTop+8, (i%3));
+    }
+  }
+}
+
+function drawFlower(x,y,v){
+  ctx.fillStyle='#2a9d3a';
+  ctx.fillRect(x, y, 2, 8);
+  const cols = ['#fff','#ffe27a','#ff7eb6'];
+  ctx.fillStyle=cols[v%3];
+  for(let a=0;a<5;a++){
+    const ang=a* (Math.PI*2/5);
+    ctx.beginPath(); ctx.arc(x+1+Math.cos(ang)*5, y-1+Math.sin(ang)*5, 3.2,0,Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle='#ffbe0b'; ctx.beginPath(); ctx.arc(x+1,y-1,2.3,0,Math.PI*2); ctx.fill();
+}
+
+// BICYCLE + PELICAN
+function drawWheel(x,y,r, angle, speedFactor){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+  // tire
+  ctx.fillStyle='#1a1d21';
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#2b2f33';
+  ctx.beginPath(); ctx.arc(0,0,r-3,0,Math.PI*2); ctx.fill();
+  // rim
+  ctx.strokeStyle='#dbe6ee'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.arc(0,0,r-9,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='#a8c1d3'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(0,0,r-9,0,Math.PI*2); ctx.stroke();
+  // hub
+  ctx.fillStyle='#e63946'; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+  // spokes - animated blur at speed, otherwise crisp
+  ctx.strokeStyle= speedFactor>0.6 ? 'rgba(219,230,238,0.55)' : '#dbe6ee';
+  ctx.lineWidth=2; ctx.lineCap='round';
+  const spokeCount=12;
+  for(let i=0;i<spokeCount;i++){
+    const a=i* (Math.PI*2/spokeCount);
+    ctx.beginPath(); ctx.moveTo(Math.cos(a)*(8), Math.sin(a)*(8));
+    ctx.lineTo(Math.cos(a)*(r-11), Math.sin(a)*(r-11));
+    ctx.stroke();
+  }
+  // valve
+  ctx.fillStyle='#ffbe0b';
+  ctx.beginPath(); ctx.arc(r-11,0,2.2,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // shadow on road
+  ctx.fillStyle='rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(x, H*0.62+42, r*0.95, 7, 0,0,Math.PI*2); ctx.fill();
+}
+
+function drawBicycleAndPelican(dt){
+  const groundY = H*0.62+18;
+  const wheelR = 38;
+  const wheelY = groundY - 1; // center y?
+  // We'll place wheel centers at y = groundY - wheelR + tweak
+  const wheelCenterY = groundY + (H - groundY)/2*0.0 + wheelR*0.0;
+  // Let's set wheelCenterY to groundY+? Actually roadTop+... Let's define:
+  const wcY = groundY + 18 + (H - (groundY+18))/0.7*0 + wheelR; // simplify: wheels sit on road
+  // correct: wheels sit so bottom touches road top+18+?
+  // road top is H*0.62, asphalt starts at roadTop+18. Wheel bottom should be at roadTop+18.
+  // So center y = roadTop+18 - wheelR? No that would be above road. Wait asphalt is below roadTop.
+  // Road asphalt fills from roadTop+18 downwards. The "road surface" y = roadTop+18.
+  // So wheel center y = road surface + wheelR? No, center above surface.
+  // Actually bottom of tire at surface, center = surface - wheelR ??? But canvas y increases downwards.
+  // Surface is at larger y (down). Wheel bottom touches surface from above, so center y = surface - wheelR.
+  // But that would place wheel above road, which is good. Let's compute.
+
+  const roadSurface = H*0.62 + 18;
+  const centerY = roadSurface - wheelR + 18; // lift for perspective: 18 px overlap for shadow
+  // fudge: set centerY = roadSurface - wheelR + 18? Let's fix to look good: empirically.
+  const cy = roadSurface - wheelR + 28; // 28 is offset to make wheel sit nicely half into shadow
+
+  // For visual, we adjusted previous tests: let's set cy = 460?
+  // H=540, roadSurface= 540*0.62+18=352.8, cy =352.8 -38+28=342.8 . Hmm too high. Let's evaluate: that puts wheel center at y=343, road surface at 353, wheel bottom at 381? That's below surface. So wrong sign.
+  // Wait y increasing downwards: surface y=353. Wheel center at 343 -> bottom = 343+38=381 which is below surface (381>353) - wheel sinks into road (good for cartoon? but need above)
+  // Actually need center = surface - wheelR + something? Bottom = center + wheelR = surface - wheelR +something + wheelR = surface+something. So to sit on surface, something =0. To have slight squash, something = -2. Let's set something=0 but we want wheel to be above visually? Let's set cy = roadSurface - wheelR - 2  => 353-38-2=313. Bottom=351 close to surface.
+
+  const wheelCY = roadSurface - wheelR - 2;
+
+  const bikeX = W*0.52; // bicycle anchor
+
+  // crank
+  const crankX = bikeX - 4;
+  const crankY = wheelCY + 24;
+  const crankLen = 16;
+
+  // handle with trick tilt
+  let bikeTilt = Math.sin(t*0.0007)*0.02 + (trickActive? Math.sin(trickT*0.02)*0.18*Math.sin(trickT*0.02):0);
+  let bikeBob = Math.sin(t*0.006 + bobPhase)* (1.2 + speed*2.5) * (trickActive? 1.6:1);
+  // if trick, add jump
+  let jumpY = 0;
+  if(trickActive){
+    const p = trickT/ 520; // 0..1
+    if(p<1) jumpY = - Math.sin(p*Math.PI)* 42;
+    else { trickActive=0; jumpY=0;}
+  }
+
+  ctx.save();
+  ctx.translate(0, bikeBob + jumpY);
+  // when trick, rotate bike
+  if(trickActive){
+    const p = trickT/520;
+    ctx.translate(bikeX, crankY);
+    ctx.rotate(Math.sin(p*Math.PI)*0.22 + Math.sin(p*6.28)*0.06);
+    ctx.translate(-bikeX, -crankY);
+  } else {
+    ctx.rotate(bikeTilt*0.6);
+  }
+
+  // shadow under whole bike (before)
+  ctx.fillStyle='rgba(0,0,0,0.13)';
+  ctx.beginPath(); ctx.ellipse(bikeX, roadSurface+44 - (bikeBob+jumpY)*0.15, 92, 14, 0,0,Math.PI*2); ctx.fill();
+
+  // wheels
+  drawWheel(bikeX - 56, wheelCY, wheelR, wheelAngle, speed);
+  drawWheel(bikeX + 56, wheelCY, wheelR, wheelAngle, speed);
+
+  // frame - modern city bike / cruiser
+  // colors
+  const frameColor='#e63946';
+  const frameDark='#b51f2b';
+  const accent='#ffbe0b';
+
+  ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // main triangle
+  const seatX = bikeX - 38; // seat post top x
+  const seatY = crankY - 58;
+  const headX = bikeX + 38;
+  const headY = crankY - 52;
+  const headTopY = headY - 22;
+  const headBotY = headY + 12;
+
+  // down tube: crank to head bottom
+  ctx.strokeStyle=frameColor;
+  ctx.beginPath(); ctx.moveTo(crankX, crankY); ctx.lineTo(headBotY? headX:headX, headBotY); ctx.stroke();
+  // seat tube
+  ctx.beginPath(); ctx.moveTo(crankX, crankY); ctx.lineTo(seatX+6, seatY+18); ctx.stroke();
+  // top tube: seat to head top
+  ctx.beginPath(); ctx.moveTo(seatX+6, seatY+8); ctx.lineTo(headX, headTopY+8); ctx.stroke();
+  // head tube
+  ctx.strokeStyle=frameDark;
+  ctx.lineWidth=11;
+  ctx.beginPath(); ctx.moveTo(headX, headTopY); ctx.lineTo(headX, headBotY); ctx.stroke();
+
+  // chain stays & seat stays
+  ctx.strokeStyle=frameColor; ctx.lineWidth=6;
+  // chain stay left side
+  ctx.beginPath(); ctx.moveTo(crankX, crankY); ctx.lineTo(bikeX-56, wheelCY); ctx.stroke();
+  // seat stay
+  ctx.beginPath(); ctx.moveTo(seatX+2, seatY+18); ctx.lineTo(bikeX-56, wheelCY); ctx.stroke();
+  // fork
+  ctx.lineWidth=7; ctx.strokeStyle='#2b2f33';
+  ctx.beginPath(); ctx.moveTo(headX, headTopY); ctx.lineTo(bikeX+56, wheelCY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(headX-1, headBotY); ctx.lineTo(bikeX+56, wheelCY-1); ctx.stroke();
+
+  // handlebars
+  ctx.strokeStyle='#1a1d21'; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(headX-6, headTopY+2); ctx.lineTo(headX+16, headTopY-4); ctx.stroke();
+  // grips
+  ctx.fillStyle='#1a1d21';
+  ctx.beginPath(); ctx.roundRect(headX+14, headTopY-8, 18, 7, 3); ctx.fill();
+  ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(headX+15, headTopY-4.5, 2,0,Math.PI*2); ctx.fill();
+
+  // seat
+  ctx.fillStyle='#1a1d21';
+  ctx.beginPath();
+  ctx.ellipse(seatX+2, seatY, 24, 9, -0.12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#2b2f33';
+  ctx.beginPath(); ctx.ellipse(seatX+2, seatY-3, 22, 6, -0.12,0,Math.PI*2); ctx.fill();
+  // seat post
+  ctx.strokeStyle='#a8c1d3'; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(seatX+6, seatY+6); ctx.lineTo(seatX+10, crankY-18); ctx.stroke();
+
+  // crank & pedals
+  ctx.fillStyle='#1a1d21';
+  ctx.beginPath(); ctx.arc(crankX, crankY, 9,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ffbe0b'; ctx.beginPath(); ctx.arc(crankX, crankY, 3.5,0,Math.PI*2); ctx.fill();
+  // chainring
+  ctx.strokeStyle='#dbe6ee'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(crankX, crankY, 14,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='#2b2f33'; ctx.beginPath(); ctx.arc(crankX, crankY, 14,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#ffbe0b';
+  for(let i=0;i<6;i++){ const a=i*Math.PI/3; ctx.beginPath(); ctx.arc(crankX+Math.cos(a)*8, crankY+Math.sin(a)*8,1.5,0,Math.PI*2); ctx.fill(); }
+  // chain (simplified line from chainring to rear hub)
+  ctx.strokeStyle='#a8c1d3'; ctx.lineWidth=1.6; ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  ctx.moveTo(crankX+12, crankY-6); ctx.lineTo(bikeX-56+12, wheelCY-6);
+  ctx.moveTo(crankX+12, crankY+6); ctx.lineTo(bikeX-56+12, wheelCY+6);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  const ang = crankAngle;
+  const p1x = crankX + Math.cos(ang)*crankLen;
+  const p1y = crankY + Math.sin(ang)*crankLen;
+  const p2x = crankX + Math.cos(ang+Math.PI)*crankLen;
+  const p2y = crankY + Math.sin(ang+Math.PI)*crankLen;
+
+  // crank arms
+  ctx.strokeStyle='#1a1d21'; ctx.lineWidth=7; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(crankX, crankY); ctx.lineTo(p1x, p1y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(crankX, crankY); ctx.lineTo(p2x, p2y); ctx.stroke();
+  // pedals
+  ctx.fillStyle='#1a1d21';
+  const pedalW=16, pedalH=6;
+  ctx.save(); ctx.translate(p1x,p1y); ctx.rotate(0.06); ctx.fillRect(-pedalW/2, -pedalH/2, pedalW, pedalH); ctx.fillStyle=accent; ctx.fillRect(-pedalW/2+2, -1, pedalW-4,2); ctx.restore();
+  ctx.save(); ctx.translate(p2x,p2y); ctx.rotate(-0.06); ctx.fillRect(-pedalW/2, -pedalH/2, pedalW, pedalH); ctx.fillStyle=accent; ctx.fillRect(-pedalW/2+2, -1, pedalW-4,2); ctx.restore();
+
+  // front basket?
+  // small basket front
+  ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.strokeStyle='#dbe6ee'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  const bx = headX+ 26, by = headTopY+10;
+  ctx.roundRect(bx-18, by-10, 28, 18, 3); ctx.fill(); ctx.stroke();
+  // weave lines
+  ctx.strokeStyle='rgba(168,193,211,0.9)'; ctx.lineWidth=1;
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(bx-14, by-6+i*5); ctx.lineTo(bx+6, by-6+i*5); ctx.stroke(); }
+  for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(bx-10+i*6, by-10); ctx.lineTo(bx-10+i*6, by+8); ctx.stroke(); }
+  // fish in basket
+  ctx.save(); ctx.translate(bx-4, by-2);
+  ctx.rotate(0.1);
+  ctx.fillStyle='#5dd3ff'; ctx.beginPath(); ctx.ellipse(0,0,9,5,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ff9f1c'; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-13,-4); ctx.lineTo(-13,4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#123047'; ctx.beginPath(); ctx.arc(3,-1.5,1.2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(3.6,-1.9,0.6,0,Math.PI*2); ctx.fill();
+  // fish eye highlight
+  ctx.strokeStyle='rgba(18,48,71,0.15)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,7,0.2,0.9); ctx.stroke();
+  ctx.restore();
+
+  // === PELICAN ===
+  // Pelican anchor
+  const pelX = seatX - 6;
+  const pelY = seatY - 18;
+
+  // legs -> pedals (inverse)
+  const hipX = pelX + 2; const hipY = pelY + 28;
+  // Draw legs with knee bend
+  function drawLeg(px,py, isFront){
+    const targetX = isFront? p1x : p2x;
+    const targetY = isFront? p1y : p2y;
+    const hx = hipX + (isFront? 6: -2);
+    const hy = hipY;
+    // knee position: mid + offset perpendicular
+    const mx = (hx+targetX)/2;
+    const my = (hy+targetY)/2;
+    const dx = targetX - hx, dy = targetY - hy;
+    const len = Math.hypot(dx,dy);
+    // normal
+    const nx = -dy/len, ny = dx/len;
+    const bend = isFront? 12 : -10;
+    const kx = mx + nx*bend;
+    const ky = my + ny*bend;
+
+    // thigh
+    ctx.strokeStyle = isFront? '#ff7b00' : '#e36a00';
+    ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(hx,hy); ctx.quadraticCurveTo(kx,ky, targetX, targetY); ctx.stroke();
+    // outline
+    ctx.strokeStyle='#b45300'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(hx,hy); ctx.quadraticCurveTo(kx,ky, targetX, targetY); ctx.stroke();
+    // scales
+    ctx.fillStyle='rgba(255,255,255,0.22)';
+    for(let s=0;s<3;s++){
+      ctx.beginPath(); ctx.arc(lerp(hx,kx,s/3), lerp(hy,ky,s/3),1.1,0,Math.PI*2); ctx.fill();
+    }
+    // foot on pedal
+    ctx.fillStyle='#ff7b00';
+    ctx.beginPath(); ctx.ellipse(targetX, targetY+2, 9, 4, isFront? 0.15:-0.15,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b45300'; ctx.lineWidth=1.2; ctx.stroke();
+    // toes
+    ctx.strokeStyle='#b45300'; ctx.lineWidth=1.4; ctx.lineCap='round';
+    for(let t=-1;t<=1;t++){
+      ctx.beginPath(); ctx.moveTo(targetX+ t*3, targetY+1); ctx.lineTo(targetX+ t*3 + (isFront?3:-3), targetY+4); ctx.stroke();
+    }
+  }
+
+  // back leg first (so front over)
+  drawLeg(p2x,p2y,false);
+  drawLeg(p1x,p1y,true);
+
+  // pelican body shadow on frame
+  ctx.fillStyle='rgba(0,0,0,0.08)';
+  ctx.beginPath(); ctx.ellipse(bikeX-12, crankY-18, 32, 12, -0.08,0,Math.PI*2); ctx.fill();
+
+  // body
+  ctx.save();
+  ctx.translate(pelX, pelY);
+
+  // slight wing flap & breathe
+  const flap = Math.sin(t*0.008)*0.18 + (trickActive? Math.sin(trickT*0.03)*0.7:0);
+  const breathe = Math.sin(t*0.003)*1.2;
+
+  // tail
+  ctx.fillStyle='#f2e6c9';
+  ctx.beginPath();
+  ctx.moveTo(-34, 10); ctx.quadraticCurveTo(-48, 14, -46, 2); ctx.quadraticCurveTo(-38, 6, -30, 2); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.2; ctx.stroke();
+  // tail feathers detail
+  ctx.strokeStyle='rgba(18,48,71,0.12)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-34,8); ctx.lineTo(-44,10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-32,6); ctx.lineTo(-42,6); ctx.stroke();
+
+  // main body ellipse
+  const bodyGrad = ctx.createLinearGradient(-28,-18, 26, 22);
+  bodyGrad.addColorStop(0,'#fffdf3');
+  bodyGrad.addColorStop(0.5,'#fff8e7');
+  bodyGrad.addColorStop(1,'#f3e5c2');
+  ctx.fillStyle=bodyGrad;
+  ctx.beginPath(); ctx.ellipse(0, 12+breathe*0.3, 34, 26, -0.06, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.6; ctx.stroke();
+
+  // chest bib (pelican pouchy chest)
+  ctx.fillStyle='#fffef9';
+  ctx.beginPath(); ctx.ellipse(-6, 18, 18, 14, -0.1, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(232,215,176,0.9)'; ctx.lineWidth=1; ctx.stroke();
+
+  // belly feather lines
+  ctx.strokeStyle='rgba(232,215,176,0.9)'; ctx.lineWidth=1.1;
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.arc(-4, 18+i*3, 12 - i*2, 0.35, 2.8); ctx.stroke();
+  }
+
+  // wing - folded but slightly flapping to hold handlebar
+  ctx.save();
+  ctx.translate(2, 6);
+  ctx.rotate(flap*0.9 -0.18);
+  // wing shadow
+  ctx.fillStyle='rgba(0,0,0,0.07)';
+  ctx.beginPath(); ctx.ellipse(4,6,22,13, -0.18,0,Math.PI*2); ctx.fill();
+  // wing shape
+  const wingGrad = ctx.createLinearGradient(-12,-8, 22, 10);
+  wingGrad.addColorStop(0,'#ffffff');
+  wingGrad.addColorStop(1,'#f0e3c0');
+  ctx.fillStyle=wingGrad;
+  ctx.beginPath();
+  ctx.moveTo(-14, -8); ctx.bezierCurveTo(2,-14, 18,-6, 22,4);
+  ctx.bezierCurveTo(18,12, 6,14, -8,10);
+  ctx.bezierCurveTo(-14,6, -18,-2, -14,-8);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.4; ctx.stroke();
+  // wing feather lines
+  ctx.strokeStyle='rgba(18,48,71,0.14)'; ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    const y=-6+i*4.5;
+    ctx.beginPath(); ctx.moveTo(-8,y); ctx.quadraticCurveTo(6, y+2, 18, y-1); ctx.stroke();
+  }
+  // primaries tip
+  ctx.fillStyle='#e8d7b0';
+  ctx.beginPath(); ctx.moveTo(18, -2); ctx.lineTo(26, -4); ctx.lineTo(24,0); ctx.lineTo(22,4); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#dccca1'; ctx.lineWidth=1; ctx.stroke();
+
+  // wing reaching to handlebar (invisible arm)
+  ctx.strokeStyle='#fff8e7'; ctx.lineWidth=9; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(10,4); ctx.quadraticCurveTo(28,2, 38+ (headX - (pelX+10)), (headTopY - (pelY+6)) -2 ); ctx.stroke();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.2; ctx.stroke();
+  // glove?
+  ctx.fillStyle='#ff7b00';
+  ctx.beginPath(); ctx.ellipse(38+ (headX - (pelX+10)), (headTopY - (pelY+6)) -2, 6,5,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#b45300'; ctx.lineWidth=1; ctx.stroke();
+  ctx.restore();
+
+  // neck
+  ctx.fillStyle='#fff8e7';
+  ctx.beginPath();
+  ctx.moveTo(18, -6); ctx.bezierCurveTo(26,-14, 32,-8, 28,8);
+  ctx.bezierCurveTo(26,14, 18,16, 12,10);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.4; ctx.stroke();
+  // neck shading
+  ctx.fillStyle='rgba(232,215,176,0.5)';
+  ctx.beginPath(); ctx.ellipse(23, -2, 3, 9, 0.2,0,Math.PI*2); ctx.fill();
+
+  // head
+  ctx.save();
+  ctx.translate(30, -14);
+  // head bob with speed
+  const headBob = Math.sin(t*0.011 + 1)* (0.6+speed*1.2);
+  ctx.translate(0, headBob);
+
+  // helmet
+  const helmetY = -18;
+  // helmet strap
+  ctx.fillStyle='#123047';
+  ctx.beginPath(); ctx.ellipse(0, -2, 14, 12, -0.1, 0, Math.PI*2); // head base fill
+  ctx.fill();
+
+  // head shape (pelican)
+  ctx.fillStyle='#fff8e7';
+  ctx.beginPath(); ctx.ellipse(0,0, 14, 12, -0.08, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.3; ctx.stroke();
+
+  // helmet top - cute
+  const helmetGrad = ctx.createLinearGradient(-10,-26, 10,-6);
+  helmetGrad.addColorStop(0,'#ff3b30');
+  helmetGrad.addColorStop(0.5,'#e63946');
+  helmetGrad.addColorStop(1,'#b51f2b');
+  ctx.fillStyle=helmetGrad;
+  ctx.beginPath();
+  ctx.ellipse(1, helmetY, 16, 10, -0.05, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ffbe0b'; ctx.beginPath(); ctx.ellipse(1, helmetY-6, 6, 2.2,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#7a1420'; ctx.lineWidth=1; ctx.stroke(); // outline approximated
+  ctx.strokeStyle='rgba(255,255,255,0.45)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(-4, helmetY-3, 4, 1.9, 3.8); ctx.stroke();
+
+  // visor
+  ctx.fillStyle='rgba(18,48,71,0.18)';
+  ctx.beginPath(); ctx.ellipse(6, helmetY+5, 12, 5, 0.12, 0, Math.PI*2); ctx.fill();
+
+  // cheek strap
+  ctx.strokeStyle='#ffbe0b'; ctx.lineWidth=2.2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-8, -8); ctx.quadraticCurveTo(-2,-4, 4,-6); ctx.stroke();
+  ctx.fillStyle='#ffbe0b'; ctx.beginPath(); ctx.arc(5,-6,2,0,Math.PI*2); ctx.fill();
+
+  // eye
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(4, -1.5, 5.2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#123047'; ctx.beginPath(); ctx.arc(5.2,-1.2, 3.1,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#5dd3ff'; ctx.beginPath(); ctx.arc(6.2,-1.8,1.7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(6.6,-2.4,0.9,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(5.2,-1.2,1.05,0,Math.PI*2); ctx.fill();
+  // eyelid
+  ctx.strokeStyle='#e8d7b0'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(4.2,-1.5,5.6, 3.6, 5.9); ctx.stroke();
+  // eyebrow feather
+  ctx.strokeStyle='#dccca1'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-1,-6); ctx.lineTo(4,-7); ctx.stroke();
+
+  // beak - long orange
+  const beakGrad = ctx.createLinearGradient(10,-6, 52, 6);
+  beakGrad.addColorStop(0,'#ff9f1c'); beakGrad.addColorStop(1,'#ff7b00');
+  ctx.fillStyle=beakGrad;
+  ctx.beginPath();
+  ctx.moveTo(12, -4); ctx.lineTo(48, 0); ctx.lineTo(12, 6); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#b45300'; ctx.lineWidth=1.2; ctx.stroke();
+  // beak nostril & line
+  ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(14,-1); ctx.lineTo(40,-0.2); ctx.stroke();
+  ctx.fillStyle='#7a3b00'; ctx.beginPath(); ctx.ellipse(18,-2,1.4,0.8,0,0,Math.PI*2); ctx.fill();
+  // beak tip
+  ctx.fillStyle='#ff7b00'; ctx.beginPath(); ctx.ellipse(48,0,3,3.2,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(48,1.2,2,1.2,0,0,Math.PI*2); ctx.fill();
+
+  // lower mandible pouch
+  ctx.fillStyle='#ffbf69';
+  ctx.beginPath();
+  ctx.moveTo(12, 6); ctx.quadraticCurveTo(26, 14, 32, 10); ctx.quadraticCurveTo(28, 16, 20, 14); ctx.lineTo(12,6);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#e68a00'; ctx.lineWidth=1; ctx.stroke();
+  // pouch lines
+  ctx.strokeStyle='rgba(180,83,0,0.35)'; ctx.lineWidth=0.9;
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(16+i*5, 8); ctx.quadraticCurveTo(18+i*5,10, 18+i*5,12); ctx.stroke(); }
+
+  // wind lines when speed high
+  if(speed>0.5){
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1.2; ctx.lineCap='round';
+    const ws = (speed-0.5)*12;
+    for(let i=0;i<3;i++){
+      const wy = -4 + i*4;
+      ctx.beginPath(); ctx.moveTo(44, wy); ctx.lineTo(44+ ws + Math.sin(t*0.02+i)*4, wy); ctx.stroke();
+    }
+  }
+
+  ctx.restore(); // head
+
+  ctx.restore(); // pelican
+
+  // front wheel fork detail highlight
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(headX+2, headTopY+4); ctx.lineTo(bikeX+50, wheelCY-12); ctx.stroke();
+
+  ctx.restore();
+
+  // bell ping visual
+  if(bellPing>0){
+    bellPing -= dt*0.0025;
+    const px = bikeX+54, py = crankY -68 - (bikeBob+jumpY);
+    ctx.save();
+    ctx.globalAlpha = clamp(bellPing,0,1);
+    ctx.strokeStyle='#ffbe0b'; ctx.lineWidth=2;
+    for(let r=1;r<=3;r++){
+      ctx.beginPath(); ctx.arc(px, py, 12+r*9*(1-bellPing*0.5), -0.8, 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py, 12+r*9*(1-bellPing*0.5), 2.34, 3.94); ctx.stroke();
+    }
+    ctx.fillStyle='#fff'; ctx.font='700 13px system-ui'; ctx.textAlign='center';
+    ctx.fillText('RING!', px, py-34);
+    ctx.restore();
+  }
+}
+
+let last=performance.now();
+function loop(now){
+  const dt = Math.min(32, now-last); last=now;
+  t += dt;
+  // easing speed
+  speed = lerp(speed, targetSpeed, 0.04);
+  // update road offsets
+  const move = speed* dt * 0.22 + 0.6; // pixels per frame
+  roadOffset += move;
+  dashOffset += move*1.1;
+  distance += move*0.0012; // km-ish
+  wheelAngle += move *0.11; // wheel rotation rad
+  // crank tied to speed: pelican pedals faster with speed
+  crankAngle += (0.009 + speed*0.014) * dt;
+
+  // trick timer
+  if(trickActive) trickT += dt;
+
+  // draw
+  ctx.clearRect(0,0,W,H);
+  drawBackground(dt);
+  drawRoad();
+  drawBicycleAndPelican(dt);
+
+  // hud
+  kmEl.textContent = distance.toFixed(1);
+  const kmh = Math.round(6 + speed*28);
+  mphEl.textContent = kmh + ' km/h';
+  if(speed<0.02) moodEl.textContent='standing by...';
+  else if(speed<0.25) moodEl.textContent='easy cruise ~';
+  else if(speed<0.6) moodEl.textContent='cruising ~';
+  else if(speed<0.85) moodEl.textContent='zooming!';
+  else moodEl.textContent='WHEEE!!';
+
+  // subtle vignette
+  const vign = ctx.createRadialGradient(W/2,H/2, 320, W/2,H/2, 680);
+  vign.addColorStop(0,'transparent'); vign.addColorStop(1,'rgba(18,48,71,0.12)');
+  ctx.fillStyle=vign; ctx.fillRect(0,0,W,H);
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// click stage to ring
+canvas.addEventListener('click', (e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const x=(e.clientX-rect.left)/rect.width*W;
+  const y=(e.clientY-rect.top)/rect.height*H;
+  // if near bell, ring, else honk
+  const bikeX=W*0.52;
+  const headX=bikeX+38;
+  const bellX=headX+10; const bellY= H*0.62 - 66;
+  if(Math.hypot(x-bellX, y-bellY)<40) ringBell(); else if(Math.hypot(x- (W*0.52), y- (H*0.62-40))<90) { trickActive=1; trickT=0; }
+});
+stage.addEventListener('dblclick', honk);
+</script>
+</body>
+</html>
