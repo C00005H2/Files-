@@ -390,10 +390,10 @@ API_NAMES_LIST = ['LoadLibraryW','GetProcAddress','ExitProcess','ReadConsoleW','
     'ToUnicode','ToAscii','VkKeyScanW','GetOEMCP','GetACP','GetPrivateProfileStringW',
     'WritePrivateProfileStringW','GetPrivateProfileIntW','GetPrivateProfileSectionW',
     'GetPrivateProfileSectionNamesW','GetPrivateProfileStructW','WritePrivateProfileStructW']
-spec={'base':DLLBASE,'out':'/home/user/emulator/fake.dll',
+spec={'base':DLLBASE,'out':'/home/user/Files-/analysis/work/fake.dll',
       'apis':[{'name':n,'addr':(TRAMP+NAME2IDX[n]*0x40 - DLLBASE) if n in NAME2IDX else (TRAMP+len(NAME2IDX)*0x40-DLLBASE)} for n in API_NAMES_LIST]}
-os.system(f"{sys.executable} /home/user/emulator/make_fake_dll.py '{_json.dumps(spec)}'")
-dllbytes=open('/home/user/emulator/fake.dll','rb').read()
+os.system(f"{sys.executable} /home/user/Files-/analysis/tools/make_fake_dll.py '{_json.dumps(spec)}'")
+dllbytes=open('/home/user/Files-/analysis/work/fake.dll','rb').read()
 mu.mem_write(DLLBASE, dllbytes)
 
 # --- PatchGuard / checksum self-check: the binary verifies its own code. Since we
