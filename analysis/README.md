@@ -2,65 +2,81 @@
 
 Goal: recover the correct password for crackme.exe via legitimate RE (no patching, no external hints).
 
-## STATUS (as of this update)
-**A working unicorn emulator now runs the binary end-to-end to the password prompt and checks the
-password.** All 28 runtime-resolved APIs resolve, anti-debug checks pass, and the binary reads the
-password via ReadConsoleW, runs the 1000-round sponge + VMP bytecode VM, and calls
-`ExitProcess(0)` on success / `ExitProcess(1)` on failure. Common passwords (test123, aaaa, pass,
-+25 more) all FAIL. The next step is to (a) capture a full ground-truth sponge trace for a known
-password, (b) validate/fix the Python sponge model, and (c) sweep candidate passwords.
+## STATUS
+**Sponge MAC model is FULLY BYTE-EXACT and the GATE is fully decoded.** The remaining task is the
+password search itself, which is blocked on a fast oracle (see "What's blocking the password search").
 
-## How the emulator gets the binary running (the hard part)
-The binary is a no-import PE that resolves its own APIs at runtime via a custom
-`LoadLibraryW`/`GetProcAddress` (0x6DD0 module lookup + 0x6BA0 export walk). The emulator
-(analysis/tools/emu3.py + make_fake_dll.py) fakes:
-- A minimal PE32+ `fake.dll` at 0x77000000 with a real IMAGE_EXPORT_DIRECTORY (~185 exports, ASCII
-  names, section file-offset == RVA) so 0x6BA0 can walk it.
-- A TEB/PEB with a module list (kernel32.dll, ntdll.dll entries) so 0x6DD0 finds them.
-- Trampolines at 0x78000000 + idx*0x40 for each API, dispatched by a single code hook.
-- **CRITICAL:** trampoline fill must contain a NUL (`ud2` + 0x00*0x3e). 0xCC padding has no NUL and
-  makes the resolver's forward-export NUL-scan (0x6C88–0x6D7E) run forever.
-- **CRITICAL:** `OpenProcess` must return a nonzero handle (the binary calls
-  `OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId())` and fails if it returns 0).
-- **CRITICAL:** the binary executes `int3` (0xCC) anti-debug breakpoints; handle via a
-  `UC_HOOK_INTR` handler that advances RIP past the 0xCC.
-- The anti-debug TEB checks read `gs:[0x60]` (+2 BeingDebugged, +0xBC bits 4-6); a fake TEB at
-  0x60001000 with those bytes = 0 passes.
+- `tools/sponge.py` computes `MAC(pw)` byte-exact for any password:
+  - `test123  -> cc32b406bbfcacc658bcf662cca61c23`  (matches emulator)
+  - `aaaaaaaa -> 8929fc1347a4b5db644e5ba5f47067cf`  (matches emulator)
+- The success **gate** is `R[0..7] == C` where `C = E6 A0 EF 22 84 73 41 65` (8 handler-16/18
+  checks). A full unicorn emulator (`tools/emu3.py`) is a valid oracle (~4 s/password) but the
+  sponge MAC is only part of what the VM reads (see below).
 
-## Verified findings
-- **Pipeline:** password -> 0x80-pad to 40-byte buffer -> `0x65A0` 1000-round keystretcher
-  ("sponge") -> 16-byte MAC -> VMP bytecode VM (loop 0xB2A0–0xB3E6) -> gate.
-- **Success gate:** the VM sets an exitflag if `R[0..7] != C` where
-  `C = [E6 A0 EF 22 84 73 41 65]` (VM steps 3781–3805). The VM returns `bl = (exitflag == 0)`;
-  the caller does `ExitProcess(1 - bl)` (0 on success, 1 on failure).
-- **Ground-truth MAC:** `test123 -> cc32b406bbfcacc658bcf662cca61c23` (captured live from the
-  emulator's scratch+0x140, matches the statically-derived value). `aaaa -> f44249d71a7b7a9485e166b58c691f86`.
-- **VM state layout** (base 0x2B650): +0x08 limit, +0x10 acc, +0x14 h (program counter),
-  +0x28 R[0] (16-byte R array of dwords at +0x2C in the live dump), +0xB8 exitflag,
-  +0xC0 c0, +0xC1..C5 c1–c5, +0xCC outpos, +0xD0 scratch ptr -> 0x2B7A0.
-- **Sponge driver:** called with rcx = scratch (0x2B7A0); runs 1000 iterations (r14), each =
-  6x 0x5E20 round + a key-mix; final 16-byte state = MAC, written to scratch+0x140.
+## Architecture (verified in the emulator)
+```
+ReadConsoleW(pw)
+  -> 0x9b80  builds buf40 = pw + 0x80 + zeros
+  -> 0x65A0  sponge keystretcher, 1000 iterations (r14=0x3e8)
+       writes MAC block + a 224-byte key-stretch context (see "Sponge output")
+  -> 0xB0B0  VM setup (shuffle-per-run bytecode, dispatch table @ r14=0x4000)
+  -> 0xB2A0  VM loop, ~15557 iterations (hot body 0xB310-0xB355)
+  -> GATE    R[0..7] == C  (8 checks); fail => exitflag |= 1
+  -> ExitProcess(1) on failure, ExitProcess(0) on success
+```
 
-## Sponge structure
-- `0x60B0(s, t1, t2, off)`: swap s[off..off+3]<->s[off+4..off+7]; then
-  `a'=rotl8(a+b, b&7)^t1[off]`; `b'=rotl8(b+D, c&7)`; `c'=rotl8(c-d, d&7)^t2[off]`;
-  `d'=rotl8(c'+d, A&7)^t1[off+3]` (A=s[off+4], D=s[off+7] post-swap). **Verified byte-exact.**
-- `0x5E20(state,t1,t2,cnt)`: 2x 0x60B0(off=cnt) + pairwise rots
-  `for i in 0..7: s[8+i]=rotl8(s[8+i], s[i]&7); s[i]=rotl8(s[i], s[8+i]&7)`.
-- `0x5C10(state,key,t1,t2)`: state^=key(16); loop(lb): 2x 0x60B0(off=lv) + same pairwise rots.
-- `0x65A0` driver: state=buf[0..15]; 1000x { 6x 0x5E20(i=0..5); key-mix; 6x 0x5E20(i=0..5) };
-  MAC=state.
-- Tables: `t1@0x2B628 = 6c9f1ab735e3487d51132bc78eb24f63`, `t2@0x2B630 = 51132bc78eb24f63c93bbd119443ebdf`.
+## Sponge (0x65A0) — byte-exact model in tools/sponge.py
+Per iteration (i = 0..999), with `prev` the previous iteration's state (prev=0 initially):
+```
+state = buf40[0..15] ^ prev            # Feistel feedback (0x6611-0x661a)
+6 x 0x5E20(state, ctr=0..5)
+0x5C10(state, key=buf40[16..31], lb=6) # state^=key then 6x 0x5E20
+state[0..7] ^= buf40[32..39]           # (upper 8B ^= 0)
+6 x 0x5E20(state, ctr=0..5)
+prev = state
+MAC = prev
+```
+- `0x5E20(state,cnt)` = `0x60B0(win0,cnt) + 0x60B0(win8,cnt) + pairwise-rot`.
+- `0x60B0(s,win,off)`: swap s[win..win+3]<->s[win+4..win+7];
+  `a'=rotl8(a+b,b&7)^T1[off%8]`; `b'=rotl8(b+D,c&7)`; `c'=rotl8(c-d,d&7)^T2[off%8]`;
+  `d'=rotl8(c'+d,A&7)^T1[(off+3)%8]` (a,b,c,d=s[win..win+3], A=s[win+4], D=s[win+7]).
+- `0x5C10(s,key,lb)`: `s ^= key`; `lb x (0x60B0(win0,lv) + 0x60B0(win8,lv) + pairwise-rot)`.
+- Tables: `T1=6c9f1ab735e3487d51132bc78eb24f63`, `T2=51132bc78eb24f63c93bbd119443ebdf`.
+
+### Sponge output (what the VM reads)
+The sponge (rdi=0x2B7A0) writes, verified by post-sponge memory diff:
+- `rdi+0x140` (0x2B8E0) MAC16  (= MAC, the 16-byte digest — modeled in sponge.py)
+- `rdi+0x150` (0x2B8F0) key16  = buf40[16..31]
+- `rdi+0x160` (0x2B900) tail8  = buf40[32..39]
+- `rdi+0x168` (0x2B908) 0x80
+- **`rdi+0x80..rdi+0x1DF` (0x2B820-0x2B8DF) a 224-byte key-stretch context** (written by the
+  sponge epilogue XOR/PMADDWD/PSHUFB loop @0x6760-0x6920). **NOT yet modeled in Python.**
+
+## The gate (see disasm/re_vm_gate.txt)
+8 checks; before check i (i=0..7) the VM sets `R[17]=C[i]`, `c1=17`, `c2=i`:
+- handler-16 @0x1270: `c0 = (R[c1] == R[c2])`  =>  `c0 = (C[i] == R[i])`
+- handler-18 @0x12c0: `if !c0: exitflag |= 1`
+=> **gate passes <=> R[0]==C[0] && ... && R[7]==C[7]**, `C = E6 A0 EF 22 84 73 41 65`.
+
+R[0..7] is computed by the VM from the MAC block **and** the 224-byte context. It is not a simple
+per-byte function of MAC[0..7] (no constant XOR/add fits the 3 captured data points).
+
+### Ground truth (test123, FAIL)
+- gate R[0..7] = `b2 e4 96 25 ed f6 0e 69`; R[17] = `e6 a0 ef 22 84 73 41 65` (=C, set per-check)
+- MAC = `cc32b406bbfcacc658bcf662cca61c23`; acc set @0x1380; exitflag set @0x12c9 (x8)
+
+## What's blocking the password search
+The sponge MAC (16 B) is modeled, but the VM also reads the **224-byte key-stretch context**
+(0x2B820-0x2B8DF). An oracle that injects only the MAC block (skipping the sponge) diverges from
+the real binary, so it is invalid. Two paths to the password:
+1. **Model the 224-byte context in Python** (decode the sponge epilogue @0x6760-0x6920) -> a valid
+   fast oracle -> sweep a candidate list.
+2. **Use the full emulator** (tools/emu3.py, ~4 s/pw) as the oracle and sweep a candidate list
+   (slower, but no additional RE needed).
 
 ## Files
-- `tools/emu3.py` — the working unicorn harness (copy of /home/user/emulator/emu3.py).
+- `tools/sponge.py` — byte-exact sponge MAC model (self-test: 6 rounds + 2 full MACs).
+- `tools/emu3.py` — the working unicorn harness (valid oracle).
 - `tools/make_fake_dll.py` — builds the fake export-table DLL.
-- `tools/sponge.py` — Python model of the sponge (0x60B0 verified; full MAC pending validation).
-- `disasm/re_60b0.txt`, `re_5e20.txt`, `re_5c10.txt`, `re_65a0.txt` — capstone disassembly.
-
-## Next steps
-1. Capture a full ground-truth sponge trace (driver buffer + per-iteration state) for a known
-   password from the live emulator.
-2. Validate/fix the Python sponge model against the live MAC.
-3. Sweep candidate passwords (the MAC is one-way; the password is a short human string, so a
-   targeted candidate list + the validated model is the path).
+- `disasm/re_60b0.txt`, `re_5e20.txt`, `re_5c10.txt`, `re_65a0.txt` — sponge disassembly.
+- `disasm/re_vm_gate.txt` — VM + gate + handler analysis.
