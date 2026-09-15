@@ -41,10 +41,15 @@ Two independent reasons, either of which is sufficient:
    (`MSVCP140.dll`, `VCRUNTIME140.dll`, `VCRUNTIME140_1.dll`, `api-ms-win-crt-*`).
    Dependency resolution for `LoadLibraryW("%TEMP%\d3dx9_30.dll")` uses the default
    search order — the *game executable's* directory, `System32`, … — and `%TEMP%` is
-   not part of it. Modern Windows does not ship D3DX9, and your private-server client
-   clearly does not either (your list contains neither `d3dx9_43.dll` nor
-   `d3dx9_30.dll`; had our module mapped, `d3dx9_43.dll` would have been dragged in
-   with it). Result: `ERROR_MOD_NOT_FOUND` (126), module never maps, the tool's own
+   not part of it. The DLL's delay-import directory is empty (RVA `0x0`), so this
+   dependency is resolved at load time and cannot be satisfied lazily. Modern Windows
+   does not ship D3DX9, and your private-server client clearly does not either (your
+   list contains neither `d3dx9_43.dll` nor `d3dx9_30.dll`; had our module mapped,
+   `d3dx9_43.dll` would have been dragged in with it). Your list *does* show a
+   duplicate `version.dll` — a 152 kB one from the game folder shadowing the 40 kB
+   system one — which proves the game directory is ahead of `System32` in this
+   process' search order, so `d3dx9_43.dll` is missing from *both* places.
+   Result: `ERROR_MOD_NOT_FOUND` (126), module never maps, the tool's own
    post-check (`EnumProcessModules`, `inner_deob2.au3:20562`) sees the failure, burns
    the two fallbacks, and goes quiet.
 
@@ -152,15 +157,33 @@ machine, no user-visible error for any of them.
 
 ## 4. Cross-check against your module list
 
+The full `aion.bin` module dump (names, base addresses, sizes) was cross-checked
+against the ESP DLL's PE headers. Import directory: RVA `0x1313dc`, size 400,
+**19 modules**; the *delay-import* directory is RVA `0x0` / size 0 and the bound-import
+directory is empty — so `d3dx9_43.dll` is a **hard, load-time** dependency: there is no
+code path in which the DLL can map while `d3dx9_43.dll` is missing.
+
 | Observation in `aion.bin` | Meaning for this analysis |
 |---|---|
-| no `d3dx9_30.dll` | injection never succeeded (all three methods failed or never ran) |
-| no `d3dx9_43.dll` | the ESP DLL's *static dependency* is absent → even a correct `LoadLibraryW` returns 126 |
+| no `d3dx9_30.dll` anywhere | injection never succeeded (all three methods failed or never ran) |
+| no `d3dx9_43.dll` | the ESP DLL's hard static dependency is absent → even a correct `LoadLibraryW` returns 126 |
+| `d3d9.dll` @ `0x7ffe4d630000` present | the API the ESP targets *is* available; D3D9 is not the blocker |
 | no `Game.dll`, no `NCGuard.dll` | the ESP DLL's retail-client anchors are missing (see §5) |
-| `euroaion.dll`, `clmods64.dll`, `crysystem.dll` | private-server client layout, different module names/offsets |
-| `AcGenral.dll`, `AcLayers.dll` | process runs under an Application-Compatibility shim (extra threads/hooks) |
-| `RTSSHooks64.dll` | RivaTuner/MSI Afterburner overlay hooked into the game (perturbs D3D9 hooking and thread hijack) |
-| `d3d9.dll`, `dxgi.dll`, `d3d11.dll` present | D3D9 itself is available — not the blocker |
+| `clmods64.dll` @ `0x7ffe38280000` (24.4 MB, no description), `crysystem.dll` @ `0xae90000` (8.4 MB, described "AION GameClient"), `euroaion.dll` @ `0x7ffe6b390000` (172 kB) | private-server client: `aion.bin` itself is only 1.66 MB and is a stub, the real code moved into `clmods64.dll`/`crysystem.dll`. Every retail offset the ESP was built on is invalid here |
+| **`version.dll` listed twice** — `0x7ffe6bc00000`, 152 kB, *no description*, and `0x7ffe8b890000`, 40 kB, "Version Checking and File Installation Libraries" | the EuroAion client ships a **local proxy `version.dll`** in the game folder that wins over `System32` (the real one is pulled in separately by another module). Two consequences: the game directory has precedence in this process' DLL search order, and the client already performs DLL proxying of its own |
+| `DirectXApps_FOD.sdb` @ `0x7ff4fdd30000` (1.32 MB) **plus** `apphelp.dll`, `AcGenral.dll`, `AcLayers.dll` | a compatibility **shim database is mapped into the process** and shim layers are active. Shimmed processes get patched API behaviour and extra loader work — this distorts method A's 1-second hook window and method C's thread-set/register assumptions |
+| `msvcp80.dll` @ `0x58a40000`, `msvcr80.dll` @ `0x58970000` (VC++ **2005** runtime) but **no `MSVCP140.dll` / `VCRUNTIME140.dll` / `VCRUNTIME140_1.dll`** | the game is VC++2005-era; the ESP DLL needs the **VC++ 2015–2022 x64** runtime (54 `MSVCP140` imports, 16 `VCRUNTIME140`, and `VCRUNTIME140_1!__CxxFrameHandler4` — i.e. built with VS2019+). Absence from the list is not proof it is not installed on disk, but nothing in this process has loaded it |
+| `ucrtbase.dll` @ `0x7ffe90a90000` present | the 10 `api-ms-win-crt-*` imports are forwarders satisfied by the Universal CRT — this part of the dependency set is fine |
+| `RTSSHooks64.dll` @ `0x2790000` (2.4 MB, low base = injected) | RivaTuner/MSI Afterburner overlay is already hooking inside the game; it competes for the same D3D9/present path and adds threads that method C will suspend |
+| `igc64.dll`, `igd10um64gen11.dll`, `igd12dxva64.dll` **and** `nvppex.dll` (NVIDIA 582.66) | hybrid (Intel + NVIDIA) GPU machine; the D3D9 device the ESP would hook may belong to either stack |
+| `dbghelp.dll`, `imagehlp.dll`, `sfc.dll`, `sfc_os.dll`, `amsi.dll`, `wldp.dll` | image/integrity and AMSI machinery is live in the process (typical for `clmods64.dll`-style protected clients); a foreign module appearing can be detected or torn down after the fact |
+| `ws2_32.dll`, `mswsock.dll`, `IPHLPAPI.DLL`, `cryptnet.dll` | only the *game's* networking; nothing here belongs to the tool's injection path |
+
+Reading of the whole list: it is exactly what you would see if the tool dropped
+`%TEMP%\d3dx9_30.dll` and then every injection attempt failed — and, independently,
+exactly what you would see if a load had been attempted and rejected at
+`d3dx9_43.dll`. Both statements are true here; the missing `d3dx9_43.dll` is the one
+that would still bite after the injector worked.
 
 ---
 
@@ -182,6 +205,10 @@ include: `Game.dll`, `NCGuard.dll`, `AIONClientWndClass1.0`,
   (`clmods64.dll`/`crysystem.dll`/`euroaion.dll` instead), so base-address resolution
   fails and the ESP initialises to a disabled state — Insert would stay dead even
   after a successful load.
+* The retail layout is not just renamed here, it is restructured: your `aion.bin` is a
+  1.66 MB stub while 24.4 MB of `clmods64.dll` and 8.4 MB of `crysystem.dll` carry the
+  client. The ESP's hard-coded offsets/signatures (its thread-hijack-style constants
+  and `Game.dll`-relative lookups) have no counterpart in that layout.
 
 ---
 
@@ -202,12 +229,19 @@ include: `Game.dll`, `NCGuard.dll`, `AIONClientWndClass1.0`,
 
 ## 7. Confirmation checklist (ordered, cheapest first)
 
-1. `dir <game>\bin64\d3dx9_43.dll` — if missing, place the **x64** `d3dx9_43.dll`
-   (DirectX End-User Runtime, June 2010) next to `aion.bin` (the application
-   directory *is* in the dependency search path) and retry. This single file is the
-   most likely immediate unlock.
-2. Verify the VC++ 2015–2022 **x64** redistributable (`MSVCP140.dll`,
-   `VCRUNTIME140.dll` in `System32`).
+1. `dir <game>\bin64\d3dx9_43.dll` and `dir C:\Windows\System32\d3dx9_43.dll`. Your
+   module list proves the game folder takes precedence (duplicate `version.dll`), so
+   check both. This is a **diagnostic** step, not a cure: supplying the file removes
+   the dependency blocker, but the three injection methods in §3 are broken
+   independently, so `LoadLibraryW` may still never be called. Its value is that it
+   isolates which of the two blockers you are hitting — with `d3dx9_43.dll` present,
+   ProcMon will show a genuine `Load Image` attempt instead of a silent
+   `NAME NOT FOUND`.
+2. Check the VC++ 2015–2022 **x64** redistributable: the ESP DLL imports 54 functions
+   from `MSVCP140.dll`, 16 from `VCRUNTIME140.dll` and
+   `VCRUNTIME140_1!__CxxFrameHandler4`, while your process has only the VC++2005 pair
+   (`msvcp80.dll`/`msvcr80.dll`) loaded. `ucrtbase.dll` is present, so the
+   `api-ms-win-crt-*` half is already satisfied.
 3. After clicking *Inject…*: `dir %TEMP%\d3dx9_30.dll` — confirms the drop happened.
 4. Process Monitor, filter `Process Name = aion.bin`, path contains `d3dx9`: expect
    `NAME NOT FOUND` on `d3dx9_43.dll` (or a failed `Load Image`). Event Viewer →
