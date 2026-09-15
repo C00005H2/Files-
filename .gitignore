@@ -1,0 +1,9 @@
+# generated reconstruction artifacts (see docs/OFFLINE_RUNBOOK.md)
+_work/
+*.img
+*.bin
+*_rc.bin
+payload.exe
+*_deobf.au3
+*_strings.txt
+*_out/
