@@ -1,0 +1,236 @@
+#IF=%FirstTime,;
+#EXECUTE=GetOffsets;
+UseSpeed=1;
+#SetVar3=Cancel Animation at how much percent? (the animation begins at 100% and goes to 0%)/n/nA value between 80 and 95 is recommend;
+#SetVar4=Do you have any skill keybinds that use modifiers (ALT, Shift, CTRL)/n/n1 = Yes/n0 = No;
+#SetVar5=After which Skill IDs you don't want to weave?/n/nExample:/n839,572,577;
+_SetArray1=--,%Var5;
+_Calc3=%Var3*0.01;
+WaitForResponse=Be sure Attack/Chat is binded to "C"/n/nThe Script can be stopped when you write "stop weave" into the chat;
+Command=;
+#ENDIF
+
+
+#IF=%ClientID,=1; // NA
+_MemPattern=33F68D43FF83F8700F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8B9FB8000000;
+_SetVar=Mod_Code,0xBB0000000090;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_MemPattern=33F68D43FF83F8700F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8B9FB8000000;
+_SetVar=Mod_Code,0xBB0000000090;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_MemPattern=8D47FF83F8360F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8BBBA8000000;
+_SetVar=Mod_Code,0xBF0000000090;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_MemPattern=8D47FF83F8360F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8BBBA8000000;
+_SetVar=Mod_Code,0xBF0000000090;
+#ENDIF
+
+#IF=%ClientID,10-13; // 4.6
+_MemPattern=48897C246083C0FF83F83E0F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8B83AC000000;
+_SetVar=Mod_Code,0xB80000000090;
+#ENDIF
+
+#IF=%ClientID,=14; // 4.8
+_MemPattern=4889AC248000000083C0FF83F83E0F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8B8798000000;
+_SetVar=Mod_Code,0xB80000000090;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_MemPattern=8D47FF83F8360F87,-0x6,False,True;
+_SetVar=Reset_Code,0x8BBBA4000000;
+_SetVar=Mod_Code,0xBF0000000090;
+#ENDIF
+
+
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+#ELSE
+WaitForResponse=Error 5;
+#EndScript
+#ENDIF
+
+
+
+
+
+
+
+#DO=9999999999;
+#EXECUTE=GetPlayerAddr;
+_IFMemPtrRead=%AddrFreeMem4,%OffsetActionID,DWORD,=2;
+#EXECUTE=CheckSkillBlacklist;
+#IF=%Var[Blocked],=0;
+MemWrite=%Var[PatternRet_1],%Var[Mod_Code],BYTE[6]; // Apply
+#2DO=2500;
+#EXECUTE=AutoAttack;
+_2UNTILMemPtrRead=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_AnimName],CHAR[7],=cattack; // autoattack used
+_IFMemPtrRead=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_AnimName],CHAR[7],=cattack; // autoattack used
+_MemPtrReadVar=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_AnimTimeMax],FLOAT,2; // max anim time
+_Calc2=%Var2*%Var3;
+_IFMemPtrRead=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_AnimTimeRemaining],FLOAT,>%Var2; // Animation time
+#2DO=2500;
+MemWrite=%Var[PatternRet_1],%Var[Mod_Code],BYTE[6]; // Apply
+_2UNTILMemPtrRead=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_AnimTimeRemaining],FLOAT,<%Var2; // dmg came trough
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+CreateTimer=999999;
+#ELSE
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+CreateTimer=999999;
+#ENDIF
+#IF=%Timer=999999,5000;
+_IFMemRead=%Var[PatternRet_1],BYTE[6],=%Var[Mod_Code];
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+CreateTimer=999999;
+#ENDIF
+_UNTILMemPtrRead=%AddrChat,%Var[Offset_ChatText],WCHAR[32],=stop weave;
+
+
+start_CheckSkillBlacklist;
+_IFMemPtrRead=%AddrFreeMem4,%OffsetData/%Var[Offset_Base_ActionID_2],DWORD,%ARRAY1;
+_SetVar=Blocked,1;
+#ELSE
+_SetVar=Blocked,0;
+#ENDIF
+end_CheckSkillBlacklist;
+
+
+start_GetPlayerAddr;
+
+_IFMemPtrRead=%AddrFreeMem4,%OffsetType,CHAR[32],=Player;
+#Return
+#ENDIF
+
+
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[32],=Player;
+_MemPtrReadVar=%PlayerBase,%OffsetData/0x8,UINT64,PlayerAddr;
+MemWrite=%AddrFreeMem4,%Var[PlayerAddr],UINT64;
+#Return
+#ENDIF
+
+GetEntity=%OffsetType,CHAR[32],=Player,EntityAddr;
+#IF=%Var[EntityAddr_Elements],>0;
+_IFMemPtrRead=%Var[EntityAddr_Addr_1],%OffsetType,CHAR[32],=Player;
+_MemPtrReadVar=%Var[EntityAddr_Addr_1],%OffsetData/0x8,UINT64,PlayerAddr;
+MemWrite=%AddrFreeMem4,%Var[PlayerAddr],UINT64;
+#Return
+#ENDIF
+
+_MemPtrReadVar=%TargetBase,%OffsetName,WCHAR[128],TargetName_Cache;
+Command=/select %CHARNAME;
+#DO=999999999;
+_UNTILMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=Player;
+_MemPtrReadVar=%TargetBase,%OffsetData/0x8,UINT64,PlayerAddr;
+MemWrite=%AddrFreeMem4,%Var[PlayerAddr],UINT64;
+Command=/select %Var[TargetName_Cache];
+
+end_GetPlayerAddr;
+
+
+
+start_AutoAttack;
+
+#IF=%Var4,=0;
+SendKey=0x43; // AutoAttack
+#ENDIF
+
+end_AutoAttack;
+
+
+
+start_OnScriptExit;
+
+MemWrite=%Var[PatternRet_1],%Var[Reset_Code],BYTE[6]; // Reset
+
+end_OnScriptExit;
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[NA\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[NA\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[NA\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[NA\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[NA\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[NA\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[EU\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[EU\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[EU\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[EU\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[EU\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[EU\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[Classic\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Classic\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[Classic\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[Classic\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[Classic EU\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Classic EU\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[Classic EU\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[Classic EU\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic EU\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic EU\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,10-13; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[4\.6\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[4\.6\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[4\.6\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[4\.6\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.6\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[4\.6\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=14; // 4.8
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[4\.8\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[4\.8\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[4\.8\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[4\.8\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.8\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[4\.8\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[Nova\]\n.*?^ChatText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Nova\]\n.*?^Base_AnimName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeRemaining,(?m)\[Nova\]\n.*?^Base_AnimTimeRemaining=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimTimeMax,(?m)\[Nova\]\n.*?^Base_AnimTimeMax=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Nova\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Nova\]\n.*?^Base_ActionID_2=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Base_AnimName],>0;
+
+end_GetOffsets;

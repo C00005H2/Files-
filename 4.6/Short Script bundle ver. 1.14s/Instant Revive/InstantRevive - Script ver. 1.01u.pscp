@@ -1,0 +1,190 @@
+#IF=%FirstTime,;
+#SetVar=Resurrect_Method,This script instantly revives you after death skipping the death cam and wait time/n/nWhich Resurrect method you want to use?/n/n0 = Click the revive method by yourself/n1 = Skill Resurrect/n2 = Item Resurrect/n3 = Kisk Resurrect/n4 = Obelisk Resurrect;
+#EXECUTE=GetOffsets;
+#EXECUTE=GetResurrectOffsets;
+Console=\g_deathCamActive 0;
+#ENDIF
+
+#IF=%Var[Resurrect_Method],=1; // Skill
+_SetVar=Resurrect_Mode,1;
+_SetVar=Resurrect_Button,%Var[Offset_Resurrect_resurrect_ok];
+#ENDIF
+
+#IF=%Var[Resurrect_Method],=2; // Item
+_SetVar=Resurrect_Mode,2;
+_SetVar=Resurrect_Button,%Var[Offset_Resurrect_resurrect_ok];
+#ENDIF
+
+#IF=%Var[Resurrect_Method],=3; // Kisk
+_SetVar=Resurrect_Mode,4;
+_SetVar=Resurrect_Button,%Var[Offset_Resurrect_resurrect_ok];
+#ENDIF
+
+
+#DO=9999999;
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player;
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,=0;
+#EXECUTE=InstaResurrect;
+#ENDIF
+#UNTIL=1,=2;
+
+
+
+
+
+start_InstaResurrect;
+
+#IF=%Var[Resurrect_Method],1-3;
+#DO=2000;
+MemPtrWrite=%PlayerBase,%OffsetAnimationTimeRemain,0,FLOAT;
+MemWrite=%Var[AddrResurrectTimer],0,FLOAT;
+MemWrite=%Var[AddrResurrectOptions],%Var[Resurrect_Mode],BYTE;
+_UNTILMemPtrRead=%AddrFrameName[resurrect_dialog],%Var[Offset_Frame_State],BYTE,=175;
+Delay=33;
+FrameClick=resurrect_dialog,%Var[Resurrect_Button],Left,True;
+#ENDIF
+
+#IF=%Var[Resurrect_Method],=4;
+MemWrite=%AddrResurrect,0,FLOAT;
+#ENDIF
+
+#DO=60000;
+MemPtrWrite=%PlayerBase,%OffsetAnimationTimeRemain,0,FLOAT;
+_UNTILMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player;
+_UNTILMemPtrRead=%PlayerBase,%OffsetHP,DWORD,>0;
+#DO=500;
+MemPtrWrite=%PlayerBase,%OffsetAnimationTimeRemain,0,FLOAT;
+#UNTIL=1,=2;
+FrameActionByName=resurrect_dialog,STATE,HIDE;
+
+end_InstaResurrect;
+
+
+
+start_GetResurrectOffsets;
+
+#IF=%Var[Offset_Resurrect_resurrect_ok],=0;
+_SetVar=Frame_FindControl_Frame,resurrect_dialog; // Frame Name
+_SetVar=Frame_FindControl_Control,resurrect_ok; // Control Name
+_SetVar=Frame_FindControl_StartOffset,0x400; // Start Offset
+_SetVar=Frame_FindControl_Range,0x300; // Scan range
+#EXECUTE=Frame_FindControl;
+_SetVar=Offset_Resurrect_resurrect_ok,%Var[Frame_FindControl_Return];
+#ENDIF
+#IF=%Var[Offset_Resurrect_resurrect_ok],=0;
+#Return
+#ENDIF
+
+
+#IF=%Var[Offset_Resurrect_resurrect_cancel],=0;
+_SetVar=Frame_FindControl_Frame,resurrect_dialog; // Frame Name
+_SetVar=Frame_FindControl_Control,resurrect_cancel; // Control Name
+_SetVar=Frame_FindControl_StartOffset,0x400; // Start Offset
+_SetVar=Frame_FindControl_Range,0x300; // Scan range
+#EXECUTE=Frame_FindControl;
+_SetVar=Offset_Resurrect_resurrect_cancel,%Var[Frame_FindControl_Return];
+#ENDIF
+#IF=%Var[Offset_Resurrect_resurrect_cancel],=0;
+#Return
+#ENDIF
+
+end_GetResurrectOffsets;
+
+
+
+start_Frame_FindControl;
+//Finds the offset of a frame control by name
+
+_SetVar=Frame_FindControl_Return,0;
+IniRead=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,Frame_FindControl_Return;
+#IF=%Var[Frame_FindControl_Return],=;
+_SetVar=Frame_FindControl_Return,0;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[Frame_FindControl_Return]/%Var[Offset_Frame_Name],CHAR[128],=%Var[Frame_FindControl_Control];
+#Return
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[Frame_FindControl_Return]/%Var[Offset_Frame_Name]/0x0,CHAR[128],=%Var[Frame_FindControl_Control];
+#Return
+#ENDIF
+
+
+_Calc[EndOffset]=%Var[Frame_FindControl_StartOffset]+%Var[Frame_FindControl_Range];
+_SetVar=i,0;
+
+#DO=90000;
+_Calc[tOffset]=%Var[i]*0x8;
+_Calc[tOffset]=%Var[Frame_FindControl_StartOffset]+%Var[tOffset];
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[tOffset]/%Var[Offset_Frame_Name],CHAR[128],=%Var[Frame_FindControl_Control];
+_SetVar=Frame_FindControl_Return,%Var[tOffset];
+IniWrite=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,%Var[Frame_FindControl_Return];
+#Return
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[tOffset]/%Var[Offset_Frame_Name]/0x0,CHAR[128],=%Var[Frame_FindControl_Control];
+_SetVar=Frame_FindControl_Return,%Var[tOffset];
+IniWrite=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,%Var[Frame_FindControl_Return];
+#Return
+#ENDIF
+_Calc[i]=%Var[i]+1;
+#UNTIL=%Var[tOffset],>%Var[EndOffset];
+
+_SetVar=Frame_FindControl_Return,0;
+
+end_Frame_FindControl;
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[NA\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[NA\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[NA\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_Name,(?m)\[NA\]\n.*?^Frame_Name=(.*?)$;
+_Calc[AddrResurrectTimer]=%AddrResurrect+0x8;
+_Calc[AddrResurrectOptions]=%AddrResurrect+0x10;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_Name,(?m)\[EU\]\n.*?^Frame_Name=(.*?)$;
+_Calc[AddrResurrectTimer]=%AddrResurrect+0x8;
+_Calc[AddrResurrectOptions]=%AddrResurrect+0x10;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_Name,(?m)\[Classic\]\n.*?^Frame_Name=(.*?)$;
+_Calc[AddrResurrectTimer]=%AddrResurrect+0x8;
+_Calc[AddrResurrectOptions]=%AddrResurrect+0x10;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_Name,(?m)\[Classic EU\]\n.*?^Frame_Name=(.*?)$;
+_Calc[AddrResurrectTimer]=%AddrResurrect+0x8;
+_Calc[AddrResurrectOptions]=%AddrResurrect+0x10;
+#ENDIF
+
+#IF=%ClientID,>9; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.6\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.6\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.6\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_Name,(?m)\[4\.6\]\n.*?^Frame_Name=(.*?)$;
+_Calc[AddrResurrectTimer]=%AddrResurrect+0x8;
+_Calc[AddrResurrectOptions]=%AddrResurrect+0x10;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

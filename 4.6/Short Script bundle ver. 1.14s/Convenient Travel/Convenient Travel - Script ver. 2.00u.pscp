@@ -1,0 +1,263 @@
+#IF=%FirstTime,;
+RequireVersion=10.89;
+#UseGravity
+#UseCollision
+UseSpeed=1;
+#SmoothBackground
+#EXECUTE=GetOffsets;
+Command=;
+Command=/say ;
+SendKey=0x4D; // M
+Delay=100;
+FrameActionByName=new_map_dialog,STATE,SHOW;
+WaitForResponse=CTRL+Rightclick on the location you want to go and hit ok afterwards/n/nMake sure no players are around/nMake sure no obstacle is above you;
+#EXECUTE=GetDestination;
+#ENDIF
+
+
+
+
+
+
+start_GetDestination;
+
+_IFMemPtrRead=%AddrChat,%Var[Offset_ChatText_Short]/0x0,BYTE,>0;
+_MemPtrReadVar=%AddrChat,%Var[Offset_ChatText_Short]/0x0,WCHAR[128],ChatText;
+_IFRegExp=%Var[ChatText],^\[pos:[a-zA-Z0-9]+\x3B[0-9] [0-9]+ [0-9\.]+ [0-9\.]+ [0-9\.]+ [0-9]\];
+_RegExp=%Var[ChatText],^\[pos:[a-zA-Z0-9]+\x3B[0-9] ([0-9]+) [0-9\.]+ [0-9\.]+ [0-9\.]+ [0-9]\],Destination_MapID;
+_RegExp=%Var[ChatText],^\[pos:[a-zA-Z0-9]+\x3B[0-9] [0-9]+ ([0-9\.]+) [0-9\.]+ [0-9\.]+ [0-9]\],Destination_PosX;
+_RegExp=%Var[ChatText],^\[pos:[a-zA-Z0-9]+\x3B[0-9] [0-9]+ [0-9\.]+ ([0-9\.]+) [0-9\.]+ [0-9]\],Destination_PosY;
+#EXECUTE=GetMapID;
+#IF=%Var[MapID],=%Var[Destination_MapID];
+MemPtrWrite=%AddrChat,%Var[Offset_ChatText_Short]/0x0,0,BYTE;
+Command=;
+FrameActionByName=new_map_dialog,STATE,HIDE;
+#EXECUTE=GotoDestination;
+WaitForResponse=Arrived, thanks for taking Paraly Airlines;
+#ELSE
+WaitForResponse=No valid Location posted on Chat;
+#EndScript
+#ENDIF
+
+end_GetDestination;
+
+
+
+start_GetMapID;
+
+_MemReadVar=%AddrMap,DWORD,MapID;
+_Calc[cTemp]=%Var[MapID]/100;
+_RegExp=%Var[cTemp],^([0-9]+),cTemp; // Remove Comma
+_Calc[MapID]=%Var[cTemp]*100;
+
+end_GetMapID;
+
+
+
+start_GotoDestination;
+
+#IF=%Var[Gravitable],=0; // Can NOT walk in mid air without reset or being pulled down
+#DO=300000;
+Delay=1000;
+#UNTIL=%FlightTime,=%MaxFlightTime; // Waiting for flight time
+#ENDIF
+
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,1;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,2;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,3;
+_Calc3=%Var3+7;
+_Calc4=%Var3+375; // distance to glide upwards
+
+#DO=120000;
+MoveTo=%Var1,%Var2,%Var3,True,False;
+#EXECUTE=WaitForFlightCD;
+MovementTimeout=1;
+MovementDistance=9999;
+MoveSmooth=%Var[Destination_PosX],%Var[Destination_PosY];
+MovementTimeout=5000;
+MovementDistance=35;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+Delay=175;
+SendAction=1,2;
+Delay=355;  // Delay for going upwards
+#2DO=2500;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+SendAction=3,%Var[Action_Glide];
+Delay=100;
+_2UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+_UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+UseSpeed=170;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+_UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+UseSpeed=1;
+
+#DO=20000;
+MemPtrWrite=%PlayerBase,%OffsetPosX,%Var1,FLOAT;
+MemPtrWrite=%PlayerBase,%OffsetPosY,%Var2,FLOAT;
+MoveBy=0,0,8;
+Delay=1;
+_UNTILMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,>%Var4;
+Delay=500;
+
+#IF=%Var[Gravitable],=1; // Can walk in mid air without reset or being pulled down
+MoveTo=%Var1,%Var2,%Var4,True,False;
+Delay=1500;
+#DO=360000;
+MoveSmooth=%Var[Destination_PosX],%Var[Destination_PosY];
+Delay=8;
+#UNTIL=%Position,%Var[Destination_PosX]/%Var[Destination_PosY]/x;
+MoveSmooth=%Var[Destination_PosX],%Var[Destination_PosY];
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,7;
+#ELSE
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,7;
+#DO=360000;
+MemWrite=%AddrCamY,65,FLOAT;
+MemPtrWrite=%PlayerBase,%OffsetPosZ,%Var7,FLOAT;
+Delay=8;
+#UNTIL=%Position,%Var[Destination_PosX]/%Var[Destination_PosY]/x;
+#ENDIF
+
+#DO=60000;
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,True,False;
+#EXECUTE=WaitForFlightCD;
+
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,False,False;
+SendAction=1,2;
+Delay=625; // Delay for going downwards
+#2DO=2500;
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,False,False;
+SendAction=3,%Var[Action_Glide];
+Delay=100;
+_2UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+UseSpeed=200;
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,False,False;
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,False,False;
+MoveTo=%Var[Destination_PosX],%Var[Destination_PosY],%Var7,False,False;
+_UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+Delay=750;
+UseSpeed=1;
+#DO=90000;
+MemPtrWrite=%PlayerBase,%OffsetPosX,%Var[Destination_PosX],FLOAT;
+MemPtrWrite=%PlayerBase,%OffsetPosY,%Var[Destination_PosY],FLOAT;
+MoveBy=0,0,-2;
+MoveBy=0,0,-2;
+MoveBy=0,0,-2;
+MoveBy=0,0,-2;
+_UNTILMemRead=%AddrFlightStatus,BYTE,=0;
+Delay=200;
+MoveBy=0,0,5;
+SendAction=1,2;
+SendAction=%Var[Action_Jump_Action],%Var[Action_Jump];
+
+end_GotoDestination;
+
+
+
+
+
+
+start_WaitForFlightCD;
+
+#DO=10000;
+Delay=250;
+_UNTILMemRead=%AddrFlightCooldown,WORD,=0;
+
+end_WaitForFlightCD;
+
+
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[NA\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[NA\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[NA\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[NA\]\n.*?^ChatText=(.*?)$;
+_SetVar=MapFrame,new_map_dialog;
+_SetVar=Action_Jump_Action,3;
+_SetVar=Action_Jump,2; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,32; // 3
+_SetVar=Gravitable,1; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[EU\]\n.*?^ChatText=(.*?)$;
+_SetVar=MapFrame,new_map_dialog;
+_SetVar=Action_Jump_Action,3;
+_SetVar=Action_Jump,2; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,32; // 3
+_SetVar=Gravitable,1; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[Classic]\n.*?^ChatText=(.*?)$;
+_SetVar=MapFrame,v3_map_dialog;
+_SetVar=Action_Jump_Action,2;
+_SetVar=Action_Jump,128; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,8; // 3
+_SetVar=Gravitable,0; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[Classic EU\]\n.*?^ChatText=(.*?)$;
+_SetVar=MapFrame,v3_map_dialog;
+_SetVar=Action_Jump_Action,2;
+_SetVar=Action_Jump,128; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,8; // 3
+_SetVar=Gravitable,0; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+
+#IF=%ClientID,>9; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.6\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.6\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.6\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_ChatText,(?m)\[4\.6\]\n.*?^ChatText=(.*?)$;
+_SetVar=MapFrame,new_map_dialog;
+_SetVar=Action_Jump_Action,3;
+_SetVar=Action_Jump,2; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,16; // 3
+#ENDIF
+
+#IF=%ClientID,=10; // EuroAion
+_SetVar=Gravitable,0; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+#IF=%ClientID,=11; // America
+_SetVar=Gravitable,0; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+#IF=%ClientID,=12; // Destiny
+_SetVar=Gravitable,0; // Can walk in mid air without reset or being pulled down? | 1 = Yes | 0 = No
+#ENDIF
+
+_RegExp=%Var[Offset_ChatText],^([0-9A-Fa-fx]+\/[0-9A-Fa-fx]+),Offset_ChatText_Short; // Only takes first 2 offsets
+
+#IF=%Var[Offset_Frame_XPos],=0;
+Delay=5000;
+#ENDIF
+
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

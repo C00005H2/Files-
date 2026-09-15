@@ -1,0 +1,185 @@
+#IF=%FirstTime,;
+RequireVersion=7.56;
+UseSpeed=1;
+#DisableScrolling
+#EXECUTE=DeclareMemory;
+#SetVar3=Enable Kisk detection?/n/n1 = Yes/n0 = No;
+_SetVar=Asmo1,100002;
+_SetVar=Asmo2,100003;
+_SetVar=Asmo3,703556;
+_SetVar=Asmo4,700409;
+_SetVar=Asmo5,700410;
+_SetVar=Asmo6,700407;
+_SetVar=Asmo7,700408;
+Print=;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+#ENDIF
+
+#IF=%Var3,=1;
+_SetVar4=8;
+#ELSE
+_SetVar4=3;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L;
+_SetVar=RaceCode,0;
+#ELSE
+_SetVar=RaceCode,1;
+#ENDIF
+
+
+_IFMemRead=%Var[InjectAddr],WORD,=31617;
+#EXECUTE=WaitForNPC;
+#ELSE
+#EXECUTE=StartThread;
+#EXECUTE=WaitForNPC;
+#ENDIF
+
+
+
+start_WaitForNPC;
+
+_Calc[InjectNPCID]=%Var[InjectAddr]+3;
+
+_SetVar2=1;
+CreateTimer=999;
+
+#DO=9999999;
+
+MemWrite=%Var[InjectNPCID],%Var[Asmo%Var2],DWORD;
+
+_IFMemPtrRead=%AddrChat,0xC8,DWORD,>0;
+_IFMemPtrRead=%AddrChat,0xC8/%OffsetData/0x4C8,DWORD,=0;
+_MemReadVar=%AddrMap,DWORD,MapID;
+_MemPtrReadVar=%AddrChat,0xC8/%OffsetName,WCHAR[64],Name;
+_MemPtrReadVar=%AddrChat,0xC8/%OffsetPosX,FLOAT,XPOSF;
+_MemPtrReadVar=%AddrChat,0xC8/%OffsetPosY,FLOAT,YPOSF;
+_MemPtrReadVar=%AddrChat,0xC8/%OffsetPosZ,FLOAT,ZPOSF;
+MemWrite=%AddrFreeMem0,%Var[XPOSF],DWORD; float to dword
+_MemReadVar=%AddrFreeMem0,DWORD,XPOS;
+MemWrite=%AddrFreeMem0,%Var[YPOSF],DWORD; float to dword
+_MemReadVar=%AddrFreeMem0,DWORD,YPOS;
+MemPtrWrite=%AddrChat,0xC8/%OffsetData/0x4C8,1,DWORD; set already scanned
+MemPtrWrite=%AddrChat,0xC8,0,DWORD;
+#EXECUTE=Post;
+#ENDIF
+
+Delay=50;
+
+#IF=%Timer=999,400;
+_Calc2=%Var2+1;
+CreateTimer=999;
+#ENDIF
+
+#IF=%Var2,=%Var4;
+_SetVar2=1;
+#ENDIF
+
+#UNTIL=1,=2;
+
+end_WaitForNPC;
+
+
+
+
+start_Post;
+
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+#ELSE
+#DO=20000;
+Delay=50;
+_UNTILMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+Delay=1250; <- flat delay after loading screen
+#ENDIF
+
+_SetVar=temp,0;
+
+#IF=%Var[temp],=0;
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPOSF],<2100; // Height
+#IF=%Var[XPOS],>0;
+_SetVar=temp,1;
+Print=<%Var[Name]> detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 1];
+#ENDIF
+#IF=%Var[temp],=0;
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPOSF],2100-2450; // Height
+#IF=%Var[XPOS],>0;
+_SetVar=temp,1;
+Print=<%Var[Name]> detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 2];
+#ENDIF
+#IF=%Var[temp],=0;
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPOSF],>2450; // Height
+#IF=%Var[XPOS],>0;
+_SetVar=temp,1;
+Print=<%Var[Name]> detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 3];
+#ENDIF
+
+#IF=%Var[temp],=0;
+#IF=%Var[XPOS],>0;
+_SetVar=temp,1;
+Print=<%Var[Name]> detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 0];
+#ENDIF
+
+end_Post;
+
+
+
+
+start_StartThread;
+
+_Pause=True;
+
+_Calc[InjectAddr]=%AddrFreeMem30+0x40;
+MemWrite=%Var[InjectAddr],%Var[InjectAddr],DWORD;
+_MemReadVar=%Var[InjectAddr],DWORD,FreeMemory;
+_SetVar=AddrThread,%Var10;
+_SetVar=AddrThread2,%Var11;
+
+_Calc[Jump]=%Var[FreeMemory]-%Var[AddrThread];
+_Calc[Jump]=%Var[Jump]-5;
+
+_Calc[Jump2]=%Var[FreeMemory]-%Var[AddrThread2];
+_Calc[Jump2]=%Var[Jump2]-5;
+
+_Calc[Return]=%Var[AddrThread]+4294967295;
+_Calc[Return]=%Var[Return]-%Var[FreeMemory];
+_Calc[Return]=%Var[Return]+5;
+
+MemWrite=%Var[InjectAddr],0x817B34AFAE0A00751783BBC804000000750E488B430848A3D89058410000000048B80000000000000000%Var[Offset]0000E9,BYTE[49];
+
+_MemReadVar=%AddrChat,DWORD,ChatStruct;
+_Calc[ChatStruct]=%Var[ChatStruct]+0xC8; create ptr at Chat/D8
+_Calc[InjectSaveSlot]=%Var[FreeMemory]+0x18;
+MemWrite=%Var[InjectSaveSlot],%Var[ChatStruct],DWORD;
+
+_Calc[Return1]=%Var[Return]-%Var[ReturnValue];
+_Calc[AddrReturn1]=%Var[FreeMemory]+0x31;
+MemWrite=%Var[AddrReturn1],%Var[Return1],DWORD;
+
+_Calc[AddrJump1]=%Var[AddrThread]+0x1;
+_Calc[AddrJump2]=%Var[AddrThread]+0x5;
+MemWrite=%Var[AddrThread],0xE9,BYTE[1];
+MemWrite=%Var[AddrJump1],%Var[Jump],DWORD;
+MemWrite=%Var[AddrJump2],0x90,BYTE[1];
+
+_Calc[AddrJump21]=%Var[AddrThread2]+0x1;
+_Calc[AddrJump22]=%Var[AddrThread2]+0x5;
+MemWrite=%Var[AddrThread2],0xE9,BYTE[1];
+MemWrite=%Var[AddrJump21],%Var[Jump2],DWORD;
+MemWrite=%Var[AddrJump22],0x90,BYTE[1];
+_Pause=False;
+
+end_StartThread;
+
+
+
+start_DeclareMemory;
+
+_HTTPGetVar=http://subvanillatool.com/data/Threads.html,,10,4\.6-9A4="(.*?)";
+_HTTPGetVar=http://subvanillatool.com/data/Threads.html,,Offset,4\.6_CODE="(.*?)";
+_SetVar=ReturnValue,0x33;
+_Calc11=%Var10+0x41; Thread 2
+
+end_DeclareMemory;

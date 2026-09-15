@@ -1,0 +1,35 @@
+#IF=%FirstTime,;
+Command=;
+Print=Print initialized..;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetArray1=5,6; // Classic Clients
+_SetArray2=100002,100003,701388,701389,701390,703556,700409,700410,700407,700408,832855,832856,832857,219191,219192,219193,219218; // Asmo + Kisk + Tia Chests + Tia Key Mobs
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L; // If Elyos
+_SetVar=RaceCode,0;
+#ELSE
+_SetVar=RaceCode,1;
+#ENDIF
+
+#DO=99999999;
+#2DO=99999999;
+GetEntity=%OffsetNPCID,DWORD,%ARRAY2,%OffsetLevel,BYTE,>0,EntityAddr;
+#2UNTIL=%Var[EntityAddr_Elements],>0;
+
+
+MemPtrWrite=%Var[EntityAddr_1],%OffsetLevel,0,BYTE; // To ignore entity till it got reloaded
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetName,WCHAR[64],Name;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetPosX,FLOAT,PosX_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetPosY,FLOAT,PosY_Decimal;
+_RegExp=%Var[PosX_Decimal],^([0-9]+),PosX_NoDecimal; // Remove Comma
+_RegExp=%Var[PosY_Decimal],^([0-9]+),PosY_NoDecimal; // Remove Comma
+_MemReadVar=%AddrMap,DWORD,MapID;
+
+#IF=%ClientID,%ARRAY1; // Classic Client
+Print=%Var[Name] detected at [pos:Location/:%Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+#ELSE
+Print=%Var[Name] detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+#ENDIF
+
+#UNTIL=1,=2;

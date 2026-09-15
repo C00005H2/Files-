@@ -1,0 +1,61 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Tailoring####
+
+Leather Glue x 243 = 13,608 Kinah
+Leather Polisher x 315 = 8,505 Kinah
+Bleacher x 226 = 6,102 Kinah
+Button x 226 = 6,102 Kinah
+Tikel String or Ruko String x 602 = 16,254 Kinah
+
+Skill Costs: 3,564 Kinah
+Total Costs: 54,135 Kinah
+
+
+
+------------------------------------
+
+####100-199 Regular Tailoring####
+
+Leather Glue x 368 = 20,608 Kinah
+Leather Polisher x 892 = 24,084 Kinah
+Bleacher x 424 = 11,448 Kinah
+Button x 611 = 16,497 Kinah
+Tikel String or Ruko String x 138 = 3,726 Kinah
+Twisp String or Fess String x 1,766 = 98,896 Kinah
+
+Skill Costs: 17,820 Kinah
+Total Costs: 193,079 Kinah
+
+
+------------------------------------
+
+####200-299 Greater Tailoring####
+
+Leather Glue x 586 = 32,816 Kinah
+Leather Polisher x 496 = 13,392 Kinah
+Bleacher x 860 = 23,220 Kinah
+Button x 1,687 = 45,549 Kinah
+Twisp String or Fess String x 183 = 10,248 Kinah
+Xilix String or Sobi String x 3,653 = 306,852 Kinah
+
+Skill Costs: 119,968 Kinah
+Total Costs: 552,045 Kinah
+
+
+------------------------------------
+
+####300-399 Expert Tailoring####
+
+Leather Glue x 2,200 = 123,200 Kinah
+Leather Polisher x 1,271 = 34,317 Kinah
+Bleacher x 1,908 = 51,516 Kinah
+Button x 1,750 = 47,250 Kinah
+Xilix String or Sobi String x 240 = 20,160 Kinah
+Linon Fiber Thread x 5,270 = 600,780 Kinah
+
+Skill Costs: 479,952 Kinah
+Total Costs: 1,357,175 Kinah
+Total Cost 1-399: 2,156,434 Kinah

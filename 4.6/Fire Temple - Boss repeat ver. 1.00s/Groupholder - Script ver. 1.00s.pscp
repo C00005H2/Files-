@@ -1,0 +1,17 @@
+#IF=%FirstTime,;
+#SmoothBackground
+Console=\g_maxfps 10;
+#ENDIF
+
+#DO=9999999999;
+Command=; // Enter to accept group
+Delay=500;
+#UNTIL=1,=2;
+
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+
+end_OnScriptExit;

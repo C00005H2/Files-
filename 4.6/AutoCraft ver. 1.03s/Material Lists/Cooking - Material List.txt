@@ -1,0 +1,66 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Cooking####
+
+Salt x 232 = 12,992 Kinah
+Natural Water x 512 = 14,336 Kinah
+Qooqoo Egg x 128 = 3,584 Kinah
+Sugar x 208 = 11,648 Kinah
+
+Skill Costs: 3,425 Kinah
+Total Costs: 49,417 Kinah
+
+
+------------------------------------
+
+####100-199 Regular Cooking####
+
+Natural Water x 924 = 25,872 Kinah
+Salt x 432 = 24,192 Kinah
+Sugar x 552 = 30,912 Kinah
+Salix Oil x 252 = 14,112 Kinah
+Raydam Vinegar x 94 = 10,810 Kinah
+Kukuru Powder or Briga Powder x 108 = 12,420 Kinah
+Hot Spice x 216 = 24,840 Kinah
+
+Skill Costs: 17,125 Kinah
+Total Costs: 160,281 Kinah
+
+
+------------------------------------
+
+####200-299 Greater Cooking####
+
+Natural Water x 1,276 = 35,728 Kinah
+Qooqoo Egg x 1,424 = 39,872 Kinah
+Bay Salt x 448 = 51,520 Kinah
+Kukuru Powder or Briga Powder x 624 = 71,760 Kinah
+White Sugar x 160 = 18,400 Kinah
+Salix Oil x 480 = 26,880 Kinah
+Storage Container x 150 = 8,400 Kinah
+Hot Spice x 240 = 27,600 Kinah
+Verteron Pepper x 128 = 14,720 Kinah
+Mela Vinegar x 94 = 10,810 Kinah
+
+Skill Costs: 113,102 Kinah
+Total Costs: 418,792 Kinah
+
+
+------------------------------------
+
+####300-399 Expert Cooking####
+
+Storage Container x 600 = 33,600 Kinah
+Hot Spice x 880 = 101,200 Kinah
+Omblic Wine x 80 = 59,360 Kinah
+Natural Water x 3,800 = 106,400 Kinah
+White Sugar x 1,320 = 151,800 Kinah
+Kukuru Powder or Briga Powder x 980 = 112,700 Kinah
+Bay Salt x 740 = 85,100 Kinah
+Mela Vinegar x 200 = 23,000 Kinah
+
+Skill Costs: 443,872 Kinah
+Total Costs: 1,117,032 Kinah
+Total Cost 1-399: 2,144,640 Kinah

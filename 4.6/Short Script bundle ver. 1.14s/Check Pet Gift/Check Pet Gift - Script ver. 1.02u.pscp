@@ -1,0 +1,176 @@
+#IF=%FirstTime,;
+#SmoothBackground
+Console=\g_maxfps 20;
+#EXECUTE=Init;
+#UseLoop
+#ENDIF
+
+#EXECUTE=CheckPetGift;
+Delay=5000;
+
+start_CheckPetGift;
+
+_IFMemRead=%AddrPet,BYTE,>0;
+_Calc[AddrMood]=%AddrPet+0x60;
+_MemReadVar=%AddrPet,WCHAR[32],PetName;
+_MemReadVar=%Var[AddrMood],WORD,PetMood;
+GetCooldown=%Var[PetSkill_CheckMood],PetCooldown;
+GetCooldown=%Var[PetSkill_Gift],GiftCooldown;
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PetCooldown],=0;
+#IF=%Var[PetMood],<9000;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+Command=/select %Var[PetName];
+Delay=125;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[64],=%Var[PetName];
+UseID=%Var[PetSkill_CheckMood],21;
+Delay=2250;
+UseID=114,34;
+Delay=9500;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+_MemReadVar=%Var[AddrMood],WORD,PetMood;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+Command=/select %Var[PlayerName];
+Delay=125;
+SendAction=3,1; // Jump
+Delay=250;
+#EXECUTE=CloseWindows;
+Delay=750;
+#ENDIF
+
+#IF=%Var[GiftCooldown],=0;
+#IF=%Var[PetMood],>8999;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+Command=/select %Var[PetName];
+Delay=125;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[64],=%Var[PetName];
+UseID=%Var[PetSkill_Gift],21;
+Delay=9500;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+Command=/select %Var[PlayerName];
+Delay=125;
+SendAction=3,1; // Jump
+Delay=250;
+#EXECUTE=CloseWindows;
+Delay=750;
+#ENDIF
+
+_IFInventoryContains=188051378; // Pet's Gift Bundle
+_SetVar=Bundle_ItemID,188051378;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051379; // Coin Bundle
+_SetVar=Bundle_ItemID,188051379;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051380; // [Event] Elemental Stone Pouch II
+_SetVar=Bundle_ItemID,188051380;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051381; // [Event] Balaur Materials Pouch
+_SetVar=Bundle_ItemID,188051381;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051382; // [Event] Refining Stone Pouch
+_SetVar=Bundle_ItemID,188051382;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051383; // [Event] Jewel Pouch II
+_SetVar=Bundle_ItemID,188051383;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051162; // Coin Bundle
+_SetVar=Bundle_ItemID,188051162;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051161; // Antique Enchantment Stone Box Bundle
+_SetVar=Bundle_ItemID,188051161;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+_IFInventoryContains=188051160; // Antique Enchantment Stone Box
+_SetVar=Bundle_ItemID,188051160;
+#EXECUTE=OpenItemBundle;
+#ENDIF
+end_CheckPetGift;
+
+
+
+start_OpenItemBundle;
+
+#DO=120000;
+
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,>0; // Alive
+_IFInventoryContains=%Var[Bundle_ItemID];
+_SetVar=Temp,1;
+UseID=%Var[Bundle_ItemID];
+Delay=150;
+#2DO=10000;
+Delay=200;
+_2UNTILMemPtrRead=%PlayerBase,%OffsetCastTime,DWORD,=0;
+#ELSE
+_SetVar=Temp,0;
+#ENDIF
+
+#UNTIL=%Var[Temp],=0;
+
+end_OpenItemBundle;
+
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_Init;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[NA\]\n.*?^Base_Animation=(.*?)$;
+_SetVar=PetSkill_CheckMood,50048;
+_SetVar=PetSkill_Gift,50049;
+#ENDIF
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[EU\]\n.*?^Base_Animation=(.*?)$;
+_SetVar=PetSkill_CheckMood,50048;
+_SetVar=PetSkill_Gift,50049;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_SetVar=PetSkill_CheckMood,50062;
+_SetVar=PetSkill_Gift,50063;
+#ENDIF
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_SetVar=PetSkill_CheckMood,50042;
+_SetVar=PetSkill_Gift,50043;
+#ENDIF
+
+#IF=%ClientID,>9; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[4\.6\]\n.*?^Base_Animation=(.*?)$;
+_SetVar=PetSkill_CheckMood,50042;
+_SetVar=PetSkill_Gift,50043;
+#ENDIF
+
+end_Init;
+
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+
+end_OnScriptExit;

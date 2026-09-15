@@ -1,0 +1,63 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Armorsmithing####
+
+Steel Mold x 930 = 26,970 Kinah 
+Steel Welding Rod x 261 = 15,921 Kinah 
+Cooling Water x 84 = 2,436 Kinah 
+Lubricant x 142 = 4,118 Kinah 
+Metal Coating Agent x 156 = 4,524 Kinah 
+
+Skill Costs: 3,564 Kinah 
+Total Costs: 57,533 Kinah 
+
+
+------------------------------------
+
+####100-199 Regular Armorsmithing####
+
+Steel Mold x 86 = 2,494 Kinah 
+Steel Welding Rod x 221 = 13,481 Kinah 
+Titanium Mold x 1,365 = 83,265 Kinah 
+Titanium Welding Rod x 470 = 42,770 Kinah 
+Cooling Water x 330 = 9,570 Kinah 
+Lubricant x 680 = 19,720 Kinah 
+Metal Coating Agent x 757 = 21,953 Kinah 
+
+Skill Costs: 17,998 Kinah 
+Total Costs: 211,251 Kinah 
+
+
+------------------------------------
+
+####200-299 Greater Armorsmithing####
+
+Titanium Mold x 201 = 12,261 Kinah 
+Titanium Welding Rod x 272 = 24,752 Kinah 
+Adamantium Mold x 938 = 84,420 Kinah 
+Adamantium Welding Rod x 1,691 = 206,302 Kinah 
+Cooling Water x 853 = 24,737 Kinah 
+Lubricant x 1,438 = 41,702 Kinah 
+Metal Coating Agent x 2,359 = 68,411 Kinah 
+
+Skill Costs: 115,544 Kinah 
+Total Costs: 578,129 Kinah 
+
+
+------------------------------------
+
+####300-399 Expert Armorsmithing####
+
+Adamantium Mold x 364 = 32,760 Kinah 
+Adamantium Welding Rod x 184 = 22,448 Kinah 
+Orichalcum Mold x 2,050 = 250,100 Kinah 
+Orichalcum Welding Rod x 2,686 = 405,586 Kinah 
+Cooling Water x 1,517 = 43,993 Kinah 
+Lubricant x 1,719 = 49,851 Kinah 
+Metal Coating Agent x 3,818 = 110,722 Kinah 
+
+Skill Costs: 466,620 Kinah 
+Total Costs: 1,382,080 Kinah 
+Total Cost 1-399: 2,228,993 Kinah 

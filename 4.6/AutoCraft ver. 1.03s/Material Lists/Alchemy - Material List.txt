@@ -1,0 +1,67 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Alchemy####
+
+Alcohol x 352 = 9,856 Kinah
+Distilled Water x 480 = 13,440 Kinah
+Solvent x 48 = 1,344 Kinah
+Larail Tears x 560 = 15,680 Kinah
+Scorpin Poison Sting x 144 = 8,064 Kinah
+Crynac Scale x 80 = 4,480 Kinah
+
+Skill Costs: 3,432 Kinah
+Total Costs: 56,296 Kinah
+
+
+------------------------------------
+
+####100-199 Regular Alchemy####
+
+Alcohol x 572 = 16,016 Kinah
+Distilled Water x 288 = 8,064 Kinah
+Solvent x 300 = 8,400 Kinah
+Larail Tears x 288 = 8,064 Kinah
+Scorpin Poison Sting x 754 = 41,888 Kinah
+Dried Gumi Tail x 810 = 22,680 Kinah
+Crynac Scale x 336 = 18,816 Kinah
+Abyss Dust x 324 = 27,864 Kinah
+Reaction Activator x 768 = 21,504 Kinah
+
+Skill Costs: 16,998 Kinah
+Total Costs: 192,182 Kinah
+
+
+------------------------------------
+
+####200-299 Greater Alchemy####
+
+Alcohol x 784 = 21,952 Kinah
+Distilled Water x 144 = 4,032 Kinah
+Solvent x 1,756 = 49,168 Kinah
+Larail Tears x 1,280 = 35,840 Kinah
+Scorpin Poison Sting x 902 = 50,176 Kinah
+Dried Gumi Tail x 672 = 18,816 Kinah
+Crynac Scale x 720 = 40,320 Kinah
+Abyss Dust x 1,352 = 116,272 Kinah
+Reaction Activator x 3,332 = 93,296 Kinah
+
+Skill Costs: 113,256 Kinah
+Total Costs: 543,128 Kinah
+
+
+------------------------------------
+
+####300-399 Expert Alchemy####
+
+Distilled Water x 440 = 12,320 Kinah
+Solvent x 2,120 = 59,360 Kinah
+Larail Tears x 2,560 = 71,680 Kinah
+Crynac Scale x 3,060 = 85,680 Kinah
+Abyss Dust x 4,640 = 399,040 Kinah
+Reaction Activator x 4,372 = 122,416 Kinah
+
+Skill Costs: 479,160 Kinah
+Total Costs: 1,229,656 Kinah
+Total Cost 1-399: 2,104,478 Kinah 
