@@ -7,3 +7,7 @@ payload.exe
 *_deobf.au3
 *_strings.txt
 *_out/
+
+# python caches
+__pycache__/
+*.pyc
