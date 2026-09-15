@@ -144,3 +144,5 @@ After the pipeline, each claim is one `grep`:
   `dd if="Para's Vanillatool -Rework- 11.31.exe" bs=1 skip=1634 count=8`.
 - Windows-only conveniences (none needed): any CPython 3.8+ on
   Linux/macOS/Windows runs the kit; outputs are plain bytes/text.
+- Live lab observation (run the original binaries against a fake local
+  server): see `docs/LAB_GUIDE.md` + `lab/stub_server.py`.
