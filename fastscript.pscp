@@ -1,0 +1,897 @@
+FastScript_Cooldown=350; // this fast script will run every 350ms
+//PLAYERSCAN + REBUFF + Flighttime management
+________________________________________
+
+#IF=%FirstTime,;
+//___Settings___________________________________________________________________________
+// [GENERAL OPTIONS]
+_SetVar=FPSCap,500; // Set the FPS cap (default 120)
+_SetVar=TabDistance,1; // Increase the Distance the "Tab" key finds monsters? | 1 = Yes | 0 = No
+
+// [MAIN OPTIONS]
+_SetVar=PlayerScan,1; // Allows to locate any allied player by typing "/Who PlayerName" | 1 = Yes | 0 = No
+_SetVar=Rebuff,0; // Allows to automatically keep buffs alive | 1 = Yes | 0 = No
+_SetVar=WindScroll,1; // Use Greater Raging Wind Scroll? - 0 = No | 1 = Yes
+_SetVar=FlightTimeManagement,1; // Automatically use Flight Potions / Flight Skill? - 0 = No | 1 = Yes
+_SetVar=FlightPotion_Gathering,1; // Allow Flight Potion usage while gathering? - 0 = No | 1 = Yes
+
+// [REBUFF OPTIONS]
+// [Assassin]
+_SetVar=ApplyPoison,1; // [Assassin] Keep [Apply Poison] buff alive | 1 = Yes | 0 = No
+_SetVar=ApplyDeadlyPoison,1; // [Assassin] Keep [Apply Deadly Poison] buff alive | 1 = Yes | 0 = No
+_SetVar=ApplyDeadlyAbandon,0; // [Assassin] Keep [Deadly Abandon] buff alive | 1 = Yes | 0 = No
+// [Ranger]
+_SetVar=FocusedShots,1; // [Ranger] Keep [Focused Shots] buff alive | 1 = Yes | 0 = No
+_SetVar=BestialFury,1; // [Ranger] Keep [Bestial Fury] buff alive | 1 = Yes | 0 = No
+_SetVar=StrongShots,0; // [Ranger] Keep [Strong Shots] buff alive | 1 = Yes | 0 = No
+_SetVar=Aiming,0; // [Ranger] Keep [Aiming] buff alive | 1 = Yes | 0 = No
+_SetVar=HuntersEye,0; // [Ranger] Keep [Hunter's Eye] buff alive | 1 = Yes | 0 = No
+_SetVar=Dodging,0; // [Ranger] Keep [Dodging] buff alive | 1 = Yes | 0 = No
+// [Chanter]
+_SetVar=WordofInspiration,1; // [Chanter] Keep [Word of Inspiration] buff alive | 1 = Yes | 0 = No
+_SetVar=WordofProtection,0; // [Chanter] Keep [Word of Protection] buff alive | 1 = Yes | 0 = No
+// [Sorcerer]
+_SetVar=SC_StoneSkin,1; // [Sorcerer] Keep [Stone Skin] buff alive | 1 = Yes | 0 = No
+_SetVar=RobeOfFlame,1; // [Sorcerer] Keep [Robe of Flame] buff alive | 1 = Yes | 0 = No
+_SetVar=RobeOfEarth,0; // [Sorcerer] Keep [Robe of Earth] buff alive | 1 = Yes | 0 = No
+_SetVar=RobeOfCold,0; // [Sorcerer] Keep [Robe of Cold] buff alive | 1 = Yes | 0 = No
+// [Spiritmaster]
+_SetVar=SM_StoneSkin,1; // [Spiritmaster] Keep [Stone Skin] buff alive | 1 = Yes | 0 = No
+//___End Settings______________________________________________________________________
+
+// Ignore below
+_ACRelyOnBuff=831,831; // Apply Poison
+_ACRelyOnBuff=919,919; // Apply Deadly Poison
+_ACRelyOnBuff=949,949; // Deadly Abandon
+_ACRelyOnBuff=684,684; // Focused Shots
+_ACRelyOnBuff=646,646; // Bestial Fury
+_ACRelyOnBuff=786,786; // Strong Shots
+_ACRelyOnBuff=776,776; // Aiming
+_ACRelyOnBuff=693,693; // Hunter's Eye
+_ACRelyOnBuff=777,777; // Dodging
+_ACRelyOnBuff=1377,1377; // Stone Skin
+_ACRelyOnBuff=1564,1564; // Robe of Flame
+_ACRelyOnBuff=1574,1574; // Robe of Earth
+_ACRelyOnBuff=1566,1566; // Robe of Cold
+_ACRelyOnBuff=1223,1223; // Word of Inspiration
+_ACRelyOnBuff=1224,1224; // Word of Protection
+_ACSkills=831,919,684,646,786,776,693,777,1377,1564,1574,1566,1223,1224;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,%Var[FPSCap],BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,%Var[FPSCap],FLOAT;
+#EXECUTE=TabMod;
+#EXECUTE=Setup;
+#ENDIF
+
+#EXECUTE=CheckIngame;
+#IF=%Var[Ingame],=1; // If ingame
+#EXECUTE=Main;
+#ENDIF
+
+
+#EndScript
+
+
+
+
+
+
+
+
+
+start_Main;
+
+#IF=%Var[PlayerScan],=1;
+#IF=%Var[ScanArray],=0;
+#EXECUTE=Init;
+//#EXECUTE=PlayerScan_Set_MapID;
+#ENDIF
+
+#IF=%Var[PlayerScan],=1;
+#IF=%Var[ScanArray],>0;
+#EXECUTE=PlayerScan;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,=0; // Dead
+#Return
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetHideLevel,BYTE,>0; // In hide
+#Return
+#ENDIF
+
+#EXECUTE=FlyingRoutine;
+
+#IF=%Var[Rebuff],=1;
+#IF=%ClientID,%ARRAY1; // Classic
+#ELSE
+#Return
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4; // Assassin
+#EXECUTE=CheckAssassin;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5; // Ranger
+#EXECUTE=CheckRanger;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7; // Sorcerer
+#EXECUTE=CheckSorcerer;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8; // Spiritmaster
+#EXECUTE=CheckSpiritmaster;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11; // Chanter
+#EXECUTE=CheckChanter;
+#ENDIF
+
+end_Main;
+
+
+
+
+start_CheckAssassin;
+
+#IF=%Var[ApplyPoison],=1;
+_ACUseSkill=831; // Apply Poison
+#ENDIF
+
+#IF=%Var[ApplyDeadlyPoison],=1;
+_ACUseSkill=919; // Apply Deadly Poison
+#ENDIF
+
+#IF=%Var[ApplyDeadlyAbandon],=1;
+_ACUseSkill=949; // Deadly Abandon
+#ENDIF
+
+end_CheckAssassin;
+
+
+
+start_CheckRanger;
+
+#IF=%Var[FocusedShots],=1;
+_ACUseSkill=684; // Focused Shots
+#ENDIF
+
+#IF=%Var[BestialFury],=1;
+_ACUseSkill=646; // Bestial Fury
+#ENDIF
+
+#IF=%Var[StrongShots],=1;
+_ACUseSkill=786; // Strong Shots
+#ENDIF
+
+#IF=%Var[Aiming],=1;
+_ACUseSkill=776; // Aiming
+#ENDIF
+
+#IF=%Var[HuntersEye],=1;
+_ACUseSkill=693; // Hunter's Eye
+#ENDIF
+
+#IF=%Var[Dodging],=1;
+_ACUseSkill=777; // Dodging
+#ENDIF
+
+end_CheckRanger;
+
+
+
+start_CheckSorcerer;
+
+#IF=%Var[SC_StoneSkin],=1;
+_ACUseSkill=1377; // Stone Skin
+#ENDIF
+
+#IF=%Var[RobeOfFlame],=1;
+_ACUseSkill=1564; // Robe of Flame
+#ENDIF
+
+#IF=%Var[RobeOfEarth],=1;
+_ACUseSkill=1574; // Robe of Earth
+#ENDIF
+
+#IF=%Var[RobeOfCold],=1;
+_ACUseSkill=1566; // Robe of Cold
+#ENDIF
+
+end_CheckSorcerer;
+
+
+
+start_CheckSpiritmaster;
+
+#IF=%Var[SM_StoneSkin],=1;
+_ACUseSkill=1377; // Stone Skin
+#ENDIF
+
+end_CheckSpiritmaster;
+
+
+
+start_CheckChanter;
+
+#IF=%Var[WordofInspiration],=1;
+_ACUseSkill=1223; // Word of Inspiration
+#ENDIF
+
+#IF=%Var[WordofProtection],=1;
+_ACUseSkill=1224; // Word of Protection
+#ENDIF
+
+end_CheckChanter;
+
+
+
+start_TabMod;
+
+#IF=%Var[TabDistance],=1;
+#TabMod=True;
+#ENDIF
+
+end_TabMod;
+
+
+
+start_PlayerScan;
+
+_MemPtrReadVar=%Var[ScanArray],0x4,FLOAT,XPos;
+_MemPtrReadVar=%Var[ScanArray],0x8,FLOAT,YPos;
+_MemPtrReadVar=%Var[ScanArray],0xC,FLOAT,ZPos;
+_Calc[Checksum]=%Var[XPos]+%Var[YPos];
+_Calc[Checksum]=%Var[Checksum]+%Var[ZPos];
+
+#IF=%Var[Checksum],=0;
+#Return
+#ENDIF
+
+#IF=%Var[Checksum],=%Var[CachedChecksum];
+#ELSE
+FrameActionByName=who_dialog,STATE,HIDE;
+Delay=200;
+_MemPtrReadVar=%Var[ScanArray],0x4,FLOAT,XPos;
+_MemPtrReadVar=%Var[ScanArray],0x8,FLOAT,YPos;
+_MemPtrReadVar=%Var[ScanArray],0xC,FLOAT,ZPos;
+_Calc[Checksum]=%Var[XPos]+%Var[YPos];
+_Calc[Checksum]=%Var[Checksum]+%Var[ZPos];
+_SetVar=CachedChecksum,%Var[Checksum];
+_MemPtrReadVar=%Var[ScanArray],0x0,DWORD,MapID;
+_MemPtrReadVar=%Var[ScanArray],0x10,BYTE,Class_ID;
+_MemPtrReadVar=%Var[ScanArray],0x12,BYTE,Level;
+_MemPtrReadVar=%Var[ScanArray],0x14,WCHAR[16],Name;
+#EXECUTE=GetClassByID;
+#EXECUTE=Show;
+#ENDIF
+
+end_PlayerScan;
+
+
+
+start_Show;
+
+_SetVar=SubMap,0;
+
+_RegExp=%Var[XPos],^([0-9]+),PosX_NoDecimal; // Remove Comma
+_RegExp=%Var[YPos],^([0-9]+),PosY_NoDecimal; // Remove Comma
+_RegExp=%Var[ZPos],^([0-9]+),PosZ_NoDecimal; // Remove Comma
+
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPos],<1950; // Lower
+_SetVar=SubMap,1;
+#ENDIF
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPos],1950-2225; // Center
+_SetVar=SubMap,2;
+#ENDIF
+#IF=%Var[MapID],=400010000; // Reshanta
+#IF=%Var[ZPos],>2225; // Upper
+_SetVar=SubMap,3;
+#ENDIF
+
+#IF=%ClientID,%ARRAY1; // Classic
+Print=[[pos:%Var[Name]/:%Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 %Var[SubMap]]] - Lv: %Var[Level] | %Var[Class_String] | X: %Var[PosX_NoDecimal] | Y: %Var[PosY_NoDecimal] | Z: %Var[PosZ_NoDecimal] | Map: %Var[MapID];
+#ELSE
+Print=[[pos:%Var[Name]/:%Var[RaceCode] %Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 %Var[SubMap]]] - Lv: %Var[Level] | %Var[Class_String] | X: %Var[PosX_NoDecimal] | Y: %Var[PosY_NoDecimal] | Z: %Var[PosZ_NoDecimal] | Map: %Var[MapID];
+#ENDIF
+
+end_Show;
+
+
+start_PlayerScan_Set_MapID;
+
+#IF=%Var[Addr_PlayerScan_MapID],=0;
+_MemPattern=4A8B440950C3,0,False,True; // original code
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],0x48B8909E8E0600000000C333C0C3CC,BYTE[15];
+_Calc[Addr_PlayerScan_Jmp]=%Var[PatternRet_1]-0x9;
+MemWrite=%Var[Addr_PlayerScan_Jmp],0x13,BYTE[1];
+_Calc[Addr_PlayerScan_MapID]=%Var[PatternRet_1]+0x2;
+#ENDIF
+#IF=%Var[Addr_PlayerScan_MapID],=0;
+_MemPattern=48B8........00000000C333C0C3CC,0,False,True; // modified code
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],0x48B8909E8E0600000000C333C0C3CC,BYTE[15];
+_Calc[Addr_PlayerScan_Jmp]=%Var[PatternRet_1]-0x9;
+MemWrite=%Var[Addr_PlayerScan_Jmp],0x13,BYTE[1];
+_Calc[Addr_PlayerScan_MapID]=%Var[PatternRet_1]+0x2;
+#ENDIF
+
+#IF=%Var[Addr_PlayerScan_MapID],>0;
+MemWrite=%Var[Addr_PlayerScan_MapID],%Var[PlayerScan_MapID],DWORD;
+#ENDIF
+
+end_PlayerScan_Set_MapID;
+
+
+
+//start_OnScriptExit;
+
+//#IF=%Var[Addr_PlayerScan_Jmp],>0;
+//MemWrite=%Var[Addr_PlayerScan_Jmp],0x0E4B8D0C4048C1E1054A8B440950C333C0C3CCCCCCCCCC,BYTE[17];
+//#ENDIF
+
+//end_OnScriptExit;
+
+
+
+start_Init;
+
+_SetArray1=5,6,15; // Classic Client IDs
+
+#EXECUTE=GetOffsets;
+
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],PlayerScan starting..,WCHAR[26];
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L;
+_SetVar=RaceCode,0;
+#ELSE
+_SetVar=RaceCode,1;
+#ENDIF
+
+#IF=%ClientID,=1; // NA
+_SetVar=ScanOffset,0x5DC;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_SetVar=ScanOffset,0x5DC;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_SetVar=ScanOffset,0x240;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_SetVar=ScanOffset,0x240;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=10; // EuroAion
+_SetVar=ScanOffset,0x39C;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=11; // Aion America
+_SetVar=ScanOffset,0x39C;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=12; // Destiny
+_SetVar=ScanOffset,0x39C;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=13; // Elden Aion
+_SetVar=ScanOffset,0x39C;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=14; // GamezAion
+_SetVar=ScanOffset,0x39C;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+#IF=%ClientID,=15; // Aion Nova
+_SetVar=ScanOffset,0x1FC;
+_Calc[ScanArray]=%AddrHidePlayer-%Var[ScanOffset];
+#ENDIF
+
+_MemPtrReadVar=%Var[ScanArray],0x4,FLOAT,XPos;
+_MemPtrReadVar=%Var[ScanArray],0x8,FLOAT,YPos;
+_MemPtrReadVar=%Var[ScanArray],0xC,FLOAT,ZPos;
+_Calc[Checksum]=%Var[XPos]+%Var[YPos];
+_Calc[Checksum]=%Var[Checksum]+%Var[ZPos];
+
+Command=;
+Print=____________________/n/nPlayerScan started/n/nType "/Who PlayerName" to locate a allied Player/n____________________/n;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],0,DWORD;
+
+end_Init;
+
+
+
+start_CheckIngame;
+
+_SetVar=Ingame,0;
+
+#IF=%ClientID,=1; // NA
+_IFMemRead=%AddrCharacterScene,DWORD,=5;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_IFMemRead=%AddrCharacterScene,DWORD,=5;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=5; // NA Classic
+_IFMemRead=%AddrCharacterScene,DWORD,=15;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=6; // EU Classic
+_IFMemRead=%AddrCharacterScene,DWORD,=15;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=10; // EuroAion
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=11; // Aion America
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=12; // Destiny
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=13; // Elden
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=14; // Gamez
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+#IF=%ClientID,=15; // Aion Nova
+_IFMemRead=%AddrCharacterScene,DWORD,=14;
+_SetVar=Ingame,1;
+#Return
+#ENDIF
+
+end_CheckIngame;
+
+
+
+start_GetClassByID;
+
+#IF=%Var[Class_ID],=0;
+_SetVar=Class_String,Warrior;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=1;
+_SetVar=Class_String,Gladiator;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=2;
+_SetVar=Class_String,Templar;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=3;
+_SetVar=Class_String,Scout;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=4;
+_SetVar=Class_String,Assassin;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=5;
+_SetVar=Class_String,Ranger;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=6;
+_SetVar=Class_String,Mage;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=7;
+_SetVar=Class_String,Sorcerer;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=8;
+_SetVar=Class_String,Spiritmaster;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=9;
+_SetVar=Class_String,Priest;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=10;
+_SetVar=Class_String,Cleric;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=11;
+_SetVar=Class_String,Chanter;
+#Return
+#ENDIF
+
+#IF=%ClientID,%ARRAY1; // Classic
+#IF=%Var[Class_ID],=12;
+_SetVar=Class_String,Soldier;
+#Return
+#ENDIF
+
+#IF=%ClientID,%ARRAY1; // Classic
+#IF=%Var[Class_ID],=13;
+_SetVar=Class_String,Executor;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=12;
+_SetVar=Class_String,Technist;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=13;
+_SetVar=Class_String,Aethertech;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=14;
+_SetVar=Class_String,Gunslinger;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=15;
+_SetVar=Class_String,Artist;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=16;
+_SetVar=Class_String,Songweaver;
+#Return
+#ENDIF
+
+#IF=%Var[Class_ID],=17;
+_SetVar=Class_String,Painter;
+#Return
+#ENDIF
+
+end_GetClassByID;
+
+
+start_FlyingRoutine;
+_IFMemRead=%AddrFlightStatus,BYTE,=0;
+#Return
+#ENDIF
+_IFBuffAlive=9961; // 30% Flightspeed buff
+#ELSE
+#IF=%Var[WindScroll],=1;
+_IFMemPtrRead=%PlayerBase,%OffsetActionID,BYTE,=0;
+_IFInventoryContains=164000079; // Greater Raging Wind Scroll
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player; // if not in loading screen
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,>0; // if alive
+#IF=%Timer=1001,15100; // If no cooldown on scroll
+UseID=164000079;
+Delay=333;
+CreateTimer=1001;
+#ENDIF
+#IF=%Var[FlightTimeManagement],=0;
+#Return
+#ENDIF
+#IF=%Var[FlightSkill],=1;
+#IF=%FlightTime,<%MaxFlightTime-%Var[FlightSkill_Gain];
+_ACUseSkill=%Var[FlightSkill_ID];
+#ENDIF
+_IFInventoryContains=%Var[FlightPotionID],1;
+#ELSE
+#EXECUTE=GetFlightPotionID;
+#ENDIF
+_IFInventoryContains=%Var[FlightPotionID],1;
+_IFMemPtrRead=%PlayerBase,%OffsetActionID,BYTE,%Var[PotionPermission];
+#IF=%FlightTime,<%MaxFlightTime-%Var[FlightPotionGain];
+#IF=%Timer=162000024,%Var[FlightPotionCD];
+UseID=%Var[FlightPotionID];
+#DO=2000;
+_UNTILMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=%Var[FlightPotionID];
+_IFMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=%Var[FlightPotionID];
+#DO=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=0;
+CreateTimer=162000024;
+#ENDIF
+_IFInventoryContains=162000063,1;
+_IFMemPtrRead=%PlayerBase,%OffsetActionID,BYTE,%Var[PotionPermission];
+#IF=%FlightTime,<%MaxFlightTime-20;
+#IF=%Timer=162000063,30500;
+UseID=162000063; // essence of wind
+#DO=2000;
+_UNTILMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=162000063;
+_IFMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=162000063;
+#DO=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,=0;
+CreateTimer=162000063;
+#ENDIF
+end_FlyingRoutine;
+
+
+
+start_FlightSkillSort;
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0; // Warrior
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1; // Gladiator
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,1;
+_SetVar=FlightSkill_Gain,60;
+_SetVar=FlightSkill_ID,383;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2; // Templar
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3; // Scout
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4; // Assassin
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5; // Ranger
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6; // Mage
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7; // Sorcerer
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8; // Spiritmaster
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9; // Priest
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10; // Cleric
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>45;
+_SetVar=FlightSkill,1;
+_SetVar=FlightSkill_Gain,15;
+_SetVar=FlightSkill_ID,1183;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11; // Chanter
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>0;
+_SetVar=FlightSkill,0;
+_SetVar=FlightSkill_Gain,0;
+_SetVar=FlightSkill_ID,0;
+_SetVar=FlightSkill_2,0;
+_SetVar=FlightSkill_2_Gain,0;
+_SetVar=FlightSkill_2_ID,0;
+#ENDIF
+
+end_FlightSkillSort;
+
+start_GetFlightPotionID;
+
+_SetVar=FlightPotionID,-1;
+_SetVar=FlightPotionCD,0;
+_SetVar=FlightPotionGain,0;
+
+_IFInventoryContains=162000024; // +12 | CD 24s
+_GetInventoryItemHandle=162000024;
+_SetVar=FlightPotionHandle,%VarItemHandle;
+_SetVar=FlightPotionID,162000024;
+_SetVar=FlightPotionCD,24000;
+_SetVar=FlightPotionGain,12;
+#ENDIF
+_IFInventoryContains=162000025; // +24 | CD 42s
+_GetInventoryItemHandle=162000025;
+_SetVar=FlightPotionHandle,%VarItemHandle;
+_SetVar=FlightPotionID,162000025;
+_SetVar=FlightPotionCD,42000;
+_SetVar=FlightPotionGain,24;
+#ENDIF
+_IFInventoryContains=162000026; // +36 | CD 54s
+_GetInventoryItemHandle=162000026;
+_SetVar=FlightPotionHandle,%VarItemHandle;
+_SetVar=FlightPotionID,162000026;
+_SetVar=FlightPotionCD,54000;
+_SetVar=FlightPotionGain,36;
+#ENDIF
+_IFInventoryContains=162000027; // +48 | CD 60s
+_GetInventoryItemHandle=162000027;
+_SetVar=FlightPotionHandle,%VarItemHandle;
+_SetVar=FlightPotionID,162000027;
+_SetVar=FlightPotionCD,60000;
+_SetVar=FlightPotionGain,48;
+#ENDIF
+_IFInventoryContains=162000079; // +60 | CD 64s
+_GetInventoryItemHandle=162000079;
+_SetVar=FlightPotionHandle,%VarItemHandle;
+_SetVar=FlightPotionID,162000079;
+_SetVar=FlightPotionCD,64000;
+_SetVar=FlightPotionGain,60;
+#ENDIF
+
+_IFInventoryContains=162000063; // Essence of Wind
+_GetInventoryItemHandle=162000063;
+_SetVar=EssenceHandle,%VarItemHandle;
+#ENDIF
+
+end_GetFlightPotionID;
+
+
+start_Setup;
+#EXECUTE=FlightSkillSort;
+
+#IF=%Var[FlightPotion_Gathering],=1;
+_SetVar=PotionPermission,0-255;
+#ELSE
+_SetVar=PotionPermission,=0;
+#ENDIF
+
+end_Setup;
+
+
+start_GetOffsets;
+
+#DO=60000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[NA\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[EU\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic EU\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=10; // EuroAion
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.6\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=11; // AionAmerica
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.6\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=12; // Destiny
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.6\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=13; // Elden
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.6\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=14; // Gamez
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[4\.8\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Nova\]\n.*?^Base_SubText=(.*?)$;
+#ENDIF
+
+#IF=%Var[Offset_Base_SubText],=0;
+Delay=5000;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Base_SubText],>0;
+
+end_GetOffsets;
