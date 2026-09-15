@@ -1,0 +1,93 @@
+#IF=%FirstTime,;
+#UseLoop
+#SmoothBackground
+UseSpeed=1;
+Command=;
+Console=\g_maxfps 30;
+#SetVar1=Which Character name it should follow?;
+#SetVar2=Which Character names it should ressurect?/n/nSeperate them by a Comma/n/nExample:/nName,AnotherName,YetAnotherName;
+#SetVar3=Which Item or Skill ID it should use to resurrect?;
+_SetArray1=---,%Var2;
+#TabMod=True;
+#ENDIF
+
+#DO=999999999;
+GetEntity=%OffsetName,WCHAR[64],%ARRAY1,%OffsetHP,DWORD,=0,Dead_Addr;
+#IF=%Var[Dead_Addr_Elements],=0;
+#EXECUTE=Follow;
+#ENDIF
+#UNTIL=%Var[Dead_Addr_Elements],>0;
+
+_MemPtrReadVar=%Var[Dead_Addr_1],%OffsetName,WCHAR[128],NameCache;
+MemPtrWrite=%Var[Dead_Addr_1],%OffsetName,%Var[NameCache] ,WCHAR[128];
+Command=/select %Var[NameCache] ;
+Delay=100;
+GoTowardsTarget=<9,8000;
+UseID=%Var3;
+Delay=2500;
+#DO=12500;
+Delay=150;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=150;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+MemPtrWrite=%Var[Dead_Addr_1],%OffsetName,%Var[NameCache],WCHAR[128];
+#EndScript
+
+
+start_Follow;
+#EXECUTE=SelectMaster;
+#IF=%TargetDistance,<20;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+Command=/Follow;
+#ELSE
+Command=/attack;
+#ENDIF
+end_Follow;
+
+
+start_SelectMaster;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+#ELSE
+Command=/select %Var1;
+#EXECUTE=WaitForTarget;
+#ENDIF
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+#ELSE
+_MemReadVar=%AddrMap,DWORD,MapID;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,XPOS;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,YPOS;
+Command=/w %Var1 Lost you! Waiting [pos:here/:%Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 0];
+#EXECUTE=WaitForMaster;
+Command=/w %Var1 Following!;
+#ENDIF
+end_SelectMaster;
+
+
+start_WaitForTarget;
+#DO=750;
+_UNTILMemPtrRead=%TargetBase,%OffsetType,CHAR[16],%ARRAY1;
+end_WaitForTarget;
+
+
+start_WaitForMaster;
+
+#DO=99999999;
+#EXECUTE=SelectMaster;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+#IF=%TargetDistance,<20;
+#Return
+#ELSE
+_ACDetectIfAttacked=;
+#ENDIF
+#UNTIL=1,=2;
+
+end_WaitForMaster;
+
+
+start_OnScriptExit;
+
+MemPtrWrite=%PlayerBase,%OffsetActionID,0,DWORD;
+Console=\g_maxfps 120;
+#TabMod=False;
+
+end_OnScriptExit;

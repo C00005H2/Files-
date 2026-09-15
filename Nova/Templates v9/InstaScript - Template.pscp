@@ -1,0 +1,245 @@
+##################InstaScript Settings###################
+
+#IF=%FirstTime,;
+#SmoothBackground
+_SetVar=UserPIN,0000001; // Your PIN
+_SetVar=FPSCap,15; // Limits the FPS
+_SetVar=QuitClient,1; // exit aion when script finished
+#EXECUTE=AccountSettings; // Scroll at the very end to setup account specific settings
+#EXECUTE=InstaScriptLogin;
+#ENDIF
+
+##################END Settings###################
+
+
+
+##############Your Main Code Here################
+
+
+
+
+
+
+
+
+
+#################END Main Code##################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+start_HidePlayers;
+
+MemWrite=%AddrHidePlayer,%Var[HidePlayers],DWORD;
+
+end_HidePlayers;
+
+
+start_SetResolution;
+
+#SmoothBackground
+Delay=1;
+Console=\r_Width 800;
+Console=\r_Height 600;
+Delay=5;
+
+MouseHoverClick=2,-2,Left,2,-2;
+
+end_SetResolution;
+
+
+
+
+start_InstaScriptLogin;
+
+CreateTimer=997;
+#EXECUTE=GetOffsets;
+_SetVar=ScriptTitle,InstaScript; // Scriptname used for Logs or Script Editor title
+#EXECUTE=HidePlayers;
+
+#IF=%FirstTime,;
+_SetVar=WrongPIN,0;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,%Var[FPSCap],BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,%Var[FPSCap],FLOAT;
+MemWrite=%AddrMouseX,0x00000000000000000000000000000000,BYTE[16]; // initialize mouse usage
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,<999999999;
+_IFMemRead=%AddrMap,DWORD,>0; // if already logged in
+#SetWindow
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+#Return
+#ENDIF
+
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrCharacterScene,DWORD,=8;
+_IFMemRead=%AddrCharacterScene,DWORD,=8; // Accept EULA screen
+#SetWindow
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrMap,DWORD,=4294967295;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+Delay=2500;
+SendKey=0x0D; // Accept
+Delay=9000;
+#ENDIF
+_IFMemRead=%AddrCharacterScene,DWORD,=9; // Select Server screen
+SendKey=0x0D; // Connect to Game Server
+Delay=1500;
+SendKey=0x0D; // Connect to Game Server
+Delay=1500;
+#ENDIF
+_IFFrameVisible=%ConfirmFrameID; // New player cannot create new characters prompt
+FrameAction=%ConfirmFrameID,XPOS,0;
+FrameAction=%ConfirmFrameID,YPOS,0;
+Delay=450;
+Mouse=146,94;
+#ENDIF
+_Calc[CautionFrameID]=%ConfirmFrameID+20;
+_IFFrameVisible=%Var[CautionFrameID];
+FrameAction=%Var[CautionFrameID],XPOS,0;
+FrameAction=%Var[CautionFrameID],YPOS,0;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x580/0x28,7,BYTE;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x588/0x28,7,BYTE;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x590/0x28,7,BYTE;
+Delay=225;
+Mouse=229,130;
+Delay=450;
+#ENDIF
+Delay=10500;
+_IFMemRead=%AddrCharacterScene,DWORD,=11; // Select Char screen
+//#EXECUTE=EmptyServerCheckup;
+Delay=5500;
+#EXECUTE=SelectChar;
+#IF=%Var[ReturnSlot],>-1; // If char was found
+_Calc[CharCounter]=%Var[CharCounter]+1;
+Mouse=51,496; // First Char
+MemWrite=%AddrCharSlot,%Var[ReturnSlot],DWORD;
+#ELSE
+_SetVar=MSG,No character meets the requirements. logging off;
+#EXECUTE=Log;
+#EXECUTE=End;
+#ENDIF
+Delay=500;
+Mouse=292,565; // Start
+Delay=750;
+Mouse=292,565; // Start
+Delay=2000;
+_IFFrameVisibleByName=second_password_dialog; PIN window
+#EXECUTE=PINCheck;
+#ELSE
+//_SetVar=MSG,Had the PIN bug;
+//#EXECUTE=Log;
+#ENDIF
+Delay=500;
+#DO=60000;
+Delay=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,3-10;
+Delay=500;
+#DO=1500;
+SendKey=0x1B;
+Delay=25;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+_IFMemRead=%AddrMap,DWORD,>999999999; // not successfully logged in
+#EXECUTE=End;
+#ENDIF
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+
+end_InstaScriptLogin;
+
+
+
+start_EmptyServerCheckup;
+
+#DO=150000;
+_IFMemRead=%AddrCharacterScene,DWORD,=13; // Create Char screen
+Delay=1000;
+Mouse=434,573; // Main Screen
+Delay=1000;
+Mouse=164,571; // Server Selection
+Delay=9000;
+Mouse=397,145; // Lowest Server
+Delay=1000;
+SendKey=0x0D; // Accept
+Delay=5500;
+#ENDIF
+_UNTILMemRead=%AddrCharacterScene,DWORD,=11; // Char selection screen
+
+end_EmptyServerCheckup;
+
+
+start_WrongPIN;
+
+_IFFrameVisible=%ConfirmFrameID;
+Mouse=496,335;
+Delay=125;
+#ENDIF
+
+_IFFrameVisible=%ConfirmFrameID;
+_Calc[WrongPIN]=%Var[WrongPIN]+1;
+Mouse=480,347; //
+Delay=50;
+Mouse=497,345; // Prompt wrong PIN
+Delay=1000;
+#ENDIF
+
+#IF=%Var[WrongPIN],>1;
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--InstaLog.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] entered the PIN {%Var[UserPIN]} incorrectly 2 times, logging off now/n,+;
+#QuitAtRound=-1,True;
+#ENDIF
+
+end_WrongPIN;
+
+
+start_End;
+
+#IF=%Var[QuitClient],=1;
+#QuitAtRound=-1,True;
+#ELSE
+#EndScript
+#ENDIF
+
+end_End;
+
+
+start_AccountSettings; // Customize PIN and character amount for each account here
+
+_SetVar=IgnoreThis,0;
+
+#IF=%AionTitle,=Account1; // IF window title = Account1 then
+_SetVar=UserPIN,024689; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account2; // IF window title = Account2 then
+_SetVar=UserPIN,111111; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account3; // IF window title = Account3 then
+_SetVar=UserPIN,1234567; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+
+
+#IF=%Var[IgnoreThis],=0; // IF neither of them is found use default values from top of script
+_SetVar=UserPIN,%Var[UserPIN];
+#ENDIF
+
+end_AccountSettings;

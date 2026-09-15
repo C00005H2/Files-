@@ -1,0 +1,78 @@
+#IF=%FirstTime,;
+RequireVersion=10.37;
+UseSpeed=1;
+_SetVar1=0;
+_SetArray1=70,79,80,85,86,88; <-- blacklisted IDs
+MemWrite=%AddrFreeMem1,0,BYTE;
+#SetVar3=Wanna force a specific function ID or try all IDs to find a working function?/n/n(1 = Specific ID)/n(2 = Try all IDs)/n/nMake sure the dialog of the NPC is already opened before you continue here;
+#ENDIF
+
+MemWrite=%AddrFreeMem3,%Var3,BYTE;
+_IFMemRead=%AddrFreeMem3,BYTE,=1;
+#EXECUTE=SetFunc;
+#ELSE
+#EXECUTE=BruteForce;
+#ENDIF
+
+
+
+start_BruteForce;
+
+TrayInfo=Hover your mouse over the last dialog button and press "Delete";
+WaitForKey=2E,1;
+_MemReadVar=%AddrMouseX,WORD,19;
+_MemReadVar=%AddrMouseY,WORD,20;
+TrayInfo=The script tries 255 IDs, takes ~1 minute;
+
+
+#DO=9999999;
+
+_Calc1=%Var1+1;
+MemWrite=%AddrFreeMem2,%Var1,BYTE;
+_IFMemRead=%AddrFreeMem2,BYTE,%ARRAY1;Blacklist
+_Calc1=%Var1+1;
+#ENDIF
+MemWrite=%AddrFreeMem2,%Var1,BYTE;
+_IFMemRead=%AddrFreeMem2,BYTE,%ARRAY1;Blacklist
+_Calc1=%Var1+1;
+#ENDIF
+MemWrite=%AddrFreeMem2,%Var1,BYTE;
+_IFMemRead=%AddrFreeMem2,BYTE,%ARRAY1;Blacklist
+_Calc1=%Var1+1;
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[dlg_dialog],%OffsetFirstDialogBtn,NpcFunc%Var1,CHAR[10];
+_MemPtrPrint=%AddrFrameName[dlg_dialog],%OffsetFirstDialogBtn,CHAR[10];
+
+Mouse=%Var19,%Var20;
+Delay=25; // adjustable
+
+_IFFrameVisibleByName=dlg_dialog;
+#ELSE
+MemWrite=%AddrFreeMem1,1,BYTE;
+#ENDIF
+
+MemWrite=%AddrFreeMem2,%Var1,BYTE;
+_IFMemRead=%AddrFreeMem2,BYTE,>255;limit
+WaitForResponse=Seems no ID has worked;
+#EndScript
+#ENDIF
+
+_UNTILMemRead=%AddrFreeMem1,BYTE,=1;
+
+WaitForResponse=Seems ID %Var1 worked;
+
+end_BruteForce;
+
+
+
+
+start_SetFunc;
+
+#SetVar4=Enter the function ID you want to force/nExample:/n/n2 = buy/n3 = sell/n6 = disband legion/n26 = warehouse/n33 = broker/n35 = heal soul/n41 = socket godstone/n42 = remove manastone/n43 = skin changer/n44 = teleport/n46 = learn craft level/n47 = expand cube/n48 = legion teleporter/n50 = raise legion level/n53 = legion warehouse/n58 = work order craft/n61 = Plastic Surgery/n62 = Gender Switch/n66 = add armfusion/n67 = delete armfusion/n75 = augment single item(cond)/n76 = augment all items(cond)/n104 = local teleport;
+#IF=%Var4,>0;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%OffsetFirstDialogBtn,NpcFunc%Var4,CHAR[10];
+WaitForResponse=Done, click on the first dialog button;
+#ENDIF
+
+end_SetFunc;

@@ -1,0 +1,68 @@
+#IF=%FirstTime,;
+UseSpeed=1;
+Command=;
+Print=;
+WaitForResponse=Be sure you follow the instructions in the ingame chat/n/nThis script allows you to teleport to a friends house instantly even in mid combat/nIt can also be used with level 1 toons to access warehouse NPCs early;
+#ENDIF
+
+FrameActionByName=housing_buddy_list_dialog,State,SHOW;
+FrameActionByName=housing_buddy_list_dialog,XPos,0;
+FrameActionByName=housing_buddy_list_dialog,YPos,0;
+Print=Hover your mouse over a friend at the window and press "Delete";
+WaitForKey=2E,1;
+_MemReadVar=%AddrMouseX,WORD,CX_Friend;
+_MemReadVar=%AddrMouseY,WORD,CY_Friend;
+Delay=1250;
+Print=Hover your mouse over the "Visit Friend" button and press "Delete";
+WaitForKey=2E,1;
+_MemReadVar=%AddrMouseX,WORD,CX_Teleport;
+_MemReadVar=%AddrMouseY,WORD,CY_Teleport;
+FrameActionByName=housing_buddy_list_dialog,State,HIDE;
+FrameActionByName=idscore_dialog,STATE,SHOW;
+FrameActionByName=idscore_dialog,XPOS,0;
+FrameActionByName=idscore_dialog,YPOS,0;
+Print=Hover your mouse over the "Leave Instance" button and press "Delete";
+WaitForKey=2E,1;
+_MemReadVar=%AddrMouseX,WORD,CX_Leave;
+_MemReadVar=%AddrMouseY,WORD,CY_Leave;
+FrameActionByName=idscore_dialog,STATE,HIDE;
+Print=Press "Home" as soon as you want to instantly escape/nPress "End" to exit instances;
+
+#DO=9999999999999;
+_IFKey=24,1; // Home
+#IF=%Timer=500,15000;
+#EXECUTE=Teleport;
+#ENDIF
+_IFKey=23,1; // End
+#EXECUTE=Return;
+#ENDIF
+Delay=25;
+#UNTIL=1,=2;
+
+
+
+start_Teleport;
+FrameActionByName=housing_buddy_list_dialog,State,SHOW;
+FrameActionByName=housing_buddy_list_dialog,XPos,0;
+FrameActionByName=housing_buddy_list_dialog,YPos,0;
+Mouse=%Var[CX_Friend],%Var[CY_Friend];
+Delay=125;
+Mouse=%Var[CX_Teleport],%Var[CY_Teleport];
+Delay=135;
+SendKey=0x0D;
+FrameActionByName=housing_buddy_list_dialog,State,HIDE;
+CreateTimer=500;
+end_Teleport;
+
+
+start_Return;
+FrameActionByName=idscore_dialog,STATE,SHOW;
+FrameActionByName=idscore_dialog,XPOS,0;
+FrameActionByName=idscore_dialog,YPOS,0;
+Delay=250;
+Mouse=%Var[CX_Leave],%Var[CY_Leave]; // Leave Instance
+Delay=250;
+SendKey=0x0D; // Enter
+Delay=7000;
+Command=;
+end_Return;

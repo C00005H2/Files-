@@ -1,0 +1,100 @@
+#IF=%FirstTime,;
+UseSpeed=1;
+_SetArray1=100000,100001,100002,100003;
+#EXECUTE=GetOffsets;
+_SetVar=Gear1,%Var[Offset_Base_WeaponID]; // Weapon Main
+_Calc[Gear2]=%Var[Gear1]+0x4; // Godstone Main
+_Calc[Gear3]=%Var[Gear1]+0x12; // Weapon Offhand
+_Calc[Gear4]=%Var[Gear1]+0x16; // Godstone Offhand
+_Calc[Gear5]=%Var[Gear1]+0x24; // Head
+_Calc[Gear6]=%Var[Gear1]+0x36; // Torso
+_Calc[Gear7]=%Var[Gear1]+0x48; // Arms
+_Calc[Gear8]=%Var[Gear1]+0x5A; // Shoes
+_Calc[Gear9]=%Var[Gear1]+0x6C; // Earring Left
+_Calc[Gear10]=%Var[Gear1]+0x7E; // Earring Right
+_Calc[Gear11]=%Var[Gear1]+0x90; // Ring Left
+_Calc[Gear12]=%Var[Gear1]+0xA2; // Ring Right
+_Calc[Gear13]=%Var[Gear1]+0xB4; // Necklace
+_Calc[Gear14]=%Var[Gear1]+0xC6; // Shoulder
+_Calc[Gear15]=%Var[Gear1]+0xD8; // Waist
+_Calc[Gear16]=%Var[Gear1]+0xEA; // Shards Left
+_Calc[Gear17]=%Var[Gear1]+0xFC; // Shards Right
+_Calc[Gear18]=%Var[Gear1]+0x10E; // Wings
+_SetVar=TargetNameCache,---;
+#ENDIF
+
+#DO=9999999999;
+_IFMemPtrRead=%TargetBase,%OffsetData/0x30,DWORD,%ARRAY1;
+_MemPtrReadVar=%TargetBase,%OffsetName,WCHAR[64],TargetName;
+#EXECUTE=GetTargetGear;
+#ENDIF
+Delay=250;
+#UNTIL=1,=2;
+
+
+
+start_GetTargetGear;
+
+
+
+#IF=%Var[TargetName],=;
+#Return
+#ENDIF
+
+#IF=%Var[TargetName],=%Var[TargetNameCache];
+#Return
+#ELSE
+_SetVar=TargetNameCache,%Var[TargetName];
+#ENDIF
+
+_SetVar1=1;
+#DO=5000;
+_MemPtrReadVar=%TargetBase,%OffsetData/%Var[Gear%Var1],DWORD,ID_Gear%Var1;
+_Calc1=%Var1+1;
+#UNTIL=%Var1,=19;
+Display=Translating...,0,0,Gear Translation: %Var[TargetName];
+
+_SetVar1=1;
+#DO=15000;
+Display=Translating... (%Var1/18),0,0,Gear Translation: %Var[TargetName];
+#IF=%Var[ID_Gear%Var1],=0;
+_SetVar=Name_Gear%Var1,;
+#ELSE
+_HTTPGetVar=https://aioncodex.com/%Var[LangCode]/item/%Var[ID_Gear%Var1]/,,Name_Gear%Var1,id="item_name"><b>(.*?)</b></span>;
+#ENDIF
+_Calc1=%Var1+1;
+#UNTIL=%Var1,=19;
+Display=Weapon Main = %Var[Name_Gear1]/nGodstone Main = %Var[Name_Gear2]/nWeapon Offhand = %Var[Name_Gear3]/nGodstone Offhand = %Var[Name_Gear4]/nHead = %Var[Name_Gear5]/nTorso = %Var[Name_Gear6]/nArms = %Var[Name_Gear7]/nShoes = %Var[Name_Gear8]/nEarring Left = %Var[Name_Gear9]/nEarring Right = %Var[Name_Gear10]/nRing Left = %Var[Name_Gear11]/nRing Right = %Var[Name_Gear12]/nNecklace = %Var[Name_Gear13]/nShoulder = %Var[Name_Gear14]/nWaist = %Var[Name_Gear15]/nShards Left = %Var[Name_Gear16]/nShards Right = %Var[Name_Gear17]/nWings = %Var[Name_Gear18],0,0,Gear Inspector: %Var[TargetName];
+
+end_GetTargetGear;
+
+
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Classic\]\n.*?^Base_WeaponID=(.*?)$;
+_SetVar=LangCode,usc;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Classic EU\]\n.*?^Base_WeaponID=(.*?)$;
+_SetVar=LangCode,enc;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Nova\]\n.*?^Base_WeaponID=(.*?)$;
+_SetVar=LangCode,usc;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Base_WeaponID],>0;
+
+end_GetOffsets;

@@ -1,0 +1,323 @@
+#IF=%FirstTime,;
+WaitForResponse=This script will instantly leave the instance and close the client when another player is within 110 meters/n/nYou can press Alt + L to leave the instance at any point and to close the script;
+#EXECUTE=Setup;
+Print=;
+Command=;
+_HTTPGetVar=http://pastebin.com/raw/kvP6EM6m,,GMList;
+#EXECUTE=GetOffsets;
+#ENDIF
+
+
+#DO=999999999;
+#EXECUTE=IsInsideInstance;
+#IF=%Var[InsideInstance],=1;
+_IFMemPtrRead=%AddrUsers,%Var[Offset_UserCount],DWORD,>1; // If not alone in the instance
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--Barracks.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] was not alone in the instance (%Var[MapID]) (GM nearby?)/n,+;
+#EXECUTE=Leave;
+Command=/logout;
+#UseNoLoop
+#QuitAtRound=-1,True;
+#ENDIF
+#IF=%Var[InsideInstance],=0;
+#EXECUTE=GMScan;
+#ENDIF
+_IFKey=12,1; // ALT
+_IFKey=4C,1; // L
+#EXECUTE=Leave;
+#ENDIF
+Delay=10;
+#UNTIL=1,=2;
+
+
+start_Setup;
+
+FrameActionByName=idscore_dialog,STATE,SHOW;
+FrameActionByName=idscore_dialog,XPOS,0;
+FrameActionByName=idscore_dialog,YPOS,0;
+Print=Hover your mouse over the Leave Instance button and press "Delete";
+WaitForKey=2E,1;
+_MemReadVar=%AddrMouseX,WORD,CX_Leave;
+_MemReadVar=%AddrMouseY,WORD,CY_Leave;
+FrameActionByName=idscore_dialog,STATE,HIDE;
+Print=Success - You can press ALT + L at any time to quickly leave the instance;
+
+end_Setup;
+
+
+start_IsInsideInstance;
+
+#EXECUTE=GetInstanceID;
+#EXECUTE=GetMapID;
+#IF=%Var[MapID],=%Var[InstanceID];
+_SetVar=InsideInstance,0;
+#ELSE
+_SetVar=InsideInstance,1;
+#ENDIF
+
+end_IsInsideInstance;
+
+
+start_Leave;
+
+#EXECUTE=IsInsideInstance;
+#IF=%Var[InsideInstance],=1;
+FrameActionByName=idscore_dialog,STATE,SHOW;
+Delay=75;
+Mouse=%Var[CX_Leave],%Var[CY_Leave]; // Leave Instance
+Delay=125;
+SendKey=0x0D; // Enter
+Delay=50;
+Command=;
+#ENDIF
+#UseNoLoop
+#EndScript
+
+end_Leave;
+
+
+start_GetMapID;
+
+_MemReadVar=%AddrMap,DWORD,MapID;
+_Calc[cTemp]=%Var[MapID]/100;
+_RegExp=%Var[cTemp],^([0-9]+),cTemp; // Remove Comma
+_Calc[MapID]=%Var[cTemp]*100;
+
+end_GetMapID;
+
+
+start_GetInstanceID;
+
+_Calc[AddrInstanceID]=%AddrMap-0x4;
+_MemReadVar=%Var[AddrInstanceID],DWORD,InstanceID;
+_Calc[cTemp]=%Var[InstanceID]/100;
+_RegExp=%Var[cTemp],^([0-9]+),cTemp; // Remove Comma
+_Calc[InstanceID]=%Var[cTemp]*100;
+
+end_GetInstanceID;
+
+
+start_GMScan;
+//Checks for GM nearby
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player;
+#ELSE
+#Return
+#ENDIF
+
+//_SetArray2=100000,100001,100002,100003; // Asmo + Elyos
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetRank,DWORD,>0,EntityAddr;
+#IF=%Var[EntityAddr_Elements],>0;
+_SetVar=i,1;
+#DO=4000;
+
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetName,WCHAR[64],Name;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetType,CHAR[32],Type;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetLevel,BYTE,Level;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosX,FLOAT,PosX_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosY,FLOAT,PosY_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosZ,FLOAT,PosZ_Decimal;
+#EXECUTE=GetMapID;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetNPCID,DWORD,NPCID;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetHideLevel,BYTE,HideLevel;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetEyeLevel,BYTE,EyeLevel;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetMovement,FLOAT,Movement;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],0x0,BYTE[1024],Dump;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetData/0x0,BYTE[2048],DataDump;
+#EXECUTE=EntityCheckup;
+
+MemPtrWrite=%Var[EntityAddr_%Var[i]],%OffsetRank,0,DWORD; // To ignore entity till it got reloaded
+
+_Calc[i]=%Var[i]+1;
+#UNTIL=%Var[i],>%Var[EntityAddr_Elements];
+#ENDIF
+
+end_GMScan;
+
+
+
+start_EntityCheckup;
+//Checkups for a found entity
+
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+
+#IF=%Var[MapID],=4294967295; // Loading screen
+#Return
+#ENDIF
+#IF=%Var[Name],=;
+#Return
+#ENDIF
+
+#IF=%Var[Type],=User;
+#ELSE
+#Return
+#ENDIF
+#IF=%Var[NPCID],%Var[DetectFrom]-%Var[DetectTill];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[Name],=%Var[PlayerName];
+#Return
+#ELSE
+//Print=<%Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 0];
+#ENDIF
+
+
+_SetVar=GM_Found,0;
+_SetArray2=220010000,210010000; // Ishalgen, Poeta
+#IF=%Var[MapID],%ARRAY2;
+#ELSE
+#IF=%Var[Level],1-8;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,1;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_SetArray2=999,%Var[GMList];
+#IF=%Var[Name],%ARRAY2;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,2;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_SetArray2=999,%Var17;
+#IF=%Var[Name],%ARRAY2;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,8;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+#IF=%Var[HideLevel],>66; // Hide level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,4;
+#EXECUTE=GMReport;
+#ENDIF
+
+//#IF=%Var[GM_Found],=0;
+//#IF=%Var[NPCID],%Var[DetectFrom]-%Var[DetectTill];
+//_IFMemPtrRead=%Var[EntityAddr_%Var[i]],%OffsetData/0x24,BYTE,=22; // ??
+//_SetVar=GM_Found,1;
+//_SetVar=GM_Method,5;
+//#EXECUTE=GMReport;
+//#ENDIF
+
+#IF=%Var[GM_Found],=0;
+#IF=%Var[EyeLevel],>66; // Eye level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,6;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_IFRegExp=%Var[Name],^llGMll|^IIGMII;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,7;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+#IF=%Var[Movement],>19; // Movement
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,9;
+#EXECUTE=GMReport;
+#ENDIF
+
+
+#IF=%Var[GM_Found],=1;
+MemPtrWrite=%PlayerBase,%OffsetPosZ,0,FLOAT; // Suicide
+_RegExp=%Var[PosX_Decimal],^([0-9]+),PosX_NoDecimal; // Remove Comma
+_RegExp=%Var[PosY_Decimal],^([0-9]+),PosY_NoDecimal; // Remove Comma
+Print=<GM: %Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+Command=/logout;
+Print=GM Detected! - Logging off in 10..;
+Delay=100;
+Print=GM Detected! - Logging off in 9..;
+Delay=100;
+Print=GM Detected! - Logging off in 8..;
+Delay=100;
+Print=GM Detected! - Logging off in 7..;
+Delay=100;
+Print=GM Detected! - Logging off in 6..;
+Delay=100;
+Print=GM Detected! - Logging off in 5..;
+Delay=100;
+Print=GM Detected! - Logging off in 4..;
+Delay=100;
+Print=GM Detected! - Logging off in 3..;
+Delay=100;
+Print=GM Detected! - Logging off in 2..;
+Delay=100;
+Print=GM Detected! - Logging off in 1..;
+Delay=100;
+#QuitAtRound=-1,True;
+#UseNoLoop
+#EndScript
+#ENDIF
+
+end_EntityCheckup;
+
+
+start_GMReport;
+
+_HTTPPost=https://subvanillatool.com/POST/%Var[Token]/post.php,text=<b><font color="#ff0000">[Tapping 1-399 %Var[ScriptVersion]_%ClientID] [Method %Var[GM_Method]]</font></b> [%Var[Name]] (%Var[Level]) detected at Map: %Var[MapID] | X: %Var[PosX_Decimal] | Y: %Var[PosY_Decimal] | Z: %Var[PosZ_Decimal];
+
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__%DAY-%MONTH-%YEAR.txt,%Var[Dump],r;
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__Data__%DAY-%MONTH-%YEAR.txt,%Var[DataDump],r;
+
+end_GMReport;
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[NA\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[EU\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[Classic\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[Classic EU\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,10-13; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[4\.6\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+#IF=%ClientID,=14; // 4.8
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[4\.8\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_UserCount,(?m)\[Nova\]\n.*?^UserCount=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

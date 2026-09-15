@@ -1,0 +1,65 @@
+#IF=%FirstTime,;
+#SmoothBackground
+#SetWindow
+#EXECUTE=GetOffsets;
+#SetVar=Name,Enter your desired name/n/n(Uppercase supported everywhere);
+#ENDIF
+
+
+
+_IFMemRead=%AddrCharacterScene,BYTE,=13;
+Mouse=%Var[NameField_X],%Var[NameField_Y]; // Name field
+Delay=500;
+SendKey=%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd;
+Delay=4000;
+MemPtrWrite=%AddrFrameID[-3],%Var[Offset_CreateChar_Name],%Var[Name],WCHAR[16];
+Delay=200;
+Mouse=%Var[Create_X],%Var[Create_Y]; // Create
+#ELSE
+WaitForResponse=Make sure you're in the character creation screen;
+#ENDIF
+
+
+
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CreateChar_Name,(?m)\[Classic\]\n.*?^CreateChar_Name=(.*?)$;
+_SetVar=NameField_X,86;
+_SetVar=NameField_Y,108;
+_SetVar=Create_X,364;
+_SetVar=Create_Y,570;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CreateChar_Name,(?m)\[Classic EU\]\n.*?^CreateChar_Name=(.*?)$;
+_SetVar=NameField_X,97;
+_SetVar=NameField_Y,109;
+_SetVar=Create_X,360;
+_SetVar=Create_Y,570;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CreateChar_Name,(?m)\[Nova\]\n.*?^CreateChar_Name=(.*?)$;
+_SetVar=NameField_X,129;
+_SetVar=NameField_Y,109;
+_SetVar=Create_X,364;
+_SetVar=Create_Y,571;
+#ENDIF
+
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

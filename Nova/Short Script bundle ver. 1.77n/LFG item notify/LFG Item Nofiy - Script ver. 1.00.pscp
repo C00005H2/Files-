@@ -1,0 +1,20 @@
+#IF=%FirstTime,;
+#UseLoop
+#EnableChatLog
+#ClearChatLog
+#EnableSpeech
+WaitForResponse=This snippet will notify you on discord if another player posted a certain item in LFG;
+#SetVar=Discord,Enter your Discord Webhook URL/n/n/nHow to get Webhook URL:/nhttps://bit.ly/2u1nKZT;
+#SetVar1=Which ItemID you are looking for?;
+#ENDIF
+
+
+_SearchChatLog=\[3\.LFG] \[charname:[A-Za-z]*[^a-z][0-9\.\ ]*?]: .*?\[item:(?:\ |)%Var1(?:[^0-9].*?|)].*;
+_GetChatLog=\[3\.LFG] \[charname:([A-Za-z]*)[^a-z][0-9\.\ ]*?]: .*?\[item:(?:\ |)%Var1(?:[^0-9].*?|)].*,User;
+_GetChatLog=\[3\.LFG] \[charname:[A-Za-z]*[^a-z][0-9\.\ ]*?]: ((?:.*?|)\[item:(?:\ |)%Var1(?:[^0-9].*?|)].*),Message;
+#ClearChatLog
+Speech=%Var[User] has posted your desired item;
+_HTTPPost=https://subvanillatool.com/discord.php,url=%Var[Discord]&message=__**[3. LFG] %Var[User]:**__ %Var[Message];
+#ENDIF
+
+Delay=200;

@@ -1,0 +1,21 @@
+WaitForResponse=This script keeps suiciding till the EXP bar is below 5%/n/nIt does not work in Reshanta;
+
+#EXECUTE=Suicide;
+
+start_Suicide;
+// Keeps suiciding till exp is below 5%
+
+_MemReadVar=%AddrMaxEXP,DWORD,MaxExp;
+_MemReadVar=%AddrCurrentEXP,DWORD,CurrentExp;
+_Calc[ExpPercent]=%Var[CurrentExp]/%Var[MaxExp];
+_Calc[ExpPercent]=%Var[ExpPercent]*100;
+#IF=%Var[ExpPercent],>5; // IF above 80% exp
+#DO=600000;
+MemPtrWrite=%PlayerBase,%OffsetPosZ,0,FLOAT;
+_MemReadVar=%AddrCurrentEXP,DWORD,CurrentExp;
+_Calc[ExpPercent]=%Var[CurrentExp]/%Var[MaxExp];
+_Calc[ExpPercent]=%Var[ExpPercent]*100;
+#UNTIL=%Var[ExpPercent],<5; //Until below 5% exp
+#ENDIF
+
+end_Suicide;

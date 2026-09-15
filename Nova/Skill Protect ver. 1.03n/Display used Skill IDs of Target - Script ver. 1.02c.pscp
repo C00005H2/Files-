@@ -1,0 +1,159 @@
+#IF=%FirstTime,;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetVar=Target_SkillID_Cache,0;
+_SetVar=DebugText,;
+_SetVar=ShowDebug,1; Shows Debug / 0 Hides Debug
+WaitForResponse=This script shows a history of the last 15 Skills used by entities within render distance/n/nThese IDs can then be implemented in Skill Protect or other scripts;
+_MemReadVar=%AddrCurrentTime,DWORD,TimeStamp_1; // Start Timestamp
+#ENDIF
+
+
+
+#DO=999999999;
+GetEntity=%OffsetAnimationSkillID,DWORD,>0,%OffsetType,CHAR[32],!=Gather,Entity_Addr;
+#IF=%Var[Entity_Addr_Elements],>0;
+_SetVar=i,1;
+#2DO=10000;
+_MemPtrReadVar=%Var[Entity_Addr_%Var[i]],%OffsetData,UINT64,Entity_Data_Ptr;
+_MemPtrReadVar=%Var[Entity_Addr_%Var[i]],%OffsetName,WCHAR[128],Target_Name;
+_MemPtrReadVar=%Var[Entity_Addr_%Var[i]],%OffsetAnimationSkillID,DWORD,Target_SkillUsage; // During cast
+_MemPtrReadVar=%Var[Entity_Addr_%Var[i]],%OffsetCurrentID,DWORD,Target_SkillID; // After cast
+#EXECUTE=LogSkill;
+_Calc[i]=%Var[i]+1;
+#2UNTIL=%Var[i],>%Var[EntityAddr_Elements];
+#ENDIF
+#UNTIL=1,=2;
+
+
+
+start_LogSkill;
+
+#IF=%Var[Target_SkillUsage],>0;
+_SetVar=Skill_Used,%Var[Target_SkillUsage];
+#ENDIF
+#IF=%Var[Target_SkillID],>0;
+_SetVar=Skill_Used,%Var[Target_SkillID];
+#ENDIF
+
+#IF=%Var[Entity_Data_Ptr]_%Var[Skill_Used],=%Var[Skill_Used_Cache];
+_SetVar=Skill_Used,0;
+#ENDIF
+
+#IF=%Var[Skill_Used],=0;
+#Return
+#ENDIF
+
+#EXECUTE=GetSkillName;
+_MemReadVar=%AddrCurrentTime,DWORD,TimeStamp_2; // End Timestamp
+#EXECUTE=GetReadableTime; // Transforms milliseconds between timestamps to HH:MM:SS
+_SetVar=DebugData,%Var[Time_Readable] :: %Var[Target_Name] used %Var[AionCodexReturn] (%Var[Skill_Used]);
+#EXECUTE=Debug;
+_SetVar=Skill_Used_Cache,%Var[Entity_Data_Ptr]_%Var[Skill_Used];
+
+end_LogSkill;
+
+
+start_Debug;
+
+#IF=%Var[ShowDebug],=1;
+_SetVar=DebugText,%Var[DebugText]/n%Var[DebugData];
+_RegExp=%Var[DebugText],((?:(?!\/)(?!n).+?(?:\/n|\z)){1|||15}+\z),DebugText_Display;
+Display=%Var[DebugText_Display],0,0,Debug: %Var[PlayerName];
+#ENDIF
+
+end_Debug;
+
+
+
+
+start_GetSkillName;
+
+IniRead=%VANILLATOOL\Logs\SkillName.ini,Main,%Var[Skill_Used],AionCodexReturn;
+#IF=%Var[AionCodexReturn],=;
+#ELSE
+#Return
+#ENDIF
+
+#IF=%ClientID,=1; // NA
+_SetVar=AionCodexLang,us;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_SetVar=AionCodexLang,en;
+#ENDIF
+
+#IF=%ClientID,=5; // NA Classic
+_SetVar=AionCodexLang,usc;
+#ENDIF
+
+#IF=%ClientID,=6; // EU Classic
+_SetVar=AionCodexLang,enc;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_SetVar=AionCodexLang,enc;
+#ENDIF
+
+#IF=%ClientID,>9; // 4.6
+_SetVar=AionCodexLang,4x;
+#ENDIF
+
+_HTTPGetVar=https://aioncodex.com/%Var[AionCodexLang]/skill/%Var[Skill_Used]/,,AionCodexReturn,id="item_name"><b>(.*?)<\/b>;
+IniWrite=%VANILLATOOL\Logs\SkillName.ini,Main,%Var[Skill_Used],%Var[AionCodexReturn];
+
+end_GetSkillName;
+
+
+
+
+
+start_GetReadableTime;
+
+_Calc[WaitTime]=%Var[TimeStamp_2]-%Var[TimeStamp_1];
+_Calc[Seconds]=%Var[WaitTime]/1000;
+_Calc[Minutes]=%Var[Seconds]/60;
+_Calc[Hours]=%Var[Minutes]/60;
+
+_RegExp=%Var[Seconds],^([0-9]+),Seconds_Floor;
+_RegExp=%Var[Minutes],^([0-9]+),Minutes_Floor;
+_RegExp=%Var[Hours],^([0-9]+),Hours_Floor;
+
+#IF=%Var[Hours_Floor],>0;
+_Calc[Hours_Mod]=%Var[Hours_Floor]*3600000;
+_Calc[WithoutHours]=%Var[WaitTime]-%Var[Hours_Mod];
+_Calc[WithoutHours]=%Var[WithoutHours]/60000;
+_RegExp=%Var[WithoutHours],^([0-9]+),WithoutHours_Floor;
+#ELSE
+_SetVar=WithoutHours_Floor,%Var[Minutes_Floor];
+#ENDIF
+
+#IF=%Var[Minutes_Floor],>0;
+_Calc[Minutes_Mod]=%Var[Minutes_Floor]*60000;
+_Calc[WithoutMinutes]=%Var[WaitTime]-%Var[Minutes_Mod];
+_Calc[WithoutMinutes]=%Var[WithoutMinutes]/1000;
+_RegExp=%Var[WithoutMinutes],^([0-9]+),WithoutMinutes_Floor;
+#ELSE
+_SetVar=WithoutMinutes_Floor,%Var[Seconds_Floor];
+#ENDIF
+
+#IF=%Var[Hours_Floor],<10;
+_SetVar=Readable_Hours,0%Var[Hours_Floor];
+#ELSE
+_SetVar=Readable_Hours,%Var[Hours_Floor];
+#ENDIF
+
+#IF=%Var[WithoutHours_Floor],<10;
+_SetVar=Readable_Minutes,0%Var[WithoutHours_Floor];
+#ELSE
+_SetVar=Readable_Minutes,%Var[WithoutHours_Floor];
+#ENDIF
+
+#IF=%Var[WithoutMinutes_Floor],<10;
+_SetVar=Readable_Seconds,0%Var[WithoutMinutes_Floor];
+#ELSE
+_SetVar=Readable_Seconds,%Var[WithoutMinutes_Floor];
+#ENDIF
+
+_SetVar=Time_Readable,%Var[Readable_Hours]:%Var[Readable_Minutes]:%Var[Readable_Seconds];
+
+end_GetReadableTime;

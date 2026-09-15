@@ -1,0 +1,324 @@
+#IF=%FirstTime,;
+RequireVersion=7.18;
+#DisableScrolling
+MemPtrWrite=%AddrFPS,%OffsetFPS1,24,BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,24,FLOAT;
+#SmoothBackground
+UseSpeed=1;
+#UseLoop
+#EnableChatLog
+#ClearChatLog
+#SetVar1=Enter your main charactername/n/nMake sure "C" is binded to Attack/Chat;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],2;
+Command=;
+#EXECUTE=GetOffsets;
+_SetVar26=65536;
+#ENDIF
+
+
+#EXECUTE=Follow;
+
+#EXECUTE=Keywords;
+#EXECUTE=Notification;
+
+#EXECUTE=CheckLoot;
+
+
+
+
+start_Follow;
+
+
+#EXECUTE=SelectMaster;
+#IF=%TargetDistance,<20;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+Command=/Follow;
+#ELSE
+Command=/attack;
+#ENDIF
+
+
+end_Follow;
+
+
+
+
+start_CheckLoot;
+
+_SetVar4=0;
+
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_EntityID],WORD,29;
+_MemPtrReadVar=%TargetBase,%OffsetData/%Var[Offset_Base_EntityID],WORD,28;
+_MemPtrReadVar=%TargetBase,%OffsetData/%Var[Offset_Base_TargetNPCID],WORD,27;
+
+#IF=%Var27,=%Var29; <-- if target has player as target
+_SetVar4=1;
+#ENDIF
+
+#IF=%Var27,=%Var28; <-- if target has target as target
+_SetVar4=1;
+#ENDIF
+
+#IF=%Var27,=0; <-- if target has nothing as target
+_SetVar4=1;
+#ENDIF
+
+_IFMemPtrRead=%AddrFrameName[target_assist_dialog],%Var[Offset_TargetsTarget],WORD,>0; If target's target is alive
+_SetVar4=1;
+#ENDIF
+
+#IF=%Var27,=Var26; <-- if target has looted target as target
+_SetVar4=1;
+#ENDIF
+
+#IF=%Var4,=0;
+_SetVar26=%Var27;
+Command=/skill Select Target's Target;
+Delay=165;
+_IFMemPtrRead=%TargetBase,%OffsetHP,DWORD,=0; Dead
+_IFMemPtrRead=%TargetBase,%OffsetLootable,DWORD,=1; Lootable
+_IFMemPtrRead=%TargetBase,%OffsetLooted,DWORD,=0; <-- Loot table not received yet
+_MemReadVar=%AddrTargetID,WORD,5;
+#EXECUTE=WaitForLoot;
+#ENDIF
+
+end_CheckLoot;
+
+
+
+start_WaitForLoot;
+
+_SetVar6=0;
+
+#DO=15000; 15 seconds loot timeout
+
+MemPtrWrite=%PlayerBase,%OffsetActionID,0x1500000001000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002,BYTE[225];
+Delay=250;
+Command=/skill Loot;
+Delay=250;
+
+_IFMemPtrRead=%TargetBase,%OffsetLooted,DWORD,>0; <-- Loot table received
+_IFMemPtrRead=%TargetBase,%OffsetLootable,DWORD,=0; <-- Not lootable anymore
+_SetVar6=1;
+#ENDIF
+
+_IFMemRead=%AddrTargetID,WORD,=%Var5; <-- Lost target
+#ELSE
+_SetVar6=1;
+#ENDIF
+
+_IFMemPtrRead=%AddrFrameName[loot_dialog],%Var[Offset_Frame_State],BYTE,=175;
+SendKey=0x43;
+Delay=5;
+SendKey=0x43;
+Delay=5;
+SendKey=0x43;
+Delay=5;
+SendKey=0x43;
+Delay=15;
+_SetVar6=1;
+_IFMemPtrRead=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Frame_State],BYTE,=175;
+SendKey=0x0D;
+Delay=50;
+SendKey=0x0D;
+Delay=50;
+Command=;
+SendKey=0x1B;
+MemPtrWrite=%AddrFrameName[system_menu_dialog],%Var[Offset_Frame_State],142,BYTE;
+#ENDIF
+
+_IFMemPtrRead=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Frame_State],BYTE,=175;
+SendKey=0x0D;
+Delay=50;
+SendKey=0x0D;
+Delay=50;
+Command=;
+SendKey=0x1B;
+MemPtrWrite=%AddrFrameName[system_menu_dialog],%Var[Offset_Frame_State],142,BYTE;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,=0;
+_SetVar6=1;
+#ENDIF
+
+#UNTIL=%Var6,=1;
+
+#DO=1500;
+SendKey=0x1B;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=1;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_WaitForLoot;
+
+
+start_Notification;
+
+
+#EXECUTE=SelectMaster;
+#IF=%TargetName,;
+Command=/w %Var1 I don't see you anymore, I'll wait [pos:here/:0 %Var3 %Var1 %Var2 0.0 0]
+#DO=999999999;
+Command=/select %Var1;
+#UNTIL=%TargetName,%Var1;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetPercentHP,BYTE,<50;<-- Use if lower than 50% life
+#IF=%Timer=1,60000;
+Command=/w %Var1 I'm low life!
+CreateTimer=1;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetPercentHP,BYTE,<99;<-- Use if lower than 99% life
+#IF=%Timer=1,60000;
+Command=/w %Var1 I'm under attack!
+CreateTimer=1;
+#ENDIF
+
+
+end_Notification;
+
+
+
+
+
+start_Keywords;
+
+
+_SearchChatLog=\[charname:%Var1.*?] Whispers: Hello!;
+Command=/w %Var1 Hey
+#ENDIF
+
+_SearchChatLog=\[charname:%Var1.*?] Whispers: Stay here!;
+#EXECUTE=SelectMaster;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+_MemPtrReadVar=%TargetBase,%OffsetPosX,FLOAT,6;
+_MemPtrReadVar=%TargetBase,%OffsetPosY,FLOAT,7;
+_MemPtrReadVar=%TargetBase,%OffsetPosZ,FLOAT,8;
+MoveTo=%Var6,%Var7,%Var8,False,False;
+Command=/w %Var1 ok I'll wait [pos:here/:0 %Var6 %Var7 %Var8 0.0 0]
+_SetVar9=0;
+#EXECUTE=Wait;
+#ENDIF
+
+#ClearChatLog
+
+end_Keywords;
+
+
+start_Wait;
+
+#DO=9999999999;
+_SearchChatLog=\[charname:%Var1.*?] Whispers: Follow me!;
+_SetVar9=1;
+#ENDIF
+Delay=500;
+#UNTIL=%Var9,=1;
+
+end_Wait;
+
+
+start_SelectSlave;
+
+
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var2;
+#ELSE
+Command=/select %Var2;
+Delay=5;
+#ENDIF
+
+
+end_SelectSlave;
+
+
+
+
+start_SelectMaster;
+
+
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[32],=%Var1;
+#ELSE
+Command=/select %Var1;
+Delay=5;
+#ENDIF
+
+
+end_SelectMaster;
+
+
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+
+end_OnScriptExit;
+
+
+start_GetOffsets;
+
+#DO=60000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[NA\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[NA\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[NA\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[NA\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[NA\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[NA\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[EU\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[EU\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[Classic\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[Classic EU\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic EU\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,10-12; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.6\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.6\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.6\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[4\.6\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[4\.6\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[4\.6\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Nova\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_TargetsTarget,(?m)\[Nova\]\n.*?^TargetsTarget=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Nova\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Nova\]\n.*?^Base_TargetNPCID=(.*?)$;
+#ENDIF
+
+#IF=%Var[Offset_Frame_XPos],=0;
+Delay=5000;
+#ENDIF
+
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

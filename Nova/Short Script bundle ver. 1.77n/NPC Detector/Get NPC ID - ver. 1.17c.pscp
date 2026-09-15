@@ -1,0 +1,2 @@
+_MemPtrReadVar=%TargetBase,%OffsetNPCID,DWORD,NPCID;
+WaitForResponse=Target NPC ID = %Var[NPCID];

@@ -1,0 +1,15 @@
+Command=;
+_SetArray1=217829,217832,217835;
+
+#DO=999999999;
+GetEntity=%OffsetNPCID,DWORD,%ARRAY1,Chest_Addr;
+#UNTIL=%Var[Chest_Addr_Elements],>0;
+
+_MemPtrReadVar=%Var[Chest_Addr_1],%OffsetName,WCHAR[128],NameCache;
+MemPtrWrite=%Var[Chest_Addr_1],%OffsetName,%Var[NameCache] ,WCHAR[128];
+#TabMod=True;
+Command=/select %Var[NameCache] ;
+Delay=100;
+UseID=50026;
+MemPtrWrite=%Var[Chest_Addr_1],%OffsetName,%Var[NameCache],WCHAR[128];
+#TabMod=False;

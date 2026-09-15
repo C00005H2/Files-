@@ -1,0 +1,1981 @@
+//##################InstaScript Settings###################
+
+#IF=%FirstTime,;
+#SmoothBackground
+_SetVar=UserPIN,0000001; // Your PIN
+_SetVar=FPSCap,20; // Limits the FPS
+_SetVar=Loop,0; // 0 = Log trough all characters | 1 = Loop on the same character
+_SetVar=QuitClient,1; // exit aion when script finished - 0 = No | 1 = Yes
+_SetVar=HidePlayers,1; // Hides other Players - 0 = No | 1 = Yes
+_SetVar=StatusInvisible,1; // Sets Status to Invisible on friendlist - 0 = No | 1 = Yes
+_SetVar=DiscordURL,0; // Enter your Discord Webhook URL for Discord messages, otherwise enter 0 ( more information at https://vanillatool.com/discord )
+_SetVar=Morph,1; // Want to morph when ever DP is full? - 0 = No | 1 = Yes
+_SetVar=RecipeID,155000001; // Which Recipe ID you want to morph? - you find them at https://aioncodex.com/usc/recipes/convert/
+#EXECUTE=AccountSettings; // Scroll at the very end to setup account specific settings
+#EXECUTE=InstaScriptLogin;
+#ENDIF
+
+//##################END Settings###################
+
+
+
+//################## Startup ###################
+
+#DO=20000;
+Delay=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,3-10;
+
+#IF=%FirstTime,;
+#SetWindow
+#UseLoop
+UseSpeed=170;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetVar=HasMorphed,0;
+_SetVar=FirstChar,%Var[PlayerName];
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+//_SetVar40=%Var40,%Var[PlayerName]; // adds Charactername to logging blacklist for next ChangeCharacter call
+Command=;
+#EXECUTE=HidePlayers;
+#IF=%IsInstaScript,=0; // If script got loaded manually
+#EXECUTE=MorphSetup;
+#ENDIF
+
+//#EXECUTE=CombatSort;
+#EXECUTE=CloseWindows;
+#EXECUTE=SetStatusInvisible;
+
+//############### END Startup ###############
+
+
+
+//############## Your Main Code Here ################
+
+#IF=%Var[Loop],=0;
+#EXECUTE=Morph;
+#ELSE
+#DO=9999999999;
+#EXECUTE=Morph;
+Delay=10000;
+#UNTIL=1,=2;
+#ENDIF
+
+
+
+
+
+
+
+//################# END Main Code ##################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CreateTimer=44; // Starts timeout to prevent infinite stuck in changechar function
+#EXECUTE=ChangeCharacter;
+#EndScript
+
+
+
+
+//############### FUNCTIONS #############
+
+
+
+start_MorphSetup_experimental;
+
+#SetVar=AionCodexName,Enter the Item name you want to morph/n/nExample:/nIron Ore;
+#EXECUTE=GetMorphIDByName;
+_SetVar=RecipeID,%Var[AionCodexReturn];
+
+end_MorphSetup_experimental;
+
+
+
+start_MorphSetup;
+
+Delay=1000;
+UseID=40009,21;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=150;
+Print=Select your desired morph design and hit "Del";
+TrayInfo=Select your desired morph design and hit "Del";
+WaitForKey=2E,1;
+_IFKey=2E,1;
+_MemPtrReadVar=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],DWORD,AionCodexID;
+#ENDIF
+
+#IF=%Var[AionCodexID],>0;
+#EXECUTE=GetNameByID;
+Ask=ID: %Var[AionCodexID]/nName: %Var[AionCodexReturn]/n_______________/n/nCorrect?;
+_SetVar=RecipeID,%Var[AionCodexID];
+#EXECUTE=CloseWindows;
+#Return
+#ELSE
+#EXECUTE=CloseWindows;
+#EXECUTE=MorphSetup;
+#Return
+#ENDIF
+
+end_MorphSetup;
+
+
+
+
+start_Morph;
+
+#IF=%Var[Morph],=0;
+#Return
+#ENDIF
+
+#IF=%Var[HasMorphed],=1;
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[FirstChar];
+#DO=1800000;
+//SendKey=0x76; <- F7
+//Delay=50;
+SendKey=0x49; <- I
+Delay=50;
+SendKey=0x50; <- P
+Delay=2000;
+GetCooldown=160001274,Jelly_CD_1;
+GetCooldown=160002274,Jelly_CD_2;
+GetCooldown=160001273,Jelly_CD_3;
+GetCooldown=160002273,Jelly_CD_4;
+_Calc[Jelly_CD]=%Var[Jelly_CD_1]+%Var[Jelly_CD_2];
+_Calc[Jelly_CD]=%Var[Jelly_CD]+%Var[Jelly_CD_3];
+_Calc[Jelly_CD]=%Var[Jelly_CD]+%Var[Jelly_CD_4];
+#UNTIL=%Var[Jelly_CD],=0;
+#EXECUTE=CloseWindows;
+Delay=500;
+#ENDIF
+
+
+GetCooldown=160001274,Jelly_CD_1;
+GetCooldown=160002274,Jelly_CD_2;
+GetCooldown=160001273,Jelly_CD_3;
+GetCooldown=160002273,Jelly_CD_4;
+_Calc[Jelly_CD]=%Var[Jelly_CD_1]+%Var[Jelly_CD_2];
+_Calc[Jelly_CD]=%Var[Jelly_CD]+%Var[Jelly_CD_3];
+_Calc[Jelly_CD]=%Var[Jelly_CD]+%Var[Jelly_CD_4];
+#IF=%Var[Jelly_CD],1-60000;
+Delay=%Var[Jelly_CD];
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+#EXECUTE=SheatheWeapon;
+#SetWindow
+UseID=40009,21;
+Delay=1000;
+_IFFrameVisibleByName=tool_making_dialog;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=1250;
+Mouse=95,85; // First recipe
+Delay=1000;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],%Var[RecipeID],DWORD;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,CurrentDP;
+_Calc[MorphAmount]=%Var[CurrentDP]/200;
+_RegExp=%Var[MorphAmount],^([0-9]+),MorphAmount; // Remove Comma
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_Amount],%Var[MorphAmount],BYTE;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_CraftAll],7,BYTE;
+Delay=200;
+Mouse=%Var[CraftAll_X],%Var[CraftAll_Y]; // Craft All
+Delay=350;
+Mouse=%Var[CraftAll_X],%Var[CraftAll_Y]; // Craft All
+Delay=2000;
+#EXECUTE=WaitForCraft;
+Delay=1000;
+#ENDIF
+
+#DO=5000;
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,<4000;
+_IFInventoryContains=160001274,1;
+GetCooldown=160001274,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160001274; // Jelly ID
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,<4000;
+_IFInventoryContains=160002274,1;
+GetCooldown=160002274,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160002274; // Jelly ID
+#ENDIF
+_IFInventoryContains=160001273,1;
+GetCooldown=160001273,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160001273; // Jelly ID
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,<4000;
+_IFInventoryContains=160002273,1;
+GetCooldown=160002273,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160002273; // Jelly ID
+#ENDIF
+_UNTILMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+#EXECUTE=SheatheWeapon;
+#SetWindow
+UseID=40009,21;
+Delay=1000;
+_IFFrameVisibleByName=tool_making_dialog;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=1250;
+Mouse=95,85; // First recipe
+Delay=1000;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],%Var[RecipeID],DWORD;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,CurrentDP;
+_Calc[MorphAmount]=%Var[CurrentDP]/200;
+_RegExp=%Var[MorphAmount],^([0-9]+),MorphAmount; // Remove Comma
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_Amount],%Var[MorphAmount],BYTE;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_CraftAll],7,BYTE;
+Delay=200;
+Mouse=%Var[CraftAll_X],%Var[CraftAll_Y]; // Craft All
+Delay=350;
+Mouse=%Var[CraftAll_X],%Var[CraftAll_Y]; // Craft All
+Delay=2000;
+#EXECUTE=WaitForCraft;
+Delay=1000;
+#ENDIF
+
+_SetVar=HasMorphed,1;
+#EXECUTE=CloseWindows;
+
+end_Morph;
+
+
+
+start_WaitForCraft;
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+#ENDIF
+
+#DO=1000;
+Delay=50;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=6;
+_IFMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=6;
+#DO=300000;
+Delay=1000;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=2750;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=250;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=250;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+#ENDIF
+
+end_WaitForCraft;
+
+
+
+start_GetMorphIDByName;
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,de;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,en;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,us;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,fr;
+_SetVar=Prefix,Transmutation : ;
+#ENDIF
+
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,dec;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,enc;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,usc;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,frc;
+_SetVar=Prefix,Transmutation : ;
+#ENDIF
+
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,dec;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,enc;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,usc;
+_SetVar=Prefix,Morph: ;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,frc;
+_SetVar=Prefix,Transmutation : ;
+#ENDIF
+
+_HTTPGetVar=https://aioncodex.com/ac.php?l=%Var[AionCodexLang]&term=%Var[Prefix]%Var[AionCodexName],,AionCodexReturn,{"value":([0-9]*?)[^0-9]"name":"[^"]*"."grade":[0-9]."link_type":"recipe";
+
+end_GetMorphIDByName;
+
+
+
+start_GetNameByID;
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,de;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,en;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,us;
+#ENDIF
+
+#IF=%ClientID,1-2; // Retail
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,fr;
+#ENDIF
+
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,dec;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,enc;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,usc;
+#ENDIF
+
+#IF=%ClientID,5-6; // Classic
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,frc;
+#ENDIF
+
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/DEU/;
+_SetVar=AionCodexLang,dec;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+_SetVar=AionCodexLang,enc;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+_SetVar=AionCodexLang,usc;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/FRA/;
+_SetVar=AionCodexLang,frc;
+#ENDIF
+
+_HTTPGetVar=https://aioncodex.com/%Var[AionCodexLang]/recipe/%Var[AionCodexID]/,,AionCodexReturn,id="item_name"><b>(.*?)</b></span>;
+
+end_GetNameByID;
+
+
+
+start_SheatheWeapon;
+
+_SetVar=temp_shard,0;
+#DO=4000;
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x34,BYTE,=33; // combat mode without shard
+UseID=50000;
+Delay=1500;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x34,BYTE,=161; // combat mode with shard
+UseID=50000;
+Delay=1500;
+#ENDIF
+Delay=1500;
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x34,BYTE,=129;
+_SetVar=temp_shard,1;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x34,BYTE,=1;
+_SetVar=temp_shard,1;
+#ENDIF
+#UNTIL=%Var[temp_shard],=1;
+
+end_SheatheWeapon;
+
+
+
+start_CombatSort;
+
+//;;;;;;;;BASIC SETTINGS;;;;;;;;;;;
+
+#IF=%Var[Animation],=1;
+_ACUseAnimation=True;
+#ENDIF
+
+_SetVar=PotionHP,70; // Use Potion if HP below 70%
+_SetVar=PotionMP,66; // Use Potion if MP below 66%
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 35%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACTimeoutNoDamage=7000; // combat times out if the mob hasn't taken any damage within the first 7000 milliseconds
+_ACTimeout=300; // Combat times out if the fight takes longer than 300 seconds
+_ACMob_Looting=True; // Enables Looting
+_ACAllowAllMobs=False; // Keeps fighting if enemy has another entity as target
+_ACEnableAutoAttack=False; // Enables AutoAttacks while fighting
+_ACResetPosition=True; // Reset the player position after a fight to where he was before the fight started
+_ACExperimentalCooldown=True; // Leave that on True
+
+#EXECUTE=GetPotionID;
+
+//;;;;;;;END BASIC SETTINGS;;;;;;;;
+
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Settings Warrior;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=3;
+
+_ACSkills=151,169;
+//;;;;;;;End Settings Warrior;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Settings Gladiator;;;;;;;;;
+//(Based on Aioncodex level 50)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=11;
+_ACInitialRange=5;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+
+_ACIsActive=251,True; //251 Aion's Strength
+
+_ACRelyOnLevel=284,<34; //284 Seismic Wave
+
+_ACRelyOnDistance=2268,<7; //2268 Absorbing Fury
+_ACRelyOnDistance=284,<7; //284 Seismic Wave
+_ACRelyOnDistance=264,<7; //264 Howl
+_ACRelyOnDistance=264,>3; //322 Ankle Snare
+_ACRelyOnDistance=1805,>7; //1805 Herb Treatment
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+
+_ACRelyOnPlayerHP=243,<75; //243 Dauntless Spirit
+_ACRelyOnPlayerHP=250,<60; //250 Wall of Steel
+
+_ACRelyOnPlayerHP=1805,<75; //1805 Herb Treatment
+_ACRelyOnPlayerHP=232,<60; //232 Second Wind
+_ACRelyOnPlayerHP=269,<60; //269 Improved Stamina
+
+_ACRelyOnTargetHP=380,>75; //380 Aerial Lockdown
+_ACRelyOnTargetHP=245,>90; //245 Berserking
+
+_ACRelyOnRace=390,Elyos; // Blessing of Nezekan
+_ACRelyOnDP=390,4000;   // Blessing of Nezekan
+_ACRelyOnRace=391,Asmo; // Zikel's Threat
+_ACRelyOnDP=391,4000;   // Zikel's Threat
+_ACRelyOnDP=272,2000;   // Daevic Fury
+_ACRelyOnRace=399,Elyos; // Shattering Wave
+_ACRelyOnRace=400,Asmo; // Piercing Rupture
+_ACRelyOnRace=320,Elyos; // Force Blast
+_ACRelyOnRace=321,Asmo; // Piercing Wave
+
+_ACRelyOnAggro=1805,False; //1805 Herb Treatment
+_ACRelyOnAggro=1824,False; //1824 Mana Treatment
+
+
+_ACManaRecover=1824;
+//1824 Mana Treatment
+
+_ACHeals=1805,232,269;
+//1805 Herb Treatment
+//232 Second Wind
+//269 Improved Stamina
+
+_ACBuffs=251,390,391,272,243,245,287,250;
+//251 Aion's Strength
+//390 Blessing of Nezekan (Elyos)
+//391 Zikel's Threat (Asmo)
+//272 Daevic Fury
+//243 Dauntless Spirit
+//245 Berserking
+//287 Unwavering Devotion
+//250 Wall of Steel
+
+_ACSkills=293,2013,322,264,380,389,399,400,320,321,2268,284,248,386,2015,395,244,151,169;
+//293 Cleave
+//2013 Precision Cut
+//322 Ankle Snare
+//264 Howl
+//380 Aerial Lockdown
+//389 Earthquake Wave
+//399 Shattering Wave (Elyos)
+//400 Piercing Rupture (Asmo)
+//320 Force Blast
+//321 Piercing Wave
+//2268 Absorbing Fury
+//248 Severe Precision Cut
+//386 Lockdown
+//2015 Spite Strike
+//395 Vengeful Strike
+//381 Body Smash (removed)
+//244 Precision Cut
+//151 Weakening Severe Blow
+//169 Ferocious Strike
+//284 Seismic Wave (removed)
+
+//;;;;;;;End Settings Gladiator;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Settings Templar Greatsword;;;;;;;;;
+//(Based on Aioncodex level 50)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=4;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+
+_ACRelyOnDistance=1805,>7; //1805 Herb Treatment
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+
+_ACRelyOnPlayerHP=516,<10; //516 Hand of Healing
+_ACRelyOnPlayerHP=475,<20; //475 Nezekan's Shield (Elyos)
+_ACRelyOnPlayerHP=476,<20; //476 Zikel's Shield (Asmo)
+_ACRelyOnPlayerHP=543,<75; //543 Power of Restoration
+_ACRelyOnPlayerHP=2041,<60; //2041 Prayer of Resilience
+_ACRelyOnPlayerHP=401,<60; //401 Aether Armor
+_ACRelyOnPlayerHP=527,<80; //527 Holy Shield
+_ACRelyOnPlayerHP=426,<60; //426 Iron Skin
+_ACRelyOnPlayerHP=426,<70; //506 Empyrean Armor
+_ACRelyOnPlayerHP=1805,<80; //1805 Herb Treatment
+
+_ACRelyOnTargetHP=513,>80; //513 Divine Fury
+
+_ACRelyOnRace=475,Elyos; //475 Nezekan's Shield (Elyos)
+_ACRelyOnRace=476,Asmo; //476 Zikel's Shield  (Asmo)
+
+_ACRelyOnRace=549,Elyos; //549 Punishment of Light (Elyos)
+_ACRelyOnRace=544,Elyos; //544 Holy Punishment (Elyos)
+_ACRelyOnRace=550,Asmo; //550 Punishment of Darkness (Asmo)
+_ACRelyOnRace=474,Asmo; //474 Righteous Punishment (Asmo)
+
+_ACRelyOnDP=516,2000; //516 Hand of Healing
+_ACRelyOnDP=475,4000; //475 Nezekan's Shield (Elyos)
+_ACRelyOnDP=476,4000; //476 Zikel's Shield (Asmo)
+
+_ACRelyOnAggro=401,True; //401 Aether Armor
+_ACRelyOnAggro=475,True; //475 Nezekan's Shield (Elyos)
+_ACRelyOnAggro=476,True; //476 Zikel's Shield (Asmo)
+_ACRelyOnAggro=527,True; //527 Holy Shield
+_ACRelyOnAggro=426,True; //426 Iron Skin
+_ACRelyOnAggro=513,True; //513 Divine Fury
+_ACRelyOnAggro=1805,False; //1805 Herb Treatment
+_ACRelyOnAggro=1824,False; //1824 Mana Treatment
+
+
+_ACManaRecover=1824;
+//1824 Mana Treatment
+
+_ACHeals=1805,516,475,476,543,2041,506;
+//1805 Herb Treatment
+//516 Hand of Healing
+//475 Nezekan's Shield (Elyos)
+//476 Zikel's Shield (Asmo)
+//543 Power of Restoration
+//2041 Prayer of Resilience
+//506 Empyrean Armor
+
+_ACBuffs=416,439,401,527,426,287,513;
+//416 Empyrean Fury
+//439 Prayer of Victory
+//401 Aether Armor
+//527 Holy Shield
+//426 Iron Skin
+//287 Unwavering Devotion
+//513 Divine Fury
+
+_ACSkills=523,2042,536,549,544,550,474,534,2271,505,461,510,178,169;
+//523 Doom Lure
+//2042 Divine Justice
+//536 Breaking Power
+//549 Punishment of Light (Elyos)
+//544 Holy Punishment (Elyos)
+//550 Punishment of Darkness (Asmo)
+//474 Righteous Punishment (Asmo)
+//534 Punishment
+//2271 Inquisitor's Blow
+//505 Provoking Severe Blow
+//461 Punishment
+//510 Shining Slash
+//178 Weakening Severe Blow
+//169 Ferocious Strike
+
+//;;;;;;;End Settings Templar Greatsword;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Settings Scout;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=3;
+
+_ACBuffs=572;
+_ACSkills=564,551;
+//;;;;;;;End Settings Scout;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Settings Assassin;;;;;;;;;
+//(Based on Aioncodex level 50)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=3;
+_ACTimeoutNoDamage=9000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=20; // Starts sitting when MP drop below 20%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACManaPercentage=50;
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+
+_ACChainBlacklist=826,826;
+
+_ACRelyOnDistance=930,<4; //930 Divine Strike (Elyos)
+_ACRelyOnDistance=572,<4; //572 Focused Evasion
+_ACRelyOnDistance=1805,>7; //1805 Herb Treatment
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+
+_ACRelyOnTargetHP=852,=100; //852 Dash and Slash
+_ACRelyOnTargetHP=861,=100; //861 Dash Attack
+_ACRelyOnTargetHP=938,=100; //938 Ambush
+_ACRelyOnTargetHP=839,>20; //839 Killers Eye
+_ACRelyOnTargetHP=577,>30; //577 Devotion
+_ACRelyOnTargetHP=927,=100; //927 Shadow Rage (Asmo)
+_ACRelyOnTargetHP=913,=100; //913 Flurry
+_ACRelyOnTargetHP=2103,=100; //2103 Apply Lethal Venom
+_ACRelyOnTargetHP=930,>20; //930 Divine Strike (Elyos)
+_ACRelyOnTargetHP=931,>20; //931 Strike of Darkness (Asmo)
+_ACRelyOnTargetHP=940,>50; //940 Radiant Rune (Elyos)
+_ACRelyOnTargetHP=572,>15; //572 Focused Evasion
+_ACRelyOnTargetHP=853,>20; //853 Binding Rune
+_ACRelyOnTargetHP=868,>15; //868 Pain Rune
+_ACRelyOnTargetHP=2279,>25; //2279 Ripclaw Strike
+
+_ACRelyOnPlayerHP=1805,<75; //1805 Herb Treatment
+_ACRelyOnPlayerHP=941,<60; //941 Darkness Rune (Asmo)
+_ACRelyOnPlayerHP=933,<60; //933 Blood Rune
+_ACRelyOnPlayerHP=930,<40; //930 Divine Strike (Elyos)
+_ACRelyOnPlayerHP=931,<40; //931 Strike of Darkness (Asmo)
+_ACRelyOnPlayerHP=802,<25; //802 Blinding Burst
+
+_ACRelyOnTargetDebuff=941,!8305/!8306/!8307; //941 Darkness Rune (Asmo)
+_ACRelyOnTargetDebuff=940,!8305/!8306/!8307; //940 Radiant Rune (Elyos)
+_ACRelyOnTargetDebuff=853,!8305/!8306/!8307/8383/803/804/870/928/938/2126/8223/581/856; //853 Binding Rune
+_ACRelyOnTargetDebuff=868,!8305/!8306/!8307/8383/803/804/870/928/938/2126/8223/581/856; //868 Pain Rune
+_ACRelyOnTargetDebuff=933,!8305/!8306/!8307; //933 Blood Rune
+_ACRelyOnTargetDebuff=914,!8305/!8306/!8307; //914 Needle Rune
+_ACRelyOnTargetDebuff=2279,8305/8306/8307; //2279 Ripclaw Strike
+_ACRelyOnTargetDebuff=867,8305/8306/8307; //867 Rune Carve
+_ACRelyOnTargetDebuff=844,8305/8306/8307; //844 Fang Strike
+_ACRelyOnTargetDebuff=873,!803/!804/!870/!928/!938/!2126/!8223; //873 Weakening Blow
+_ACRelyOnTargetDebuff=579,!803/!804/!870/!928/!938/!2126/!8223; //579 Surprise Attack
+_ACRelyOnTargetDebuff=871,!8322/!8323/!8404/!8252; //871 Assassination
+
+_ACRelyOnRace=940,Elyos; //940 Radiant Rune (Elyos)
+_ACRelyOnRace=941,Asmo; //941 Darkness Rune (Asmo)
+_ACRelyOnRace=930,Elyos; //930 Divine Strike (Elyos)
+_ACRelyOnRace=931,Asmo; //931 Strike of Darkness (Asmo)
+_ACRelyOnRace=927,Asmo; //927 Shadow Rage (Asmo)
+
+_ACRelyOnDP=930,2000; //930 Divine Strike (Elyos)
+_ACRelyOnDP=931,2000; //931 Strike of Darkness (Asmo)
+
+_ACRelyOnAggro=1805,False; //1805 Herb Treatment
+_ACRelyOnAggro=1824,False; //1824 Mana Treatment
+
+_ACRelyOnItem=2103,169300010; //2103 Apply Lethal Venom
+_ACRelyOnItem=831,169300010; //831 Apply Poison
+_ACRelyOnItem=919,169300010; //919 Apply Deadly Poison
+
+_ACRelyOnBuff=831,831; // //831 Apply Poison
+_ACRelyOnBuff=919,919; // //919 Apply Deadly Poison
+
+_ACManaRecover=1824;
+//1824 Mana Treatment
+
+_ACHeals=1805,933,930,931;
+//1805 Herb Treatment
+//933 Blood Rune
+//941 Darkness Rune (Asmo)
+//930 Divine Strike (Elyos)
+//931 Strike of Darkness (Asmo)
+
+_ACBuffs=802,831,919,949,813,2103,913,927,839,577,938,852,861,873,579,572,853,868,940,914;
+//802 Blinding Burst
+//831 Apply Poison
+//919 Apply Deadly Poison
+//949 Deadly Abandon
+//813 Clear Focus
+//2103 Apply Lethal Venom
+//913 Flurry
+//927 Shadow Rage (Asmo)
+//839 Killers Eye
+//577 Devotion
+//938 Ambush
+//852 Dash and Slash
+//861 Dash Attack
+//873 Weakening Blow
+//579 Surprise Attack
+//572 Focused Evasion
+//853 Binding Rune
+//868 Pain Rune
+//940 Radiant Rune (Elyos)
+//914 Needle Rune
+
+_ACSkills=578,871,2279,867,844;
+//578 Swift Edge
+//871 Assassination
+//2279 Ripclaw Strike
+//867 Rune Carve
+//844 Fang Strike
+
+//;;;;;;;End Settings Assassin;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Settings Ranger;;;;;;;;;
+//(Based on Aioncodex level 50)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACManaPercentage=70;
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+
+_ACRelyOnDistance=707,<4; //707 Snare Trap (Elyos)
+_ACRelyOnDistance=709,<4; //709 Snare Trap (Asmo)
+_ACRelyOnDistance=683,>4; //683 Sandstorm Trap (Elyos)
+_ACRelyOnDistance=665,>4; //665 Sandstorm Trap (Asmo)
+_ACRelyOnDistance=775,>4; //775 Poisoning Trap (Elyos)
+_ACRelyOnDistance=772,>4; //772 Poisoning Trap (Asmo)
+_ACRelyOnDistance=684,>4; //684 Focused Shots
+_ACRelyOnDistance=786,<4; //786 Strong Shots
+_ACRelyOnDistance=672,>4; //672 Shackle Arrow
+_ACRelyOnDistance=671,>4; //671 Shock Arrow
+_ACRelyOnDistance=1805,>7; //1805 Herb Treatment
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+
+_ACRelyOnTargetHP=572,=100; //572 Focused Evasion
+_ACRelyOnTargetHP=683,=100; //683 Sandstorm Trap (Elyos)
+_ACRelyOnTargetHP=665,=100; //665 Sandstorm Trap (Asmo)
+_ACRelyOnTargetHP=775,=100; //775 Poisoning Trap (Elyos)
+_ACRelyOnTargetHP=772,=100; //772 Poisoning Trap (Asmo)
+_ACRelyOnTargetHP=723,>25; //723 Silence Arrow
+_ACRelyOnTargetHP=639,>25; //639 Bow of Blessing
+
+_ACRelyOnPlayerHP=1805,<75; //1805 Herb Treatment
+
+_ACRelyOnRace=647,Elyos; //647 Holy Arrow (Elyos)
+_ACRelyOnRace=648,Asmo; //648 Deadly Arrow (Asmo)
+_ACRelyOnRace=649,Elyos; //649 Ancestral Brightwing Arrow (Elyos)
+_ACRelyOnRace=650,Asmo; //650 Ancestral Darkwing Arrow (Asmo)
+_ACRelyOnRace=731,Elyos; //731 Briftwing Arrow (Elyos)
+_ACRelyOnRace=734,Asmo; //734 Darkwing Arrow (Asmo)
+_ACRelyOnRace=689,Elyos; //689 Mau Form (Elyos)
+_ACRelyOnRace=690,Asmo; //690 Mau Form (Asmo)
+_ACRelyOnRace=671,Elyos; //671 Shock Arrow
+_ACRelyOnRace=672,Asmo; //672 Shackle Arrow
+_ACRelyOnRace=683,Elyos; //683 Sandstorm Trap (Elyos)
+_ACRelyOnRace=665,Asmo; //665 Sandstorm Trap (Asmo)
+_ACRelyOnRace=775,Elyos; //775 Poisoning Trap (Elyos)
+_ACRelyOnRace=772,Asmo; //772 Poisoning Trap (Asmo)
+_ACRelyOnRace=707,Elyos; //707 Snare Trap (Elyos)
+_ACRelyOnRace=709,Asmo; //709 Snare Trap (Asmo)
+
+_ACRelyOnBuff=646,646; //646 Bestial Fury
+_ACRelyOnBuff=684,684; //684 Focused Shots
+_ACRelyOnBuff=786,786; //786 Strong Shots
+_ACRelyOnBuff=689,689; //689 Mau Form (Elyos)
+_ACRelyOnBuff=690,690; //690 Mau Form (Asmo)
+
+_ACRelyOnDP=689,2000; //689 Mau Form (Elyos)
+_ACRelyOnDP=690,2000; //690 Mau Form (Asmo)
+
+_ACRelyOnAggro=707,True; //707 Snare Trap (Elyos)
+_ACRelyOnAggro=709,True; //709 Snare Trap (Asmo)
+_ACRelyOnAggro=683,False; //683 Sandstorm Trap (Elyos)
+_ACRelyOnAggro=665,False; //665 Sandstorm Trap (Asmo)
+_ACRelyOnAggro=775,False; //775 Poisoning Trap (Elyos)
+_ACRelyOnAggro=772,False; //772 Poisoning Trap (Asmo)
+_ACRelyOnAggro=729,False; //729 Breath of Nature
+_ACRelyOnAggro=1805,False; //1805 Herb Treatment
+_ACRelyOnAggro=1824,False; //1824 Mana Treatment
+
+_ACRelyOnItem=683,169300009; //683 Sandstorm Trap (Elyos)
+_ACRelyOnItem=665,169300009; //665 Sandstorm Trap (Asmo)
+_ACRelyOnItem=775,169300008; //775 Poisoning Trap (Elyos)
+_ACRelyOnItem=772,169300008; //772 Poisoning Trap (Asmo)
+_ACRelyOnItem=707,169300008; //707 Snare Trap (Elyos)
+_ACRelyOnItem=709,169300008; //709 Snare Trap (Asmo)
+
+_ACHeals=1805;
+//1805 Herb Treatment
+
+_ACManaRecover=1824,2277;
+//1824 Mana Treatment
+//2277 Keen Cleverness
+
+_ACBuffs=729,783,665,775,772,707,709,646,684,786,689,690,641,639,577,572;
+//729 Breath of Nature
+//683 Sandstorm Trap (Elyos)
+//665 Sandstorm Trap (Asmo)
+//775 Poisoning Trap (Elyos)
+//772 Poisoning Trap (Asmo)
+//707 Snare Trap (Elyos)
+//709 Snare Trap (Asmo)
+//646 Bestial Fury
+//684 Focused Shots
+//786 Strong Shots
+//689 Mau Form (Elyos)
+//690 Mau Form (Asmo)
+//641 Speed of the Wind
+//639 Bow of Blessing
+//577 Devotion
+//572 Focused Evasion
+
+_ACSkills=647,648,649,650,731,734,722,680,721,644,645,651,725,671,672,2070,2068,723,2275;
+//647 Holy Arrow (Elyos)
+//648 Deadly Arrow (Asmo)
+//649 Ancestral Brightwing Arrow (Elyos)
+//650 Ancestral Darkwing Arrow (Asmo)
+//731 Briftwing Arrow (Elyos)
+//734 Darkwing Arrow (Asmo)
+//722 Entagling Shot
+//680 Stunning Shot
+//721 Swift Shot
+//644 Heart Shot
+//645 Lethal Arrow
+//651 Arrow Storm
+//725 Arrow Deluge
+//671 Shock Arrow
+//672 Shackle Arrow
+//2070 Explosive Arrow
+//2068 Gale Arrow
+//723 Silence Arrow
+//2275 Deadshot
+
+//;;;;;;;End Settings Ranger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Settings Mage;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACManaPercentage=80;
+
+_ACIgnoreAtDistance=25;
+_ACInitialRange=23;
+
+_ACRelyOnBuff=1377,1377;
+
+_ACRelyOnTargetDebuff=1358,1358; // Erosion
+
+_ACManaRecover=1370;
+_ACBuffs=1377;
+_ACSkills=1362,1358,1373,1351;
+//;;;;;;;End Settings Mage;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Settings Sorcerer;;;;;;;;;
+// (Based on Level 37 Sorcerer, made by Derail#8628)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=17;
+_ACTimeoutNoDamage=12000;
+
+_ACManaPercentage=75;
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACRelyOnDistance=1805,>7; //1805 Herb Treatment
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+
+// Dots
+_ACRelyOnTargetDebuff=1466,1466; // Only cast Flame Cage if it's missing
+
+// Only attack when mob's health is (below) the indicated level
+_ACRelyOnTargetHP=1392,>90; // Aetheric Spell (DP Dmg)
+
+// Only attack when player's health is (below) the indicated level
+_ACRelyOnPlayerHP=1445,<35; // 1445 Boon of Iron Clad
+_ACRelyOnPlayerHP=1805,<65; //1805 Herb Treatment
+
+// Only attack when if we have (no) Aggro
+_ACRelyOnAggro=1472,False; // 1472 Gain Mana (5 sec stun)
+_ACRelyOnAggro=1805,False; // 1805 Herb Treatment
+_ACRelyOnAggro=1824,False; // 1824 Mana Treatment
+
+// Rebuffs
+_ACRelyOnBuff=1379,1379; // Only use Stoneskin if its not up
+_ACRelyOnBuff=1576,1576; // Only use Robe of Earth if its not up
+
+_ACRelyOnDP=1392,2000;   // Aetheric Spell (DP Dmg)
+
+_ACHeals=1805,1445;
+// 1445 Boon of Iron Clad
+// 1805 Herb Treatment
+
+_ACManaRecover=1472,1372,1824;
+// 1472 Gain Mana (5 sec stun)
+// 1372 Absorb energy
+// 1824 Mana Treatment
+
+_ACBuffs=1379,1576;
+// 1379 Stoneskin
+// 1576 Robe of Earth (pick one Cold 1566 Earth 1576 Flame 1565)
+
+_ACSkills=1392,1460,1555,1570,1373,1567,1436,1354,1569,1503,1572,1466,1569,1364,1559,1569,1354;
+// 1392 Aetheric Spell (DP Dmg)
+// 1460 Delayed Blast
+// 1555 Zikels Wisdom (stigma)
+// 1570 Flame Fusion
+// 1373 Root
+// 1567 Inferno
+// 1436 Wind Cut Down II (stigma)
+// 1354 Flame Bolt
+// 1569 Freezing Wind (melee range)
+// 1503 Aether Hold
+// 1572 Soul Absorbtion (MP recovery)
+// 1466 Flame Cage (dot)
+// 1569 Freezing Wind (melee range)
+// 1364 Ice Chain
+// 1569 Freezing Wind (melee range)
+// 1559 Flame Harpoon
+// 1569 Freezing Wind (melee range)
+// 1354 Flame Bolt
+
+//;;;;;;;End Settings Sorcerer;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Settings Spiritmaster;;;;;;;;;
+//(Based on my SM level 40)
+
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=12000;
+
+_ACManaPercentage=80;
+_ACHealPercentage=100;
+
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+// Dots
+_ACRelyOnTargetDebuff=1358,1358; // Only cast erosion if it's missing
+
+// Pet Skills
+_ACRelyOnPet=1649,False; // Summon pet if it's not out
+_ACRelyOnPet=1615,False; // Summon pet if it's not out
+_ACRelyOnPet=1651,False; // Summon pet if it's not out
+_ACRelyOnPet=1617,False; // Summon pet if it's not out
+_ACRelyOnPet=1668,True; // Only use Spirit Thunderbolt Claw if pet is out
+_ACRelyOnPet=1671,True; // Only use Spirit Threat if pet is out
+_ACRelyOnPet=1674,True; // Only use Spirit Wrath if pet is out
+_ACRelyOnPet=1764,True; // Only use Spirit Erosion if pet is out
+_ACRelyOnPet=1765,True; // Only use Spirit Disturbance if pet is out
+_ACRelyOnPet=1659,True; // Only use Spirit Detonation Claw if pet is out
+_ACRelyOnPet=1677,True;  // Only use Replenish Element if pet is out
+_ACRelyOnPet=1683,True;  // Only use Enmity Swap if pet is out
+_ACRelyOnPet=1771,True;  // Only use Spirit Absorption if pet is out
+
+// Only attack when mob's health is (below) the indicated level
+_ACRelyOnTargetHP=1631,<65; // 1631 Chain of Earth (has chain)
+_ACRelyOnTargetHP=1362,<65; // 1362 Ice Chain
+_ACRelyOnTargetHP=2295,<60; // 2295 Vacuum Choke
+_ACRelyOnTargetHP=1351,<60; // 1351 Flame Bolt
+_ACRelyOnTargetHP=1756,<65; // 1756 Absorb Vitality
+_ACRelyOnTargetHP=1751,<65; // 1751 Summon Fire Energy
+_ACRelyOnTargetHP=1748,<65; // 1751 Summon Fire Energy
+_ACRelyOnTargetHP=1683,>50; // 1683 Enmity Swap
+_ACRelyOnTargetHP=1358,<95; // 1358 Erosion
+
+// Only attack when player's health is (below) the indicated level
+_ACRelyOnPlayerHP=1756,<85; // 1756 Absorb Vitality
+_ACRelyOnPlayerHP=1677,>50; // 1677 Replenish Element
+_ACRelyOnPlayerHP=1683,<60; // 1683 Enmity Swap
+_ACRelyOnPlayerHP=1771,<50; // 1771 Spirit Absorption
+_ACRelyOnPlayerHP=1805,<66; // 1805 Herb Treatment
+
+// Only attack when Pet's health is (below) the indicated level
+_ACRelyOnPetHP=1677,<80; // 1677 Replenish Element
+_ACRelyOnPetHP=1683,>20; // 1683 Enmity Swap
+_ACRelyOnPetHP=1771,>25; // 1771 Spirit Absorption
+
+// Only attack when if we have (no) Aggro
+_ACRelyOnAggro=1683,True; // 1683 Enmity Swap
+_ACRelyOnAggro=1677,False; // 1677 Replenish Element
+_ACRelyOnAggro=1805,False; // 1805 Herb Treatment
+_ACRelyOnAggro=1824,False; // 1824 Mana Treatment
+
+// Rebuffs
+_ACRelyOnBuff=1377,1377; // Only use Stoneskin if its not up
+
+_ACRelyOnRace=1760,Elyos;
+_ACRelyOnDP=1760,2000;   // Spirit Armor of Light (DP Buff)
+_ACRelyOnRace=1766,Asmo;
+_ACRelyOnDP=1766,2000;   // Spirit Armor of Darkness (DP Buff)
+_ACRelyOnRace=1649,Elyos; // Summon Earth Spirit
+_ACRelyOnRace=1615,Asmo; // Summon Earth Spirit
+_ACRelyOnRace=1651,Elyos; // Summon Fire Spirit
+_ACRelyOnRace=1617,Asmo; // Summon Fire Spirit
+_ACRelyOnRace=1751,Elyos; // Summon Fire Energy
+_ACRelyOnRace=1748,Asmo; // Summon Fire Energy
+
+_ACRelyOnLevel=1362,<13; // 1362 Ice Chain
+_ACRelyOnLevel=1351,<22; // 1351 Flame Bolt
+_ACRelyOnLevel=1651,<16; // 1651 Summon Fire Spirit
+_ACRelyOnLevel=1617,<16; // 1617 Summon Fire Spirit
+_ACRelyOnLevel=1649,>15; // 1649 Summon Earth Spirit
+_ACRelyOnLevel=1615,>15; // 1615 Summon Earth Spirit
+
+_ACHeals=1771,1756,1805;
+// 1771 Spirit Absorption
+// 1756 Absorb Vitality
+// 1805 Herb Treatment
+
+_ACManaRecover=1370,1824;
+// 1370 Absorb energy
+// 1824 Mana Treatment
+
+_ACBuffs=1649,1615,1651,1617,1377,1683,1677,1358;
+// 1649 | 1615 Summon Earth Spirit || 1651 | 1617 Summon Fire Spirit
+// 1377 Stoneskin
+// 1683 Enmity Swap
+// 1677 Replenish Element
+// 1358 Erosion (If not already applied)
+
+_ACSkills=1760,1766,1765,1659,1671,1668,1764,1674,1751,1748,1631,1362,2295,1351;
+// 1760 | 1766 Spirit Armor DP (Pet)
+// 1765 Spirit Disturbance (Pet)
+// 1659 Spirit Detonation Claw (Pet)
+// 1671 Spirit Threat (Pet)
+// 1668 Spirit Thunderbolt claw (Pet)
+// 1764 Spirit Erosion (Pet)
+// 1674 Spirit Wrath Positional (Pet)
+// 1751 | 1748 Summon Fire Energy
+// 1631 Chain of Earth (has chain)
+// 2295 Vacuum Choke
+
+//;;;;;;;End Settings Spiritmaster;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Settings Priest;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACHealPercentage=66;
+
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+
+_ACRelyOnBuff=951,951;
+_ACRelyOnBuff=955,955;
+_ACRelyOnBuff=969,969;
+
+_ACHeals=958,965;
+_ACBuffs=951,955,969;
+_ACSkills=975,962;
+//;;;;;;;End Settings Priest;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Settings Cleric;;;;;;;;;
+//(Based on Level 34 Cleric, made by Lunatic#9783)
+
+_ACAllowAllMobs=True;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+
+_ACHealPercentage=100; // Will check trough _ACHeals if below 100% health (each skill has it's own HP rule defined)
+_ACManaPercentage=35;
+
+_ACRelyOnPlayerHP=1096,<70;
+_ACRelyOnPlayerHP=966,<70;
+_ACRelyOnPlayerHP=1076,<50;
+_ACRelyOnPlayerHP=1161,<50;
+_ACRelyOnPlayerHP=1079,<30;
+_ACRelyOnPlayerHP=1093,>45;
+
+_ACRelyOnDP=1166,2000;
+
+_ACRelyOnBuff=951,951;
+_ACRelyOnBuff=955,955;
+_ACRelyOnBuff=969,969;
+
+_ACRelyOnRace=1083,Elyos; //1083 Holy Servant (Elyos)
+_ACRelyOnRace=1066,Asmo; //1066 Holy Servant (Asmo)
+
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+_ACRelyOnAggro=1824,False; // 1824 Mana Treatment
+
+_ACHeals=1161,1076,966,1096,1079;
+_ACBuffs=951,955,969,1163,1103;
+_ACSkills=977,963,1034,1083,1066,2281;
+_ACManaRecover=1824,1166,1093;
+
+//;;;;;;;End Settings Cleric;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Settings Chanter;;;;;;;;;
+//(Based on Level 33 Chanter, made by alexmag#0991)
+
+_ACUseAnimation=True;
+_ACMob_Looting=True;
+_ACInitialRange=3;
+_ACEnableAutoAttack=True;
+
+// _ACMob_Whitelist=[Mob Name],[Mob Name],[...]; only attack monsters written here
+// _ACMob_Blacklist=[Mob Name],[Mob Name],[...]; does not attack monsters written here
+
+_ACHealPercentage=70;
+_ACManaPercentage=50;
+
+_ACRelyOnPlayerHP=967,<70; //Healing Light 3
+// _ACRelyOnPlayerHP=1307,<45; //Word of Revival 2
+_ACRelyOnPlayerHP=1202,<40; //Protective Ward 1
+
+_ACRelyOnDP=1328,2000;  //Word of Wind 1 (buff)
+_ACRelyOnDP=1305,2000;  //Marchutan Protection (dps)
+
+_ACRelyOnBuff=955,955; //Blessing of Rock 1
+_ACRelyOnBuff=952,952; //Blessing of Health 2
+_ACRelyOnBuff=971,971; //promisse of wind 3
+_ACRelyOnBuff=1225,1225; //Focused Parry 1
+_ACRelyOnBuff=1315,1315; //Rage Spell
+_ACRelyOnBuff=1307,1307; //Word of Revival 2
+
+_ACRelyOnBuff=1316,8490; //Revival Mantra 1
+_ACRelyOnBuff=1317,8491; //Revival Mantra 2
+_ACRelyOnBuff=1332,8517; //Revival Mantra 3
+_ACRelyOnBuff=1322,8497; //Intensity Mantra 1
+_ACRelyOnBuff=1349,8534; //Intensity Mantra 2
+_ACRelyOnBuff=2180,8596; //Intensity Mantra 3
+_ACRelyOnBuff=1207,8234; //Victory Mantra 1
+_ACRelyOnBuff=1208,8243; //Victory Mantra 2
+_ACRelyOnBuff=1209,8280; //Victory Mantra 3
+_ACRelyOnBuff=1259,8396; //Victory Mantra 4
+
+_ACRelyOnDistance=1824,>7; //1824 Mana Treatment
+_ACRelyOnAggro=1824,False; // 1824 Mana Treatment
+
+_ACHeals=967,1307;
+_ACBuffs=955,952,971,1202,1225,1315,1227,1305,1307,1328,1316,1322,1208; //1316,1322,1208
+_ACSkills=964,1250;
+_ACManaRecover=1824;
+
+//975 = Smite 1
+//964 = Hallowed Strike 3
+//1250= Meteor Strike 2
+
+//;;;;;;;End Settings Chanter;;;;;;;
+#ENDIF
+
+
+//Global Rule | Only use when item is available
+_ACRelyOnItem=1827,169300006; // 1827 Herb Treatment IV
+_ACRelyOnItem=1828,169300006; // 1828 Mana Treatment IV
+_ACRelyOnItem=1825,169300005; // 1825 Herb Treatment III
+_ACRelyOnItem=1826,169300005; // 1826 Mana Treatment III
+_ACRelyOnItem=1805,169300004; // 1805 Herb Treatment II
+_ACRelyOnItem=1824,169300004; // 1824 Mana Treatment II
+_ACRelyOnItem=1804,169300003; // 1804 Herb Treatment I
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment I
+
+end_CombatSort;
+
+
+
+
+start_GetPotionID;
+_SetVar=PotionID,-1;
+_IFInventoryContains=162000093;//MP Only (440)
+_ACPotion=162000093,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000057;//MP Only (500)
+_ACPotion=162000057,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000094;//MP Only (720)
+_ACPotion=162000094,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000058;//MP Only (820)
+_ACPotion=162000058,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000095;//MP Only (940)
+_ACPotion=162000095,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000059;//MP Only (1070)
+_ACPotion=162000059,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000017;//MP Only (540)
+_ACPotion=162000017,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000096;//MP Only (1090)
+_ACPotion=162000096,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000007;//MP Only (590)
+_ACPotion=162000007,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000097;//MP Only (1180)
+_ACPotion=162000097,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000060;//MP Only (1240)
+_ACPotion=162000060,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000061;//MP Only (1340)
+_ACPotion=162000061,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000098;//MP Only (1340)
+_ACPotion=162000098,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000018;//MP Only (900)
+_ACPotion=162000018,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002006;//MP Only (900)
+_ACPotion=162002006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000008;//MP Only (980)
+_ACPotion=162000008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002004;//MP Only (980)
+_ACPotion=162002004,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000019;//MP Only (1170)
+_ACPotion=162000019,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000009;//MP Only (1280)
+_ACPotion=162000009,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002021;//MP Only (1280)
+_ACPotion=162002021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000020;//MP Only (1360)
+_ACPotion=162000020,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001008;//MP Only (1360)
+_ACPotion=162001008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000021;//MP Only (1470)
+_ACPotion=162000021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000010;//MP Only (1480)
+_ACPotion=162000010,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001006;//MP Only (1480)
+_ACPotion=162001006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000011;//MP Only (1600)
+_ACPotion=162000011,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+
+_IFInventoryContains=162000087;//HP Only (270)
+_ACPotion=162000087,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000052;//HP Only (310)
+_ACPotion=162000052,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000088;//HP Only (490)
+_ACPotion=162000088,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000053;//HP Only (560)
+_ACPotion=162000053,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000012;//HP Only (340)
+_ACPotion=162000012,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000089;//HP Only (720)
+_ACPotion=162000089,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000002;//HP Only (370)
+_ACPotion=162000002,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000054;//HP Only (810)
+_ACPotion=162000054,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000090;//HP Only (930)
+_ACPotion=162000090,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000091;//HP Only (1130)
+_ACPotion=162000091,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000055;//HP Only (1060)
+_ACPotion=162000055,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000056;//HP Only (1280)
+_ACPotion=162000056,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000013;//HP Only (610)
+_ACPotion=162000013,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002005;//HP Only (610)
+_ACPotion=162002005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000003;//HP Only (670)
+_ACPotion=162000003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002003;//HP Only (670)
+_ACPotion=162002003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000092;//HP Only (1550)
+_ACPotion=162000092,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000014;//HP Only (890)
+_ACPotion=162000014,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000004;//HP Only (970)
+_ACPotion=162000004,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002020;//HP Only (970)
+_ACPotion=162002020,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000015;//HP Only (1160)
+_ACPotion=162000015,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001007;//HP Only (1160)
+_ACPotion=162001007,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000005;//HP Only (1270)
+_ACPotion=162000005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001005;//HP Only (1270)
+_ACPotion=162001005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000016;//HP Only (1410)
+_ACPotion=162000016,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000006;//HP Only (1540)
+_ACPotion=162000006,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+
+_IFInventoryContains=162000046;//HP+MP (340 / 540)
+_ACPotion=162000046,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000041;//HP+MP (370 / 590)
+_ACPotion=162000041,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000047;//HP+MP (610 / 900)
+_ACPotion=162000047,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000042;//HP+MP (670 / 980)
+_ACPotion=162000042,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000048;//HP+MP (890 / 1170)
+_ACPotion=162000048,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000043;//HP+MP (970 / 1280)
+_ACPotion=162000043,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000049;//HP+MP (1160 / 1360)
+_ACPotion=162000049,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000044;//HP+MP (1270 / 1480)
+_ACPotion=162000044,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000050;//HP+MP (1410 / 1470)
+_ACPotion=162000050,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000045;//HP+MP (1540 / 1600)
+_ACPotion=162000045,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000080;//HP+MP (1940 / 1680)
+_ACPotion=162000080,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000081;//HP+MP (2120 / 1830)
+_ACPotion=162000081,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+end_GetPotionID;
+
+
+start_Log;
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_RegExp=%Var[PlayerName],^([a-zA-Z0-9]*),PlayerName;
+#ELSE
+_SetVar=PlayerName,[Unknown];
+#ENDIF
+
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--%Var[ScriptTitle].txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] %Var[MSG]/n,+;
+
+MemWrite=%AddrFreeMem5,%Var[DiscordURL],WCHAR[1];
+_IFMemRead=%AddrFreeMem5,BYTE,=104;
+_HTTPPost=https://subvanillatool.com/discord.php,url=%Var[DiscordURL]&message=__**[%Var[ScriptTitle]] [%AionTitle::%Var[PlayerName]]**__ [%THour:%TMin:%TSec] %Var[MSG];
+#ENDIF
+
+end_Log;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=20;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=25;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+start_SetStatusInvisible;
+
+Command=/offline;
+
+end_SetStatusInvisible;
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+
+end_OnScriptExit;
+
+
+
+start_ChangeCharacter;
+
+#IF=%Timer=44,360000; // If tried to changechar for 6 minutes
+_SetVar=MSG,script got aborted. stuck in ChangeCharacter function (%Var[CharCounter]|%Var[CharacterAmount]);
+#EXECUTE=Log;
+#EXECUTE=End;
+#ENDIF
+
+Command=/logout;
+#DO=60000;
+Delay=1000;
+_UNTILMemRead=%AddrCharacterScene,DWORD,=6; // if in char selection
+
+_IFMemRead=%AddrCharacterScene,DWORD,>6; // if still ingame
+#EXECUTE=ChangeCharacter;
+#Return
+#ENDIF
+
+_IFMemRead=%AddrCharacterScene,DWORD,=6; // if in char selection
+Delay=5500;
+#EXECUTE=SelectSlot;
+Delay=1500;
+MemPtrWrite=%PlayerBase,%OffsetAFK,600,FLOAT;
+Mouse=292,562; // Start
+Delay=750;
+Mouse=292,562; // Start
+Delay=2000;
+#EXECUTE=PINCheck;
+#DO=60000;
+Delay=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,3-10;
+Delay=3500;
+#ENDIF
+
+_IFMemRead=%AddrCharacterScene,DWORD,<16; // If not ingame
+#EXECUTE=ChangeCharacter;
+#Return
+#ENDIF
+
+end_ChangeCharacter;
+
+
+
+
+
+start_SelectChar;
+//Requires [Required_Name], [Required_Level]
+//Uses [Array3], [%Var31], [%Var40], [%Var39], [OffsetStep], [CharacterName_%i], [CharacterLevel_%i], [CharacterClassID_%i]
+//Returns [ReturnSlot]
+
+_MemPtrReadVar=%AddrUsers,0x10C,DWORD,CharacterAmount; // Reads current rendered Entity Amount to CharacterAmount variable
+_Calc[ScreenCharSlotAddress]=%AddrCharSlot-%Var[Offset_CharSelection_Array];
+_SetVar31=0;
+
+#DO=30000;
+_Calc[OffsetStep]=%Var31*8;
+_MemPtrReadVar=%Var[ScreenCharSlotAddress],%Var[OffsetStep]/%Var[Offset_CharSelection_Array_Name],WCHAR[32],CharacterName_%Var31;
+_MemPtrReadVar=%Var[ScreenCharSlotAddress],%Var[OffsetStep]/%Var[Offset_CharSelection_Array_Level],BYTE,CharacterLevel_%Var31;
+_MemPtrReadVar=%Var[ScreenCharSlotAddress],%Var[OffsetStep]/%Var[Offset_CharSelection_Array_Class],BYTE,CharacterClassID_%Var31;
+
+_SetArray3=999,%Var40; // already logged list
+#IF=%Var[CharacterName_%Var31],%ARRAY3;
+#ELSE
+_SetArray3=999,%Var39; // character name whitelist
+#IF=%Var[CharacterName_%Var31],%ARRAY3;
+//_SetVar40=%Var40,%Var[CharacterName_%Var31];
+_SetVar=ReturnSlot,%Var31;
+#Return
+#ENDIF
+
+_SetArray3=999,%Var40; // already logged list
+#IF=%Var[CharacterName_%Var31],%ARRAY3;
+#ELSE
+#IF=%Var[CharacterLevel_%Var31],%Var[Required_Level];
+//_SetVar40=%Var40,%Var[CharacterName_%Var31];
+_SetVar=ReturnSlot,%Var31;
+#Return
+#ENDIF
+
+_Calc31=%Var31+1;
+#UNTIL=%Var31,=%Var[CharacterAmount];
+
+_SetVar=ReturnSlot,-1;
+
+end_SelectChar;
+
+
+start_SelectSlot;
+
+#IF=%ClientID,=5; // Classic NA
+Mouse=1122,131; // Second Slot
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+Mouse=1122,131; // Second Slot
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+Mouse=150,495; // Second Slot
+#ENDIF
+
+Delay=550;
+_MemPtrReadVar=%AddrUsers,0x10C,DWORD,CharacterAmount;
+_Calc[CharacterAmountTemp]=%Var[CharacterAmount]-1;
+MemWrite=%AddrCharSlot,%Var[CharacterAmountTemp],DWORD;
+
+end_SelectSlot;
+
+
+start_HidePlayers;
+
+MemWrite=%AddrHidePlayer,%Var[HidePlayers],DWORD;
+
+end_HidePlayers;
+
+
+
+
+
+start_InstaScriptLogin;
+
+CreateTimer=997;
+_SetVar=ScriptTitle,AutoMorph; // Scriptname used for Logs or Script Editor title
+_SetVar39=Charactername,Othername,Anothername; // Logs on Characters with certain name
+_SetVar=Required_Level,>8; // Logs on Characters on certain level condition (Example conditions: ">0" or "<50" or "5-10" or "=50")
+
+#EXECUTE=GetOffsets;
+#EXECUTE=HidePlayers;
+
+#IF=%FirstTime,;
+_SetVar=WrongPIN,0;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,%Var[FPSCap],BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,%Var[FPSCap],FLOAT;
+MemWrite=%AddrMouseX,0x00000000000000000000000000000000,BYTE[16]; // initialize mouse usage
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,<999999999;
+_IFMemRead=%AddrMap,DWORD,>0; // if already logged in
+#SetWindow
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+#Return
+#ENDIF
+
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrCharacterScene,DWORD,=3;
+_IFMemRead=%AddrCharacterScene,DWORD,=3; // Accept EULA screen
+#SetWindow
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrMap,DWORD,=4294967295;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+Delay=2500;
+SendKey=0x0D; // Accept
+Delay=9000;
+#ENDIF
+_IFMemRead=%AddrCharacterScene,DWORD,=3; // Select Server screen
+SendKey=0x0D; // Connect to Game Server
+Delay=1500;
+SendKey=0x0D; // Connect to Game Server
+Delay=1500;
+#ENDIF
+_IFFrameVisible=%ConfirmFrameID; // New player cannot create new characters prompt
+FrameAction=%ConfirmFrameID,XPOS,0;
+FrameAction=%ConfirmFrameID,YPOS,0;
+Delay=450;
+Mouse=146,94;
+#ENDIF
+_Calc[CautionFrameID]=%ConfirmFrameID+20;
+_IFFrameVisible=%Var[CautionFrameID];
+FrameAction=%Var[CautionFrameID],XPOS,0;
+FrameAction=%Var[CautionFrameID],YPOS,0;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x580/0x28,7,BYTE;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x588/0x28,7,BYTE;
+MemPtrWrite=%AddrFrameID[%Var[CautionFrameID]],0x590/0x28,7,BYTE;
+Delay=225;
+Mouse=229,130;
+Delay=450;
+#ENDIF
+Delay=10500;
+_IFMemRead=%AddrCharacterScene,DWORD,=6; // Select Char screen
+//#EXECUTE=EmptyServerCheckup;
+Delay=5500;
+#EXECUTE=SelectChar;
+#IF=%Var[ReturnSlot],>-1; // If char was found
+_Calc[CharCounter]=%Var[CharCounter]+1;
+Mouse=51,496; // First Char
+MemWrite=%AddrCharSlot,%Var[ReturnSlot],DWORD;
+#ELSE
+_SetVar=MSG,No character meets the requirements. logging off;
+#EXECUTE=Log;
+#EXECUTE=End;
+#ENDIF
+Delay=2500;
+Mouse=292,562; // Start
+Delay=750;
+Mouse=292,562; // Start
+Delay=3000;
+_IFFrameVisibleByName=second_password_dialog; PIN window
+#ELSE
+_SetVar=MSG,Had the PIN bug;
+#EXECUTE=Log;
+#ENDIF
+#EXECUTE=PINCheck;
+Delay=500;
+#DO=60000;
+Delay=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,3-10;
+Delay=500;
+#DO=1500;
+SendKey=0x1B;
+Delay=25;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+_IFMemRead=%AddrMap,DWORD,>999999999; // not successfully logged in
+#EXECUTE=End;
+#ENDIF
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%AionTitle::%Var[PlayerName] - %Var[ScriptTitle];
+
+end_InstaScriptLogin;
+
+
+
+
+
+start_EmptyServerCheckup;
+
+#DO=150000;
+_IFMemRead=%AddrCharacterScene,DWORD,=14; // Create Char screen
+Delay=1000;
+Mouse=434,573; // Main Screen
+Delay=1000;
+Mouse=164,571; // Server Selection
+Delay=9000;
+Mouse=397,145; // Lowest Server
+Delay=1000;
+SendKey=0x0D; // Accept
+Delay=5500;
+#ENDIF
+_UNTILMemRead=%AddrCharacterScene,DWORD,=12; // Char selection screen
+
+end_EmptyServerCheckup;
+
+
+
+start_PINCheck;
+
+#DO=600000;
+_IFFrameVisibleByName=second_password_dialog; PIN window
+Mouse=496,335;
+Delay=50;
+#EXECUTE=WrongPIN;
+FrameActionByName=second_password_dialog,XPOS,0;
+FrameActionByName=second_password_dialog,YPOS,0;
+#EnterPIN=%Var[UserPIN];
+Delay=1000;
+SendKey=0x0D;
+#ELSE
+#Return
+#ENDIF
+Delay=750;
+#UNTIL=1,=2;
+
+end_PINCheck;
+
+
+start_WrongPIN;
+
+_IFFrameVisible=%ConfirmFrameID;
+_Calc[WrongPIN]=%Var[WrongPIN]+1;
+Mouse=480,347; //
+Delay=50;
+Mouse=497,345; // Prompt wrong PIN
+Delay=1000;
+#ENDIF
+
+#IF=%Var[WrongPIN],>1;
+_SetVar=MSG,entered the PIN {%Var[UserPIN]} incorrectly 2 times. logging off now;
+#EXECUTE=Log;
+#QuitAtRound=-1,True;
+#ENDIF
+
+end_WrongPIN;
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_SetVar=CraftAll_X,288;
+_SetVar=CraftAll_Y,376;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic EU\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic EU\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic EU\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic EU\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic EU\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic EU\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic EU\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic EU\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic EU\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic EU\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic EU\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic EU\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_SetVar=CraftAll_X,336;
+_SetVar=CraftAll_Y,377;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Nova\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Nova\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Nova\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Nova\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Nova\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Nova\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Nova\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Nova\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Nova\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Nova\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Nova\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Nova\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Nova\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Nova\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Nova\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Nova\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_SetVar=CraftAll_X,278;
+_SetVar=CraftAll_Y,321;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;
+
+
+start_End;
+
+#IF=%Var[QuitClient],=1;
+#QuitAtRound=-1,True;
+#ELSE
+#UseNoLoop
+#EndScript
+#ENDIF
+
+end_End;
+
+
+start_AccountSettings; // Customize PIN and character amount for each account here
+
+_SetVar=IgnoreThis,0;
+
+#IF=%AionTitle,=Account1; // IF window title = Account1 then
+_SetVar=UserPIN,024689; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account2; // IF window title = Account2 then
+_SetVar=UserPIN,111111; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account3; // IF window title = Account3 then
+_SetVar=UserPIN,1234567; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+
+
+#IF=%Var[IgnoreThis],=0; // IF neither of them is found use default values from top of script
+_SetVar=UserPIN,%Var[UserPIN];
+#ENDIF
+
+end_AccountSettings;

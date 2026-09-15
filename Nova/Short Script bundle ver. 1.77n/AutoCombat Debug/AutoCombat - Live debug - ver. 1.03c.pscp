@@ -1,0 +1,136 @@
+#IF=%FirstTime,;
+CreateTimer=997;
+#EXECUTE=GetOffsets;
+#EXECUTE=Init;
+UseSpeed=1;
+_SetVar2=0;
+#ENDIF
+
+
+#DO=99999999;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_ActionID_2],DWORD,cID;
+#IF=%Var[cID],>0;
+#EXECUTE=Add;
+#EXECUTE=GetName;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_AnimName],CHAR[128],cAnimation;
+Display=%Var[cID]/n%Var[SkillName]/n%Var[cAnimation],0,0,Current ID used;
+#EXECUTE=Log;
+#EXECUTE=WaitForNewUsage;
+#ENDIF
+#UNTIL=1,=2;
+
+
+start_Log;
+
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--AC_DEBUG.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] used %Var[SkillName] {%Var[cID]}/n,+;
+
+end_Log;
+
+
+start_WaitForNewUsage;
+
+#DO=8000;
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_ActionID_2],DWORD,=%Var[cID];
+#ELSE
+#Return
+#ENDIF
+_UNTILMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_ActionID_2],DWORD,=0;
+
+end_WaitForNewUsage;
+
+
+
+start_GetName;
+
+_SetVar3=0;
+#DO=10000;
+#IF=%Var[Skill_%Var3],=%Var[cID];
+_SetVar=SkillName,%Var[SkillName_%Var3];
+#Return
+#ENDIF
+_Calc3=%Var3+1;
+#UNTIL=%Var3,>%Var2;
+
+end_GetName;
+
+
+
+start_Add;
+
+_SetArray1=--,%Var1;
+
+#IF=%Var[cID],%ARRAY1;
+#ELSE
+_Calc2=%Var2+1;
+_SetVar=Skill_%Var2,%Var[cID];
+_SetVar1=%Var1,%Var[cID];
+_HTTPGetVar=https://aioncodex.com/%Var[AionCodexLang]/skill/%Var[cID]/,,SkillName_%Var2,id="item_name"><b>(.*?)</b></span>;
+#ENDIF
+
+end_Add;
+
+
+
+start_Init;
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_RegExp=%Var[PlayerName],^([a-zA-Z0-9]*),PlayerName;
+#ELSE
+_SetVar=PlayerName,[Unknown];
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_SetVar=AionCodexLang,usc;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_SetVar=AionCodexLang,enc;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_SetVar=AionCodexLang,usc;
+#ENDIF
+
+end_Init;
+
+
+start_OnScriptExit;
+
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--AC_DEBUG.txt,/n%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] Skills used:/n/n,+;
+
+_SetVar3=0;
+#DO=60000;
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--AC_DEBUG.txt,%Var[Skill_%Var3] - %Var[SkillName_%Var3]/n,+;
+_Calc3=%Var3+1;
+#UNTIL=%Var3,>%Var2;
+
+end_OnScriptExit;
+
+
+start_GetOffsets;
+
+#2DO=120000;
+#DO=5000;
+Delay=250;
+#UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Classic\]\n.*?^Base_AnimName=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic EU\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Classic EU\]\n.*?^Base_AnimName=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Nova\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimName,(?m)\[Nova\]\n.*?^Base_AnimName=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#2UNTIL=%Var[Offset_Base_ActionID_2],>0;
+
+end_GetOffsets;

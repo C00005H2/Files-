@@ -1,0 +1,224 @@
+#IF=%FirstTime,;
+WaitForResponse=This script loots all mobs nearby/n/nMake sure "C" is bound to "Attack/Chat"/n/nMake sure "F9" is bound to "Select Nearest Target";
+_SetVar=Region,2;
+#SmoothBackground
+#UseLoop
+UseSpeed=1;
+_SetVar1=999; // Ignore This
+_SetArray=999,999; // Ignore This
+Command=;
+CreateTimer=997;
+#EXECUTE=GetOffsets;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,StartPosX;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,StartPosY;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,StartPosZ;
+MemWrite=%AddrCamY,85,FLOAT;
+MemPtrWrite=%AddrPiercingCam,%OffsetPiercingCam,1,DWORD;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,61.5,FLOAT;
+Delay=50;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,61.5,FLOAT;
+#ENDIF
+
+
+#IF=%Position,%Var[StartPosX]/%Var[StartPosY]/%Var[StartPosZ];
+#ELSE
+FlySmooth=%Var[StartPosX],%Var[StartPosY],%Var[StartPosZ];
+#ENDIF
+
+MemWrite=%AddrCamY,85,FLOAT;
+MemPtrWrite=%AddrPiercingCam,%OffsetPiercingCam,1,DWORD;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,61.5,FLOAT;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,61.5,FLOAT;
+
+SendKey=0x78; // F9 key
+Delay=25;
+#EXECUTE=IsMob;
+#IF=%Var[IsMob],=1; // Is mob
+_IFMemPtrRead=%TargetBase,%OffsetHP,DWORD,=0; // Is dead
+_IFMemPtrRead=%TargetBase,%OffsetLootable,DWORD,=1; // Is lootable
+_IFMemPtrRead=%TargetBase,%OffsetLooted,DWORD,=0; // Was not looted yet
+#EXECUTE=Loot;
+#ENDIF
+
+
+
+
+
+
+
+
+start_Loot;
+
+_IFMemPtrRead=%TargetBase,%OffsetData,DWORD,%ARRAY1; // already looted
+#Return
+#ENDIF
+
+_MemReadVar=%AddrTargetID,WORD,TargetID;
+_MemPtrReadVar=%TargetBase,%OffsetData,DWORD,TargetPtr;
+_SetVar1=%Var1,%Var[TargetPtr];
+_SetArray1=999,%Var1;
+
+#IF=%TargetDistance,>2.5;
+GoTowardsTarget=<2.5,8000;
+#ENDIF
+
+#LootAll
+
+#DO=750;
+_SetVar=temp,0;
+_IFMemPtrRead=%PlayerBase,%Var[Offset_Base_ActionID_0],DWORD,=15;
+_SetVar=temp,1;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%Var[Offset_Base_ActionID_3],DWORD,=15;
+#ELSE
+_SetVar=temp,1;
+#ENDIF
+#UNTIL=%Var[temp],=0;
+
+_IFMemRead=%AddrTargetID,WORD,=%Var[TargetID];
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+#DO=5000;
+SendKey=0x43; // C Key
+Delay=25;
+_UNTILMemPtrRead=%AddrFrameName[loot_dialog],0x28,BYTE,=175;
+_IFMemPtrRead=%AddrFrameName[loot_dialog],0x28,BYTE,=175;
+#DO=5000;
+SendKey=0x43; // C Key
+Delay=25;
+SendKey=0x0D; // Enter key
+Delay=25;
+#UNTIL=1,=2;
+Delay=150;
+Command=;
+#ENDIF
+
+#EXECUTE=CloseWindows;
+
+end_Loot;
+
+
+
+start_IsMob;
+
+_SetVar=IsMob,0;
+
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+_IFMemPtrRead=%TargetBase,%OffsetData/0x24,BYTE,=0;
+_SetVar=IsMob,1;
+#ENDIF
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+_IFMemPtrRead=%TargetBase,%OffsetData/0x24,BYTE,=8;
+_SetVar=IsMob,1;
+#ENDIF
+
+end_IsMob;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Classic\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Classic\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Classic\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Classic\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Classic EU\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Classic EU\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic EU\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Classic EU\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Classic EU\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic EU\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic EU\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic EU\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic EU\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic EU\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic EU\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic EU\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic EU\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic EU\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic EU\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic EU\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic EU\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Nova\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Nova\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Nova\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Nova\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Nova\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Nova\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Nova\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Nova\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Nova\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Nova\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Nova\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Nova\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Nova\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Nova\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Nova\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Nova\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Nova\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Nova\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Nova\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Nova\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Nova\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

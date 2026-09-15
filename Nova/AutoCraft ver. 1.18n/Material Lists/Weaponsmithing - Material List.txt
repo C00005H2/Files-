@@ -1,0 +1,62 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Weaponsmithing####
+
+Cooling Water x 715 = 19,305 Kinah
+Natural Sand for Casting x 233 = 13,048 Kinah
+Lubricant x 98 = 2,646 Kinah
+Steel Welding Rod x 95 = 5,320 Kinah
+Lesser Whetstone x 382 = 10,314 Kinah
+
+Skill Costs: 3,564 Kinah
+Total Costs: 54,197 Kinah
+
+
+
+------------------------------------
+
+####100-199 Regular Weaponsmithing####
+
+Cooling Water x 1,055 = 28,485 Kinah
+Natural Sand for Casting x 675 = 37,800 Kinah
+Lubricant x 415 = 11,205 Kinah
+Steel Welding Rod x 46 = 2,576 Kinah
+Titanium Welding Rod x 440 = 36,960 Kinah
+Whetstone x 1,058 = 59,248 Kinah
+
+Skill Costs: 17,820 Kinah
+Total Costs: 194,094 Kinah
+
+
+------------------------------------
+
+####200-299 Greater Weaponsmithing####
+
+Cooling Water x 1,665 = 44,955 Kinah
+Natural Sand for Casting x 120 = 6,720 Kinah
+Zircon Sand for Casting x 802 = 91,428 Kinah
+Lubricant x 980 = 26,460 Kinah
+Adamantium Welding Rod x 472 = 53,808 Kinah
+Whetstone x 60 = 3,360 Kinah
+Greater Whetstone x 2,401 = 201,684 Kinah
+
+Skill Costs: 119,968 Kinah
+Total Costs: 548,383 Kinah
+
+
+------------------------------------
+
+####300-399 Expert Weaponsmithing####
+
+Cooling Water x 2,795 = 75,465 Kinah
+Zircon Sand for Casting x 824 = 93,936 Kinah
+Lubricant x 1,001 = 27,027 Kinah
+Orichalcum Welding Rod x 1,872 = 265,824 Kinah
+Greater Whetstone x 368 = 30,912 Kinah
+Major Whetstone x 3,183 = 362,862 Kinah
+
+Skill Costs: 479,952 Kinah
+Total Costs: 1,335,978 Kinah
+Total Cost 1-399: 2,132,652 Kinah

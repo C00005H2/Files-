@@ -1,0 +1,374 @@
+#IF=%FirstTime,;
+RequireVersion=8.12;
+#UseGravity
+UseSpeed=1;
+Command=;
+#EXECUTE=CombatSort_ForGravity;
+TrayInfo=Press "Delete" to fight your target;
+_SetVar7=0;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[64],6;
+#ENDIF
+
+
+#DO=99999999;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,1;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,2;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,3;
+_SetVar4=%RNG{1000|9999};
+SessionPushVar=1;
+SessionPushVar=2;
+SessionPushVar=3;
+SessionPushVar=4;
+_IFKey=2E,1; // Press/Hold Delete
+_SetVar7=%RNG{1000|9999};
+SessionPushVar=6;
+SessionPushVar=7;
+_AutoCombat=True;
+_SetVar7=0;
+SessionPushVar=7;
+#ENDIF
+#UNTIL=1,=2;
+
+
+
+
+start_GetPotionID;
+_SetVar=PotionID,-1;
+_IFInventoryContains=162000057;//MP Only (500)
+_ACPotion=162000057,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000058;//MP Only (820)
+_ACPotion=162000058,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000059;//MP Only (1070)
+_ACPotion=162000059,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000017;//MP Only (540)
+_ACPotion=162000017,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000007;//MP Only (590)
+_ACPotion=162000007,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000060;//MP Only (1240)
+_ACPotion=162000060,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000061;//MP Only (1340)
+_ACPotion=162000061,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000018;//MP Only (900)
+_ACPotion=162000018,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002006;//MP Only (900)
+_ACPotion=162002006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000008;//MP Only (980)
+_ACPotion=162000008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002004;//MP Only (980)
+_ACPotion=162002004,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000019;//MP Only (1170)
+_ACPotion=162000019,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000009;//MP Only (1280)
+_ACPotion=162000009,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002021;//MP Only (1280)
+_ACPotion=162002021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000020;//MP Only (1360)
+_ACPotion=162000020,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001008;//MP Only (1360)
+_ACPotion=162001008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000021;//MP Only (1470)
+_ACPotion=162000021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000010;//MP Only (1480)
+_ACPotion=162000010,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001006;//MP Only (1480)
+_ACPotion=162001006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000011;//MP Only (1600)
+_ACPotion=162000011,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+
+_IFInventoryContains=162000052;//HP Only (310)
+_ACPotion=162000052,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000053;//HP Only (560)
+_ACPotion=162000053,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000012;//HP Only (340)
+_ACPotion=162000012,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000002;//HP Only (370)
+_ACPotion=162000002,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000054;//HP Only (810)
+_ACPotion=162000054,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000055;//HP Only (1060)
+_ACPotion=162000055,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000056;//HP Only (1280)
+_ACPotion=162000056,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000013;//HP Only (610)
+_ACPotion=162000013,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002005;//HP Only (610)
+_ACPotion=162002005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000003;//HP Only (670)
+_ACPotion=162000003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002003;//HP Only (670)
+_ACPotion=162002003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000014;//HP Only (890)
+_ACPotion=162000014,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000004;//HP Only (970)
+_ACPotion=162000004,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002020;//HP Only (970)
+_ACPotion=162002020,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000015;//HP Only (1160)
+_ACPotion=162000015,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001007;//HP Only (1160)
+_ACPotion=162001007,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000005;//HP Only (1270)
+_ACPotion=162000005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001005;//HP Only (1270)
+_ACPotion=162001005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000016;//HP Only (1410)
+_ACPotion=162000016,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000006;//HP Only (1540)
+_ACPotion=162000006,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+
+_IFInventoryContains=162000046;//HP+MP (340 / 540)
+_ACPotion=162000046,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000041;//HP+MP (370 / 590)
+_ACPotion=162000041,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000047;//HP+MP (610 / 900)
+_ACPotion=162000047,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000042;//HP+MP (670 / 980)
+_ACPotion=162000042,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000048;//HP+MP (890 / 1170)
+_ACPotion=162000048,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000043;//HP+MP (970 / 1280)
+_ACPotion=162000043,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000049;//HP+MP (1160 / 1360)
+_ACPotion=162000049,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000044;//HP+MP (1270 / 1480)
+_ACPotion=162000044,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000050;//HP+MP (1410 / 1470)
+_ACPotion=162000050,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000045;//HP+MP (1540 / 1600)
+_ACPotion=162000045,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000080;//HP+MP (1940 / 1680)
+_ACPotion=162000080,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000081;//HP+MP (2120 / 1830)
+_ACPotion=162000081,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+end_GetPotionID;
+
+
+
+start_CombatSort_ForGravity;
+
+//;;;;;;;;BASIC SETTINGS;;;;;;;;;;;
+
+_ACUseAnimation=True;
+
+_SetVar=PotionHP,75; // Use Potion if HP below 75%
+_SetVar=PotionMP,66; // Use Potion if MP below 66%
+_ACRegenerateEnabled=False; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 35%
+_ACRegHPPercentage=35; // Starts sitting when HP drop below 35%
+_ACTimeoutNoDamage=12000; // combat times out if the mob hasn't taken any damage within the first 12000 milliseconds
+_ACTimeout=900; // Combat times out if the fight takes longer than 900 seconds
+_ACMob_Looting=False; // Enables Looting
+_ACAllowAllMobs=True; // Keeps fighting if enemy has another entity as target
+_ACEnableAutoAttack=False; // Enables AutoAttacks while fighting
+_ACResetPosition=False; // Reset the player position after a fight to where he was before the fight started
+_ACExperimentalCooldown=True; // Leave that on True
+_ACMidAirDistance=3; // Distance it moves with each step
+_ACMidAirTiming=950; // moves after at least 950 milliseconds
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+#EXECUTE=GetPotionID;
+
+//;;;;;;;END BASIC SETTINGS;;;;;;;;
+
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Settings Warrior Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Warrior Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Settings Gladiator Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Gladiator Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Settings Templar Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Templar Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Settings Scout Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Scout Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Settings Assassin Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Assassin Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Settings Ranger Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Ranger Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Settings Mage Gravity;;;;;;;;;
+_ACManaPercentage=80;
+
+_ACIgnoreAtDistance=25;
+_ACInitialRange=23;
+
+_ACRelyOnBuff=1377,1377;
+
+_ACCustomCooldown=1358,10000; // Erosion
+
+_ACManaRecover=1370;
+_ACBuffs=1377;
+_ACSkills=1362,1358,1373,1351;
+//;;;;;;;End Settings Mage Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Settings Sorcerer Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Sorcerer Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Settings Spiritmaster Gravity;;;;;;;;;
+_ACAllowAllMobs=True;
+_ACEnableAutoAttack=False;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=25;
+_ACTimeoutNoDamage=12000;
+
+_ACManaPercentage=80;
+_ACHealPercentage=60;
+
+_ACRegenerateEnabled=False; // Enables sitting
+
+// Dots
+_ACRelyOnTargetDebuff=1358,1358; // Only cast erosion if it's missing
+
+// Only attack when player's health is (below) the indicated level
+_ACRelyOnPlayerHP=1756,<85; // 1756 Absorb Vitality
+
+// Rebuffs
+_ACRelyOnBuff=1377,1377; // Only use Stoneskin if its not up
+
+_ACRelyOnRace=1649,Elyos; // Summon Earth Spirit
+_ACRelyOnRace=1615,Asmo; // Summon Earth Spirit
+_ACRelyOnRace=1751,Elyos; // Summon Fire Energy
+_ACRelyOnRace=1748,Asmo; // Summon Fire Energy
+
+_ACManaRecover=1370;
+// 1370 Absorb energy
+
+_ACBuffs=1377;
+// 1649 | 1615 Summon Earth Spirit (If not already summoned)
+// 1377 Stoneskin
+// 1683 Enmity Swap
+// 1677 Replenish Element
+
+_ACSkills=1358,1751,1748,1631,2295,1756;
+// 1358 Erosion (If not already applied)
+// 1751 | 1748 Summon Fire Energy
+// 1631 Chain of Earth (has chain)
+// 2295 Vacuum Choke
+// 1756 Absorb Vitality
+
+//;;;;;;;End Settings Spiritmaster Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Settings Priest Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Priest Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Settings Cleric Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Cleric Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Settings Chanter Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Chanter Gravity;;;;;;;
+#ENDIF
+
+//Global Rule | Only use when item is available
+_ACRelyOnItem=1827,169300006; // 1805 Herb Treatment IV
+_ACRelyOnItem=1828,169300006; // 1824 Mana Treatment IV
+_ACRelyOnItem=1825,169300005; // 1805 Herb Treatment III
+_ACRelyOnItem=1826,169300005; // 1824 Mana Treatment III
+_ACRelyOnItem=1805,169300004; // 1805 Herb Treatment II
+_ACRelyOnItem=1824,169300004; // 1824 Mana Treatment II
+_ACRelyOnItem=1804,169300003; // 1805 Herb Treatment I
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment I
+
+end_CombatSort_ForGravity;

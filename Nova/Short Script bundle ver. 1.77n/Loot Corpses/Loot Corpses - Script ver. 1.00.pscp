@@ -1,0 +1,30 @@
+#IF=%FirstTime,;
+WaitForResponse=This script keeps looting all lootable corpses within 50 meters where it got started;
+_SetArray1=0,8; // Mob Attitude
+_Calc[Offset_Base_TargetID]=%OffsetRender+0x18;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,Start_PosX;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,Start_PosY;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,Start_PosZ;
+MovementDistance=50;
+#ENDIF
+
+#DO=999999999;
+
+GetEntity=%OffsetHP,DWORD,=0,%Distance,FLOAT,<50,%OffsetType,CHAR[32],=NPC,%OffsetAttitude,BYTE,%ARRAY1,%OffsetLootable,DWORD,=1,%OffsetLooted,DWORD,=0,LootableMobs_Addr;
+
+#IF=%Var[LootableMobs_Addr_Elements],>0;
+_MemReadVar=%AddrTargetID,WORD,TargetID_Cache
+_MemPtrReadVar=%Var[LootableMobs_Addr_1],%Var[Offset_Base_TargetID],WORD,Lootable_TargetID;
+_MemPtrReadVar=%Var[LootableMobs_Addr_1],%OffsetPosX,FLOAT,Lootable_PosX;
+_MemPtrReadVar=%Var[LootableMobs_Addr_1],%OffsetPosY,FLOAT,Lootable_PosY;
+_MemPtrReadVar=%Var[LootableMobs_Addr_1],%OffsetPosZ,FLOAT,Lootable_PosZ;
+FlySmooth=%Var[Lootable_PosX],%Var[Lootable_PosY],%Var[Lootable_PosZ];
+MemWrite=%AddrTargetID,%Var[Lootable_TargetID],WORD;
+#LootAll
+Delay=200;
+MemWrite=%AddrTargetID,%Var[TargetID_Cache],WORD;
+FlySmooth=%Var[Start_PosX],%Var[Start_PosY],%Var[Start_PosZ];
+FlySmooth=%Var[Start_PosX],%Var[Start_PosY],%Var[Start_PosZ];
+#ENDIF
+
+#UNTIL=1,=2;

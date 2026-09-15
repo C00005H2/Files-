@@ -1,0 +1,4 @@
+FrameActionByName=gm_dialog,State,SHOW;
+FrameActionByName=builder_dev_dialog,State,SHOW;
+FrameActionByName=art_dev_dialog,State,SHOW;
+FrameActionByName=design_dev_dialog,State,SHOW;

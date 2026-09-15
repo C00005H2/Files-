@@ -1,0 +1,79 @@
+WaitForResponse=This script patches the Aion Client so you are able to/nchange the weapon while being attacked and change your equipment/nfrom the quickbar with macro softwares without it stopping in/nthe middle because you jumped or did some other/naction that interrupted it;
+
+
+#EXECUTE=EquipmentSwitch_StancePatch;
+#EXECUTE=SwitchWeapon_StancePatch;
+
+start_EquipmentSwitch_StancePatch;
+
+_MemPattern=1383EA1E740E83EA06740983FA1A0F85,0x3A,False,True;
+#IF=%Var[PatternFound],=0;
+WaitForResponse=Error on Equipment Switch Patch;
+#Return
+#ENDIF
+
+_IFMemRead=%Var[PatternRet_1],BYTE[2],=0x0F84;
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x2;
+_MemReadVar=%Var[AddrDistance],DWORD,Distance;
+_Calc[NewDistance]=%Var[Distance]+0x1;
+
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x1;
+_Calc[AddrNOP]=%Var[PatternRet_1]+0x5;
+MemWrite=%Var[PatternRet_1],0xE9,BYTE[1];
+MemWrite=%Var[AddrDistance],%Var[NewDistance],DWORD;
+MemWrite=%Var[AddrNOP],0x90,BYTE[1];
+WaitForResponse=Equipment Switch Patch enabled;
+#Return
+#ENDIF
+
+_IFMemRead=%Var[PatternRet_1],BYTE[1],=0xE9;
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x1;
+_MemReadVar=%Var[AddrDistance],DWORD,Distance;
+_Calc[NewDistance]=%Var[Distance]-0x1;
+
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x2;
+MemWrite=%Var[PatternRet_1],0x0F84,BYTE[2];
+MemWrite=%Var[AddrDistance],%Var[NewDistance],DWORD;
+WaitForResponse=Equipment Switch Patch disabled;
+#Return
+#ENDIF
+
+end_EquipmentSwitch_StancePatch;
+
+
+
+start_SwitchWeapon_StancePatch;
+
+_MemPattern=458B084585C9........00..410F1000,0x6,False,True;
+#IF=%Var[PatternFound],=0;
+WaitForResponse=Error on Switch Weapon Patch;
+#Return
+#ENDIF
+
+_IFMemRead=%Var[PatternRet_1],BYTE[2],=0x0F84;
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x2;
+_MemReadVar=%Var[AddrDistance],DWORD,Distance;
+_Calc[NewDistance]=%Var[Distance]+0x1;
+
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x1;
+_Calc[AddrNOP]=%Var[PatternRet_1]+0x5;
+MemWrite=%Var[PatternRet_1],0xE9,BYTE[1];
+MemWrite=%Var[AddrDistance],%Var[NewDistance],DWORD;
+MemWrite=%Var[AddrNOP],0x90,BYTE[1];
+WaitForResponse=Switch Weapon Patch enabled;
+#Return
+#ENDIF
+
+_IFMemRead=%Var[PatternRet_1],BYTE[1],=0xE9;
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x1;
+_MemReadVar=%Var[AddrDistance],DWORD,Distance;
+_Calc[NewDistance]=%Var[Distance]-0x1;
+
+_Calc[AddrDistance]=%Var[PatternRet_1]+0x2;
+MemWrite=%Var[PatternRet_1],0x0F84,BYTE[2];
+MemWrite=%Var[AddrDistance],%Var[NewDistance],DWORD;
+WaitForResponse=Switch Weapon Patch disabled;
+#Return
+#ENDIF
+
+end_SwitchWeapon_StancePatch;

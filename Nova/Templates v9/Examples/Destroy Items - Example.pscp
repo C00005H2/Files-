@@ -1,0 +1,477 @@
+#SmoothBackground
+_SetVar=Destroy,1; // Enable destruction of items when inventory is full? [0 = Off | 1 = Destroy items on list | 2 = Destroy items not on list] (Requires Real Mouse)
+_SetVar11=1; // Enter the ItemIDs the bot is allowed to destroy (Example: 182010036,182010037,182010038) | You can also enter 1 to sell all White rarity Equipment items or enter 2 to sell all White + Green rarity Equipment items or enter 3 to sell all White + Green + Blue rarity Equipment items or enter 4 for my recommended custom list
+_SetVar14=; // (Optional) Declare additional item IDs it's allowed to Destroy (Example: 182010036,182010037,182010038)
+#EXECUTE=GetOffsets;
+#DebugLog
+
+#EXECUTE=SetupDestroyList;
+#EXECUTE=Set_DestroyList;
+#EXECUTE=DestroyItem;
+
+
+start_DestroyItem;
+//Requires real mouse
+#IF=%Var[Offset_Inv_Cube],=0;
+#Return
+#ENDIF
+
+#IF=%ClientID,=5; // NA Classic
+_SetVar=ConfirmText,Confirm;
+#ENDIF
+#IF=%ClientID,=6; // EU Classic
+_SetVar=ConfirmText,Confirm Delete;
+#ENDIF
+#IF=%ClientID,=15; // Nova
+_SetVar=ConfirmText,Confirm;
+#ENDIF
+
+#EXECUTE=RealMouseQueue;
+#SetWindow
+#EXECUTE=CloseWindows;
+InventoryRefresh=False;
+Delay=750;
+FrameActionByName=inventory_dialog,STATE,SHOW;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.033447266,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],DWORD,Item_Handle_Default;
+#SetAsActive
+_SetVar=tActive,1;
+Delay=750;
+
+_SetVar=OffsetCube,%Var[Offset_Inv_Cube];
+_SetVar=OffsetSlot,0;
+_SetVar=Counter,0;
+_SetVar1=1;
+#DO=60000;
+#2DO=60000;
+_SetVar=tDestroyCurrent,0;
+#IF=%Var[Destroy],=2;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+#ELSE
+#IF=%Var[Destroy],=1;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+#IF=%Var[tDestroyCurrent],=1;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,>0;
+_SetVar=Counter,999;
+#IF=%Var1,>1;
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,SearchedItemID;
+#EXECUTE=CheckInvSlot;
+MouseDrag=%Var[Item_Coord_X],%Var[Item_Coord_Y],Left,565,51;
+Delay=100;
+#ENDIF
+_Calc[Counter]=%Var[Counter]+1;
+_Calc[OffsetSlot]=%Var[Counter]*8;
+_Calc1=%Var1+1;
+#2UNTIL=%Var[Counter],>26;
+
+#IF=%Var[Counter],>998;
+_SetVar1=999;
+#ENDIF
+
+_SetVar=Counter,0;
+_SetVar=OffsetSlot,0;
+_Calc[OffsetCube]=%Var[OffsetCube]+8;
+#UNTIL=%Var1,>%InventoryMaxSlots;
+#IF=%Var1,>998;
+#ELSE
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,0;
+#Return
+#ENDIF
+
+
+_SetVar=OffsetCube,%Var[Offset_Inv_Cube];
+_SetVar=OffsetSlot,0;
+_SetVar=Counter,0;
+_SetVar1=1;
+
+#DO=60000;
+#2DO=60000;
+_SetVar=tDestroyCurrent,0;
+#IF=%Var[Destroy],=1; // Whitelist (destroy if on list)
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+#ELSE
+#IF=%Var[Destroy],=2; // Blacklist (destroy if not list)
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+#IF=%Var[tDestroyCurrent],=1;
+#EXECUTE=Destroy;
+#ENDIF
+_Calc[Counter]=%Var[Counter]+1;
+_Calc[OffsetSlot]=%Var[Counter]*8;
+_Calc1=%Var1+1;
+#2UNTIL=%Var[Counter],>26;
+
+_SetVar=Counter,0;
+_SetVar=OffsetSlot,0;
+_Calc[OffsetCube]=%Var[OffsetCube]+8;
+#UNTIL=%Var1,>%InventoryMaxSlots;
+
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle_Default],DWORD;
+
+#EXECUTE=CloseWindows;
+InventoryRefresh=True;
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,0;
+
+end_DestroyItem;
+
+
+start_Destroy;
+
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemHandle],DWORD,Item_Handle;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/0x10,1,BYTE;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle],DWORD;
+#DO=1500;
+Delay=50;
+MouseDrag=565,51,Left,529,51;
+Delay=100;
+_UNTILMemPtrRead=%AddrFrameID[%ConfirmFrameID],0x28,BYTE,=175;
+_Calc[ConfirmFrameIDv2]=%ConfirmFrameID+20;
+_IFFrameVisible=%Var[ConfirmFrameIDv2]; // confirm text needed
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],DWORD,=%Var[Item_Handle];
+FrameAction=%Var[ConfirmFrameIDv2],XPOS,0;
+FrameAction=%Var[ConfirmFrameIDv2],YPOS,0;
+Delay=60;
+SendKey=abcdefghi;
+#2DO=5000;
+Delay=25;
+_2UNTILMemPtrRead=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],WCHAR[16],=abcdefghi;
+_IFMemPtrRead=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],WCHAR[16],=abcdefghi;
+MemPtrWrite=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],%Var[ConfirmText],WCHAR[16];
+MemPtrWrite=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_YPos],0,FLOAT;
+MemPtrWrite=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_State],7,BYTE;
+Delay=60;
+Mouse=28,10;
+Delay=20;
+#ENDIF
+_IFFrameVisible=%ConfirmFrameID; // No confirm text needed
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],DWORD,=%Var[Item_Handle];
+FrameAction=%ConfirmFrameID,XPOS,0;
+FrameAction=%ConfirmFrameID,YPOS,0;
+MemPtrWrite=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_YPos],0,FLOAT;
+MemPtrWrite=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Confirm_OKButton]/%Var[Offset_Frame_State],7,BYTE;
+Delay=60;
+Mouse=28,10;
+Delay=20;
+#ELSE
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],0,DWORD;
+#EXECUTE=CloseWindows;
+Delay=750;
+FrameActionByName=inventory_dialog,STATE,SHOW;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.033447266,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+#ENDIF
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle_Default],DWORD;
+
+end_Destroy;
+
+
+
+start_CheckInvSlot;
+
+_SetVar=Item_Coord_X,0;
+_SetVar=Item_Coord_Y,0;
+
+_IFInventoryContains=%Var[SearchedItemID];
+#ELSE
+#Return
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.032836914,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+
+_Calc[CubeAmount]=%InventoryMaxSlots/27;
+_RegExp=%Var[CubeAmount],^([0-9]*?)(?:\.[0-9]*?$|$),CubeAmount;
+_Calc[RemainingSlots]=%Var[CubeAmount]*27;
+_Calc[RemainingSlots]=%InventoryMaxSlots-%Var[RemainingSlots];
+
+_SetVar=DynamicCubeOffsetBase,%Var[Offset_Inv_Cube];
+_SetVar=tResult,0;
+_SetVar=tSlot,0;
+_SetVar=CubeCount,0;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+
+#DO=90000;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[DynamicCubeOffset]/%Var[Offset_Inv_Item]/%Var[DynamicSlotOffset]/%Var[Offset_Inv_ItemID],DWORD,=%Var[SearchedItemID];
+_Calc[tResult]=%Var[tResult]+1;
+#IF=%Var[tResult],>%Var[SecondResult];
+#EXECUTE=InvSlotToCoord;
+#Return
+#ENDIF
+_Calc[tSlot]=%Var[tSlot]+1;
+_Calc[DynamicSlotOffset]=%Var[tSlot]*0x8;
+#IF=%Var[tSlot],=27;
+_SetVar=tSlot,0;
+_Calc[CubeCount]=%Var[CubeCount]+1;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+#ENDIF
+#UNTIL=%Var[CubeCount],=%Var[CubeAmount];
+#UNTIL=%Var[tSlot],=%Var[RemainingSlots];
+
+end_CheckInvSlot;
+
+
+start_InvSlotToCoord;
+
+_SetVar=FirstSlot_X,563;
+_SetVar=FirstSlot_Y,48;
+_SetVar=Icon_Width,27;
+_SetVar=Icon_Height,27;
+_SetVar=Cube_Height,21;
+
+_Calc[tRow]=%Var[tSlot]/9;
+_RegExp=%Var[tRow],^([0-9]*?)(?:\.[0-9]*?$|$),tRow;
+_Calc[rSlots]=%Var[tRow]*9;
+_Calc[cSlot]=%Var[tSlot]-%Var[rSlots];
+
+_Calc[Cube_Distance]=%Var[CubeCount]*%Var[Cube_Height];
+_Calc[Row_Distance]=%Var[CubeCount]*3;
+_Calc[Row_Distance]=%Var[Row_Distance]+%Var[tRow];
+_Calc[Row_Distance]=%Var[Row_Distance]*%Var[Icon_Height];
+_Calc[Item_Coord_Y]=%Var[Cube_Distance]+%Var[Row_Distance];
+_Calc[Item_Coord_Y]=%Var[FirstSlot_Y]+%Var[Item_Coord_Y];
+
+_Calc[Slot_Distance]=%Var[cSlot]*%Var[Icon_Width];
+_Calc[Item_Coord_X]=%Var[FirstSlot_X]+%Var[Slot_Distance];
+
+end_InvSlotToCoord;
+
+
+
+start_RealMouseQueue;
+
+IniRead=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,InUse;
+#IF=%Var[InUse],=1;
+#DO=180000;
+Delay=%RNG{200|9000};
+IniRead=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,InUse;
+#UNTIL=%Var[InUse],=0;
+#ENDIF
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,1;
+
+end_RealMouseQueue;
+
+
+start_SetupDestroyList;
+
+#IF=%Var11,=1; // White
+_HTTPGetVar=http://pastebin.com/raw/18JSwShQ,,11;
+#Return
+#ENDIF
+#IF=%Var11,=2; // White + Green
+_HTTPGetVar=http://pastebin.com/raw/KDrvbYWj,,11;
+#Return
+#ENDIF
+#IF=%Var11,=3; // White + Green + Blue
+_HTTPGetVar=http://pastebin.com/raw/ZtdyvATb,,11;
+#Return
+#ENDIF
+#IF=%Var11,=4; // Custom list (White, Green Equipment + Worthless Manastones + Worthless Flux + Worthless Skill Books + Enchantment Stones till 64 + Stigma)
+_HTTPGetVar=http://pastebin.com/raw/QcJ6gTjG,,11;
+#Return
+#ENDIF
+
+end_SetupDestroyList;
+
+
+start_Set_DestroyList;
+
+_IFRegExp=%Var14,[0-9]+;
+_SetArray2=99,%Var11,%Var14;
+#ELSE
+_SetArray2=99,%Var11;
+#ENDIF
+
+end_Set_DestroyList;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+
+start_GetOffsets;
+
+#IF=%ClientID,=5; // NA Classic
+_SetVar=Action_Jump_Action,2;
+_SetVar=Action_Jump,128; // 2
+_SetVar=Action_StartFreeFlight,2; // 3
+_SetVar=Action_StopFreeFlight,4; // 3
+_SetVar=Action_Glide,8; // 3
+#ENDIF
+
+#IF=%ClientID,=6; // EU Classic
+_SetVar=Action_Jump_Action,3;
+_SetVar=Action_Jump,1; // 3
+_SetVar=Action_StartFreeFlight,4; // 3
+_SetVar=Action_StopFreeFlight,8; // 3
+_SetVar=Action_Glide,16; // 3
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_SetVar=Action_Jump_Action,3;
+_SetVar=Action_Jump,1;
+_SetVar=Action_StartFreeFlight,4; // 3
+_SetVar=Action_StopFreeFlight,8; // 3
+_SetVar=Action_Glide,16; // 3
+#ENDIF
+
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Page,(?m)\[Classic\]\n.*?^Dialog_Page=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Scroll,(?m)\[Classic\]\n.*?^Dialog_Scroll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Classic\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Classic\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Classic\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Classic\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ItemHandle,(?m)\[Classic\]\n.*?^Confirm_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ConfirmText,(?m)\[Classic\]\n.*?^Confirm_ConfirmText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_OKButton,(?m)\[Classic\]\n.*?^Confirm_OKButton=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_Name,(?m)\[Classic\]\n.*?^BindPoint_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_MapID,(?m)\[Classic\]\n.*?^BindPoint_MapID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosX,(?m)\[Classic\]\n.*?^BindPoint_PosX=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosY,(?m)\[Classic\]\n.*?^BindPoint_PosY=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosZ,(?m)\[Classic\]\n.*?^BindPoint_PosZ=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Classic\]\n.*?^Base_WeaponID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_BuyBasket,(?m)\[Classic\]\n.*?^Trade_BuyBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_SellBasket,(?m)\[Classic\]\n.*?^Trade_SellBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemAmount,(?m)\[Classic\]\n.*?^Inv_ItemAmount=(.*?)$;
+_SetVar=CraftAll_X,280;
+_SetVar=CraftAll_Y,320;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Classic EU\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Classic EU\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Classic EU\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Classic EU\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Classic EU\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Classic EU\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Classic EU\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Classic EU\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Page,(?m)\[Classic EU\]\n.*?^Dialog_Page=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Scroll,(?m)\[Classic EU\]\n.*?^Dialog_Scroll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Classic EU\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Classic EU\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Classic EU\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Classic EU\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ItemHandle,(?m)\[Classic EU\]\n.*?^Confirm_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ConfirmText,(?m)\[Classic EU\]\n.*?^Confirm_ConfirmText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_OKButton,(?m)\[Classic EU\]\n.*?^Confirm_OKButton=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Classic EU\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Classic EU\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Classic EU\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic EU\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Classic EU\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Classic EU\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_Name,(?m)\[Classic EU\]\n.*?^BindPoint_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_MapID,(?m)\[Classic EU\]\n.*?^BindPoint_MapID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosX,(?m)\[Classic EU\]\n.*?^BindPoint_PosX=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosY,(?m)\[Classic EU\]\n.*?^BindPoint_PosY=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosZ,(?m)\[Classic EU\]\n.*?^BindPoint_PosZ=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Classic EU\]\n.*?^Base_WeaponID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_BuyBasket,(?m)\[Classic EU\]\n.*?^Trade_BuyBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_SellBasket,(?m)\[Classic EU\]\n.*?^Trade_SellBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemAmount,(?m)\[Classic EU\]\n.*?^Inv_ItemAmount=(.*?)$;
+_SetVar=CraftAll_X,316;
+_SetVar=CraftAll_Y,319;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[Nova\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[Nova\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[Nova\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[Nova\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[Nova\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[Nova\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[Nova\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Nova\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Page,(?m)\[Nova\]\n.*?^Dialog_Page=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Scroll,(?m)\[Nova\]\n.*?^Dialog_Scroll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Nova\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Nova\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Nova\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Nova\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ItemHandle,(?m)\[Nova\]\n.*?^Confirm_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ConfirmText,(?m)\[Nova\]\n.*?^Confirm_ConfirmText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_OKButton,(?m)\[Nova\]\n.*?^Confirm_OKButton=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[Nova\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[Nova\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[Nova\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Nova\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Nova\]\n.*?^Base_EntityID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array,(?m)\[Nova\]\n.*?^CharSelection_Array=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Name,(?m)\[Nova\]\n.*?^CharSelection_Array_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Level,(?m)\[Nova\]\n.*?^CharSelection_Array_Level=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_CharSelection_Array_Class,(?m)\[Nova\]\n.*?^CharSelection_Array_Class=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_Name,(?m)\[Nova\]\n.*?^BindPoint_Name=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_MapID,(?m)\[Nova\]\n.*?^BindPoint_MapID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosX,(?m)\[Nova\]\n.*?^BindPoint_PosX=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosY,(?m)\[Nova\]\n.*?^BindPoint_PosY=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_BindPoint_PosZ,(?m)\[Nova\]\n.*?^BindPoint_PosZ=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_WeaponID,(?m)\[Nova\]\n.*?^Base_WeaponID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_BuyBasket,(?m)\[Nova\]\n.*?^Trade_BuyBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Trade_SellBasket,(?m)\[Nova\]\n.*?^Trade_SellBasket=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemAmount,(?m)\[Nova\]\n.*?^Inv_ItemAmount=(.*?)$;
+_SetVar=CraftAll_X,271;
+_SetVar=CraftAll_Y,321;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

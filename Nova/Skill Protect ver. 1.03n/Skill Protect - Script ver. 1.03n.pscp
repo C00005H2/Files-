@@ -1,0 +1,218 @@
+#IF=%FirstTime,;
+#EXECUTE=GetOffsets;
+#SetVar=Sound,This script uses evade skills and notifies you if certain harmful skills are being used/n/nDo you want a sound alarm when a harmful skills got used?/n/n1 = Yes/n0 = No;
+#SetVar=Distance,Within which radius the entity needs to be to notify you about harmful skills?/n/n/nRecommended value: 30;
+#SetVar=IfTargeted,Only use evade skills if you were the target?/n/n(AoE skills were you were not the direct target will be ignored)/n/n1 = Yes/n0 = No;
+_SetVar=Timing,1.5; // Waits till cast time is below this remaining time (in seconds) before using skill
+_SetVar2=1685,1636,1637,1708,1781,2231,1782,2232,2318,2319; // Fear Player Skills
+_SetVar3=16435,16704,17887,17888,19822,17818,17579,18109,19008,17210,17341,18330,18149,18256,18722,17715,18635; // Fear NPC Skills
+_SetVar4=1495,1496,1511,1454,1510,1497,1443,2198,2316,2317; // Sleep (cast only) Player Skills
+_SetVar5=1503,1504,1506; // Airbind (cast only) Player Skills
+_SetVar6=1498,1524,1769; // Silence (cast only) Player Skills
+_SetArray1=%Var2,%Var4,%Var5,%Var6; // Harmful Skill IDs (removed NPC Skills)
+_SetArray2=3,4,5,10; // Classes with evade skills (Assassin, Ranger, Cleric)
+_MemPtrReadVar=%PlayerBase,%OffsetClassID,DWORD,Player_ClassID;
+_ACExperimentalCooldown=True;
+_ACRelyOnBuff=926,572/926;
+_ACSkills=1042,572,926;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L;
+_SetVar=RaceCode,0;
+_SetVar=EnemyRace,D; // React only to Asmodian ([D]ark) Entities
+#ELSE
+_SetVar=RaceCode,1;
+_SetVar=EnemyRace,L; // React only to Elyos ([L]ight) Entities
+#ENDIF
+
+
+#IF=%Var[IfTargeted],=1;
+#EXECUTE=Main_IfTargeted;
+#ELSE
+#EXECUTE=Main_Anyone;
+#ENDIF
+
+
+
+
+start_Main_IfTargeted;
+
+#DO=99999999;
+#2DO=99999999;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_EntityID],DWORD,Player_EntityID;
+GetEntity=%OffsetData/%Var[Offset_Base_TargetNPCID],DWORD,=%Var[Player_EntityID],%OffsetData/%Var[Offset_Base_AnimSkillID],DWORD,%ARRAY1,%OffsetRace,CHAR[1],=%Var[EnemyRace],%Distance,FLOAT,<%Var[Distance],EntityAddr;
+#2UNTIL=%Var[EntityAddr_Elements],>0;
+
+#IF=%Var[Player_ClassID],%ARRAY2;
+#2DO=6000;
+_2UNTILMemPtrRead=%Var[EntityAddr_1],%OffsetAnimationTimeRemain,FLOAT,<%Var[Timing];
+_ACUseSkill=1042; // Ripple of Purification
+_ACUseSkill=572; // Focused Evasion
+_ACUseSkill=926; // Spelldodging
+#ENDIF
+
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetName,WCHAR[16],Entity_Name;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetData/%Var[Offset_Base_AnimSkillID],DWORD,Entity_AnimSkillID;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],%Var[Entity_Name] used %Var[Entity_AnimSkillID],WCHAR[26];
+#IF=%Var[Sound],=1;
+#Alarm
+#ELSE
+Delay=2500;
+#ENDIF
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],0,WORD;
+
+#UNTIL=1,=2;
+
+
+end_Main_IfTargeted;
+
+
+
+start_Main_Anyone;
+
+#DO=99999999;
+#2DO=99999999;
+GetEntity=%OffsetData/%Var[Offset_Base_AnimSkillID],DWORD,%ARRAY1,%OffsetRace,CHAR[1],=%Var[EnemyRace],%Distance,FLOAT,<%Var[Distance],EntityAddr;
+#2UNTIL=%Var[EntityAddr_Elements],>0;
+
+#IF=%Var[Player_ClassID],%ARRAY2;
+#2DO=6000;
+_2UNTILMemPtrRead=%Var[EntityAddr_1],%OffsetAnimationTimeRemain,FLOAT,<%Var[Timing];
+_ACUseSkill=1042; // Ripple of Purification
+_ACUseSkill=572; // Focused Evasion
+_ACUseSkill=926; // Spelldodging
+#ENDIF
+
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetName,WCHAR[16],Entity_Name;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetData/%Var[Offset_Base_AnimSkillID],DWORD,Entity_AnimSkillID;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],%Var[Entity_Name] used %Var[Entity_AnimSkillID],WCHAR[26];
+#IF=%Var[Sound],=1;
+#Alarm
+#ELSE
+Delay=2500;
+#ENDIF
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_SubText],0,WORD;
+
+#UNTIL=1,=2;
+
+end_Main_Anyone;
+
+
+
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Classic\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Classic\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Classic\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Classic\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimSkillID,(?m)\[Classic\]\n.*?^Base_AnimSkillID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic\]\n.*?^Base_EntityID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Classic EU\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Classic EU\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Classic EU\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Classic EU\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Classic EU\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimSkillID,(?m)\[Classic EU\]\n.*?^Base_AnimSkillID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Classic EU\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Classic EU\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Classic EU\]\n.*?^Base_EntityID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_0,(?m)\[Nova\]\n.*?^Base_ActionID_0=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_1,(?m)\[Nova\]\n.*?^Base_ActionID_1=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_2,(?m)\[Nova\]\n.*?^Base_ActionID_2=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_3,(?m)\[Nova\]\n.*?^Base_ActionID_3=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_ActionID_4,(?m)\[Nova\]\n.*?^Base_ActionID_4=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_AnimSkillID,(?m)\[Nova\]\n.*?^Base_AnimSkillID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_SubText,(?m)\[Nova\]\n.*?^Base_SubText=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[Nova\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[Nova\]\n.*?^Base_EntityID=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Base_ActionID_2],>0;
+
+end_GetOffsets;
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------- Skill ID Notes ---------------
+
+//----- Fear Player Skills -----
+//1685 = Fear Shriek
+//1636 = Fear I
+//1637 = Fear II
+//1708 = Fear III
+//1781 = Curse of Fire I
+//2231 = Curse of Fire II
+//1782 = Curse of Water I
+//2232 = Curse of Water II
+//2318 = Fear Poppy I
+//2319 = Fear Ginseng I
+
+//----- Fear NPC Skills -----
+//16435 = Fear mob skill
+//16704 = Fear mob skill
+//17887 = Fear mob skill
+//17888 = Fear mob skill
+//19822 = Fear mob skill
+//17818 = Fear mob skill
+//17579 = Fear mob skill
+//18109 = Fear mob skill
+//19008 = Fear mob skill
+//17210 = Fear mob skill
+//17341 = Fear mob skill
+//18330 = Fear mob skill
+//18149 = Fear mob skill
+//18256 = Fear mob skill
+//18722 = Fear mob skill
+//17715 = Fear mob skill
+//18635 = Fear mob skill
+
+//----- Sleep (cast only) Player Skills -----
+//1495 = Sleep I
+//1496 = Sleep II
+//1511 = Sleep III
+//1454 = Curse of Roots I
+//1510 = Curse of Roots II
+//1497 = Tranquillising Cloud I
+//1443 = Sleeping Storm I
+//2198 = Sleeping Storm II
+//2316 = Sleep: Scarecrow I
+//2317 = Sleep: Frightcorn I
+
+//----- Airbind (cast only) Player Skills -----
+//1503 = Aether's Hold I
+//1504 = Aether's Hold II
+//1506 = Aether's Hold III
+
+//----- Silence (cast only) Player Skills -----
+//1498 = Soul Freeze I
+//1524 = Soul Freeze II
+//1769 = Sigil of Silence I

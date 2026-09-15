@@ -1,0 +1,178 @@
+#IF=%FirstTime,;
+#SmoothBackground
+#SetWindow
+#EXECUTE=GetOffsets;
+#ENDIF
+
+
+#EXECUTE=CloseWindows; // Making sure no windows are in the way
+
+WaitForResponse=Initiating first teleport;
+
+_SetVar=QuestID,2132;
+_SetVar=NPCID,203529;
+#EXECUTE=TeleportToQuestNPC;
+
+
+WaitForResponse=Initiating second teleport;
+
+
+_SetVar=QuestID,2132;
+_SetVar=NPCID,203529;
+#EXECUTE=TeleportToQuestNPC;
+
+
+
+start_TeleportToQuestNPC;
+//Teleports to a NPC by Quest ID and NPC ID
+
+IniRead=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,Dictionary_Teleport_Addr_%ClientID,Dictionary_Teleport_Addr;
+_IFMemRead=%Var[Dictionary_Teleport_Addr],BYTE[5],=0x488B01FF90;
+#ELSE
+_SetVar=Dictionary_Teleport_Addr,0;
+#ENDIF
+
+#IF=%Var[Dictionary_Teleport_Addr],=0;
+_MemPattern=488B01FF90....00004885C0750B33F6,-0x2,False,True;
+#IF=%Var[PatternFound],>0;
+_SetVar=Dictionary_Teleport_Addr,%Var[PatternRet_1];
+IniWrite=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,Dictionary_Teleport_Addr_%ClientID,%Var[Dictionary_Teleport_Addr];
+#ENDIF
+#IF=%Var[Dictionary_Teleport_Addr],=0;
+#Return
+#ENDIF
+
+#IF=%Var[Offset_Dictionary_Teleport],=0;
+_SetVar=Frame_FindControl_Frame,dictionary_dialog; // Frame Name
+_SetVar=Frame_FindControl_Control,teleport_to_npc; // Control Name
+_SetVar=Frame_FindControl_StartOffset,0x400; // Start Offset
+_SetVar=Frame_FindControl_Range,0x200; // Scan range
+#EXECUTE=Frame_FindControl;
+_SetVar=Offset_Dictionary_Teleport,%Var[Frame_FindControl_Return];
+#ENDIF
+#IF=%Var[Offset_Dictionary_Teleport],=0;
+#Return
+#ENDIF
+
+_MemReadVar=%Var[Dictionary_Teleport_Addr],BYTE[9],OrigCode;
+
+_Calc[AddrOffset]=%Var[Dictionary_Teleport_Addr]+0x2F;
+
+_MemReadVar=%Var[AddrOffset],DWORD,Offset_Dictionary_QuestID;
+_Calc[Offset_Dictionary_NPCID]=%Var[Offset_Dictionary_QuestID]+0x8;
+
+_Calc[AddrInjectOffset]=%Var[Dictionary_Teleport_Addr]+0x3;
+
+MemWrite=%Var[Dictionary_Teleport_Addr],0x488BB300000000EB23,BYTE[9];
+MemWrite=%Var[AddrInjectOffset],%Var[Offset_Dictionary_NPCID],WORD;
+
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_State],7,BYTE;
+_MemPtrReadVar=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_XPos],FLOAT,Dictionary_Teleport_XPos;
+_MemPtrReadVar=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_YPos],FLOAT,Dictionary_Teleport_YPos;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_YPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_QuestID],%Var[QuestID],DWORD;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_NPCID],%Var[NPCID],DWORD;
+FrameActionByName=dictionary_dialog,XPOS,0;
+FrameActionByName=dictionary_dialog,YPOS,0;
+FrameActionByName=dictionary_dialog,STATE,SHOW;
+Delay=75;
+Mouse=10,20; // Teleport
+Delay=35;
+FrameActionByName=dictionary_dialog,STATE,HIDE;
+
+Delay=350;
+
+MemWrite=%Var[Dictionary_Teleport_Addr],%Var[OrigCode],BYTE[9];
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_XPos],%Var[Dictionary_Teleport_XPos],FLOAT;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_Teleport]/%Var[Offset_Frame_YPos],%Var[Dictionary_Teleport_YPos],FLOAT;
+MemPtrWrite=%AddrFrameName[dictionary_dialog],%Var[Offset_Dictionary_NPCID],0,DWORD;
+
+end_TeleportToQuestNPC;
+
+
+
+start_Frame_FindControl;
+//Finds the offset of a frame control by name
+
+_SetVar=Frame_FindControl_Return,0;
+IniRead=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,Frame_FindControl_Return;
+#IF=%Var[Frame_FindControl_Return],=;
+_SetVar=Frame_FindControl_Return,0;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[Frame_FindControl_Return]/0x8,CHAR[128],=%Var[Frame_FindControl_Control];
+#Return
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[Frame_FindControl_Return]/0x8/0x0,CHAR[128],=%Var[Frame_FindControl_Control];
+#Return
+#ENDIF
+
+
+_Calc[EndOffset]=%Var[Frame_FindControl_StartOffset]+%Var[Frame_FindControl_Range];
+_SetVar=i,0;
+
+#DO=90000;
+_Calc[tOffset]=%Var[i]*0x8;
+_Calc[tOffset]=%Var[Frame_FindControl_StartOffset]+%Var[tOffset];
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[tOffset]/0x8,CHAR[128],=%Var[Frame_FindControl_Control];
+_SetVar=Frame_FindControl_Return,%Var[tOffset];
+IniWrite=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,%Var[Frame_FindControl_Return];
+#Return
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[%Var[Frame_FindControl_Frame]],%Var[tOffset]/0x8/0x0,CHAR[128],=%Var[Frame_FindControl_Control];
+_SetVar=Frame_FindControl_Return,%Var[tOffset];
+IniWrite=%VANILLATOOL\Para's Settings\System\_CACHE.ini,Main,%Var[Frame_FindControl_Control]_%ClientID,%Var[Frame_FindControl_Return];
+#Return
+#ENDIF
+_Calc[i]=%Var[i]+1;
+#UNTIL=%Var[tOffset],>%Var[EndOffset];
+
+_SetVar=Frame_FindControl_Return,0;
+
+end_Frame_FindControl;
+
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_GetOffsets;
+
+#DO=60000;
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Nova\]\n.*?^Frame_State=(.*?)$;
+#ENDIF
+
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+CreateTimer=997;
+
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

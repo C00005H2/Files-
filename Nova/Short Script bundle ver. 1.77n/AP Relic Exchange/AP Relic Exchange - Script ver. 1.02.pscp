@@ -1,0 +1,464 @@
+// - Supports Reshanta Icon/Seal NPCs
+// - Supports Gelk/Ingg Icon/Seal NPCs
+// - Supports Abyss Core Crown/Goblet NPCs
+// - Stand next to respective NPC and hit play
+
+#IF=%FirstTime,;
+#SetWindow
+Command=;
+Print=;
+#EXECUTE=GetAP;
+_SetVar=Finished,False;
+#ENDIF
+
+_SetVar=GobletNPC,Amarunerk; // Abyss Core
+_SetVar=CrownNPC,Momorinrinerk; // Abyss Core
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,BYTE,=68;  // Asmo
+_SetVar=IconNPC,Byrgafa;
+_SetVar=SealNPC,Bakan;
+#ELSE // Reshanta Main Base NPCs
+_SetVar=IconNPC,Iacchus;
+_SetVar=SealNPC,Ceres;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=210050000; // Inggison - Maint Fort NPCs
+_SetVar=IconNPC,Fillia;
+_SetVar=SealNPC,Elrin;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=220070000; // Gelkmaros - Maint Fort NPCs
+_SetVar=IconNPC,Frigga;
+_SetVar=SealNPC,Taegir;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_SetVar=Confirm_X,190;
+_SetVar=Confirm_Y,310;
+#ENDIF
+#IF=%ClientID,=6; // Classic EU
+_SetVar=Confirm_X,190;
+_SetVar=Confirm_Y,310;
+#ENDIF
+
+
+Command=/select %Var[IconNPC];
+Delay=222;
+#IF=%TargetName,%Var[IconNPC];
+GoTowardsTarget=<4,10000;
+#IF=%TargetDistance,<5;
+#EXECUTE=IconsSeals;
+#EXECUTE=GetAP;
+#ENDIF
+
+Command=/select %Var[GobletNPC];
+Delay=222;
+#IF=%TargetName,%Var[GobletNPC];
+GoTowardsTarget=<4,10000;
+#IF=%TargetDistance,<5;
+#EXECUTE=GobletsCrowns;
+#EXECUTE=GetAP;
+#ENDIF
+
+WaitForResponse=Stand close next to NPC and start script again;
+#EndScript
+
+/////////////////////////////////
+////////////////////////////////
+
+start_IconsSeals;
+
+#DO=9999000;
+_IFInventoryContains=186000066; // Lesser icon
+_SetVar=Temp,0;
+Command=/Select %Var[IconNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select1;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000065; // Ancient icon
+_SetVar=Temp,0;
+Command=/Select %Var[IconNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select2;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000064; // Greater icon
+_SetVar=Temp,0;
+Command=/Select %Var[IconNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select3;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000063; // Major icon
+_SetVar=Temp,0;
+Command=/Select %Var[IconNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select4;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000062; // Lesser Seal
+_SetVar=Temp,0;
+Command=/Select %Var[SealNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select1;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000061; // Ancient Seal
+_SetVar=Temp,0;
+Command=/Select %Var[SealNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select2;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000060; // Greater Seal
+_SetVar=Temp,0;
+Command=/Select %Var[SealNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select3;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000059; // Major Seal
+_SetVar=Temp,0;
+Command=/Select %Var[SealNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select4;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+_SetVar=Finished,True;
+#EXECUTE=GetAP;
+
+end_IconsSeals;
+
+//
+
+start_GobletsCrowns;
+
+#DO=9999000;
+_IFInventoryContains=186000058; // Lesser Goblet
+_SetVar=Temp,0;
+Command=/Select %Var[GobletNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select1;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000057; // Ancient Goblet
+_SetVar=Temp,0;
+Command=/Select %Var[GobletNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select2;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000056; // Greater Goblet
+_SetVar=Temp,0;
+Command=/Select %Var[GobletNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select3;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000055; // Major Goblet
+_SetVar=Temp,0;
+Command=/Select %Var[GobletNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select4;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000054; // Lesser Crown
+_SetVar=Temp,0;
+Command=/Select %Var[CrownNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select1;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000053; // Ancient Crown
+_SetVar=Temp,0;
+Command=/Select %Var[CrownNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select2;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000052; // Greater Crown
+_SetVar=Temp,0;
+Command=/Select %Var[CrownNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select3;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+#DO=9999000;
+_IFInventoryContains=186000051; // Major Crown
+_SetVar=Temp,0;
+Command=/Select %Var[CrownNPC];
+Delay=111;
+Command=/attack;
+Delay=333;
+DialogClick=NpcFunc54;
+Delay=333;
+DialogClick=select4;
+Delay=333;
+FrameActionByName=dlg_dialog,XPOS,0;
+FrameActionByName=dlg_dialog,YPOS,0;
+Delay=333;
+Mouse=%Var[Confirm_X],%Var[Confirm_Y];
+Delay=333;
+#EXECUTE=CloseWindows;
+#ELSE
+_SetVar=Temp,1;
+#ENDIF
+#UNTIL=%Var[Temp],=1;
+
+_SetVar=Finished,True;
+
+end_GobletsCrowns;
+
+//
+
+start_GetAP;
+
+#IF=%Var[Finished],=True;
+_Calc[AddrAP]=%AddrHidePlayer-0x94;
+_MemReadVar=%Var[AddrAP],DWORD,EndingAP; // ending AP
+_Calc[GainedAP]=%Var[EndingAP]-%Var[StartingAP]; // Calculates AP gain
+Print=Starting AP = %Var[StartingAP]/nEnding AP = %Var[EndingAP]/n/nAP Gained = %Var[GainedAP];
+#EndScript
+#ELSE
+_Calc[AddrAP]=%AddrHidePlayer-0x94;
+_MemReadVar=%Var[AddrAP],DWORD,StartingAP; // AP
+#ENDIF
+
+end_GetAP;
+
+//
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;

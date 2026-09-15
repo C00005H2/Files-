@@ -1,0 +1,2 @@
+FrameActionByName=indun_account_iddre_dialog,STATE,SHOW;
+WaitForResponse=Click on Leave Instance;

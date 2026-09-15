@@ -1,0 +1,454 @@
+#IF=%FirstTime,;
+WaitForResponse=Make sure Aion is in windowed mode/nMake sure UI size is at 1.00/nMake sure your HUD is at bottom/nMake sure "Auto-Arrange Windows" is turned off/nMake sure "Click to Move" is turned off/nMake sure "Keep Chat Window Active" is turned off/nDPI scaling above 100% can bother (Rightclick at Desktop -> Display Settings, Percentage setting there)/nMake sure you use the English client language/nMake sure you've no accepted work order/nMake sure you stay at the profession Masters location/nMake sure you've bought enough materials;
+#SetVar=Profession,Select your Profession:/n/n1 = Alchemy/n2 = Armorsmithing/n3 = Cooking/n4 = Handicrafting/n5 = Tailoring/n6 = Weaponsmithing;
+#SetVar=RandomPos,Randomize your position?/n/n1 = Yes/n0 = No;
+#SetVar=Animation,Speed up Animation?/n/n1 = Yes/n0 = No;
+#SetVar=PassWorkorder,Pass Workorders or Complete them?/n(Completing fills up inventory but gives designs)/n/n1 = Pass/n2 = Complete;
+_SetVar=CraftTimeout,300000; // If craft all takes longer than 300000ms escape the WaitForCraft loop
+UseSpeed=1;
+#SmoothBackground
+Console=\g_maxfps 15;
+#SetWindow
+Command=;
+#UseLoop
+#EXECUTE=GetOffsets;
+#EXECUTE=DeclareJob;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_XPos],2.51171875,FLOAT;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_YPos],3.317382812,FLOAT;
+MemWrite=%AddrHidePlayer,1,DWORD;
+_SetVar=FailedCraft,0;
+MovementTimeout=1500;
+#IF=%Var[PassWorkorder],=2;
+#SetVar=LearnDesigns,Learn Designs you got from completing Workorders?/n/n1 = Yes/n0 = No;
+_SetVar=LearnDesignTimer,240000; // Searches for new designs every 240000 milliseconds
+#ENDIF
+
+
+
+
+
+#EXECUTE=TakeWorkorder;
+
+#EXECUTE=StartCraft;
+
+#EXECUTE=WaitForCraft;
+
+#IF=%Var[PassWorkorder],=1;
+#EXECUTE=PassWorkorder;
+#ELSE
+#EXECUTE=TakeWorkorder; // Also completes
+#IF=%Var[LearnDesigns],=1;
+#IF=%Timer=1001,%Var[LearnDesignTimer];
+#EXECUTE=LearnDesigns;
+#ENDIF
+
+#IF=%Var[LastAcceptedQuest],1-90000; // If looks like QuestID
+_IFQuestAtStatus=%Var[LastAcceptedQuest],3; // If still has quest try abandon
+#EXECUTE=PassWorkorder;
+#ENDIF
+
+
+#IF=%Var[FailedCraft],>3;
+WaitForResponse=Out of materials or Inventory full;
+#UseNoLoop
+#EndScript
+#ENDIF
+
+
+
+
+
+
+
+
+
+
+
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+
+end_OnScriptExit;
+
+
+
+start_PassWorkorder;
+
+#EXECUTE=CloseWindows;
+FrameActionByName=quest_dialog,STATE,SHOW; // Opens Quest window
+FrameActionByName=quest_dialog,XPOS,0;
+FrameActionByName=quest_dialog,YPOS,0;
+Delay=750;
+Mouse=119,24; // select Workorder tab
+Delay=750;
+Mouse=112,69; // select first Workorder
+Delay=750;
+Mouse=63,310; // Abandon
+Delay=800;
+SendKey=0x0D;
+Command=;
+FrameActionByName=quest_dialog,STATE,HIDE; // Hides Quest window
+
+end_PassWorkorder;
+
+
+
+start_TakeWorkorder;
+
+#DO=60000;
+#EXECUTE=CloseWindows;
+#IF=%Var[RandomPos],=1; // Randomizes NPC Pos by +/- 1.0
+_Calc[RNG_X]=%RNG{0|2000}-1000;
+_Calc[RNG_X]=%Var[RNG_X]/1000;
+_Calc[RNG_Y]=%RNG{0|2000}-1000;
+_Calc[RNG_Y]=%Var[RNG_Y]/1000;
+_Calc[t_NPC_XPOS]=%Var[NPC_XPOS]+%Var[RNG_X];
+_Calc[t_NPC_YPOS]=%Var[NPC_YPOS]+%Var[RNG_Y];
+#ELSE
+_SetVar=t_NPC_XPOS,%Var[NPC_XPOS];
+_SetVar=t_NPC_YPOS,%Var[NPC_YPOS];
+#ENDIF
+MoveSmooth=%Var[t_NPC_XPOS],%Var[t_NPC_YPOS];
+Command=/select %Var[Teacher];
+Delay=100;
+Command=/attack;
+Delay=750;
+_UNTILMemPtrRead=%AddrFrameName[dlg_dialog],0x28,BYTE,=175;
+_IFFrameVisibleByName=dlg_dialog;
+DialogClick=%Var[NPCFunc_UpgradeProfession]; // Upgrade
+Delay=350;
+SendKey=0x0D;
+Command=;
+DialogClick=%Var[NPCFunc_WorkOrder]; // Workorder
+Delay=850;
+_MemPtrReadVar=%AddrFrameName[dlg_dialog],%Var[Offset_Dlg_FirstButtonQuestID],CHAR[5],LastAcceptedQuest;
+DialogClick=; // select upper quest
+Delay=900;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_XPos],2.51171875,FLOAT;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_YPos],3.317382812,FLOAT;
+Delay=350;
+Mouse=%Var[QuestAccept_X],%Var[QuestAccept_Y]; // Accept
+Delay=600;
+#ENDIF
+
+end_TakeWorkorder;
+
+
+
+start_StartCraft;
+
+#EXECUTE=CloseWindows;
+
+#IF=%Var[RandomPos],=1; // Randomizes Table Pos by +/- 0.5
+_Calc[RNG_X]=%RNG{0|1000}-500;
+_Calc[RNG_X]=%Var[RNG_X]/1000;
+_Calc[RNG_Y]=%RNG{0|1000}-500;
+_Calc[RNG_Y]=%Var[RNG_Y]/1000;
+_Calc[t_Table_XPOS]=%Var[Table_XPOS]+%Var[RNG_X];
+_Calc[t_Table_YPOS]=%Var[Table_YPOS]+%Var[RNG_Y];
+#ELSE
+_SetVar=t_Table_XPOS,%Var[Table_XPOS];
+_SetVar=t_Table_YPOS,%Var[Table_YPOS];
+#ENDIF
+
+MoveSmooth=%Var[t_Table_XPOS],%Var[t_Table_YPOS];
+
+_IFMemPtrRead=%AddrFrameName[tool_making_dialog],0x28,BYTE,=142;
+#DO=1000;
+Command=/skill %Var[JobName];
+Delay=50;
+_UNTILMemPtrRead=%AddrFrameName[tool_making_dialog],0x28,BYTE,=175;
+#ENDIF
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],3.858276367,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=200;
+Mouse=%Var[FirstWorkorder_X],%Var[FirstWorkorder_Y]; // First Workorder
+Delay=650;
+Mouse=%Var[CraftAll_X],%Var[CraftAll_Y]; // Craft all
+
+end_StartCraft;
+
+
+
+start_WaitForCraft;
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+#ENDIF
+
+_MemReadVar=%AddrCurrentTime,DWORD,StartTime;
+
+#DO=1000;
+Delay=50;
+_UNTILMemPtrRead=%AddrFrameName[making_dialog],0x28,BYTE,=7;
+#DO=%Var[CraftTimeout];
+Delay=1000;
+_UNTILMemPtrRead=%AddrFrameName[making_dialog],0x28,BYTE,=6;
+Delay=2750;
+_UNTILMemPtrRead=%AddrFrameName[making_dialog],0x28,BYTE,=6;
+Delay=250;
+_UNTILMemPtrRead=%AddrFrameName[making_dialog],0x28,BYTE,=6;
+Delay=250;
+_UNTILMemPtrRead=%AddrFrameName[making_dialog],0x28,BYTE,=6;
+
+_MemReadVar=%AddrCurrentTime,DWORD,EndTime;
+_Calc[CraftTime]=%Var[EndTime]-%Var[StartTime];
+#IF=%Var[CraftTime],<10000; // If crafting time took less than 10 seconds it counts it as failure
+_Calc[FailedCraft]=%Var[FailedCraft]+1;
+#ELSE
+_SetVar=FailedCraft,0;
+#ENDIF
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+#ENDIF
+
+end_WaitForCraft;
+
+
+
+start_CloseWindows;
+
+MemPtrWrite=%AddrFrameName[system_menu_dialog],0x28,142,BYTE;
+#DO=5000;
+SendKey=0x1B; // ESC
+Delay=1;
+_UNTILMemPtrRead=%AddrFrameName[system_menu_dialog],0x28,BYTE,=175;
+MemPtrWrite=%AddrFrameName[system_menu_dialog],0x28,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_LearnDesigns;
+
+_SetVar=OffsetCube,%Var[Offset_Inv_Cube];
+_SetVar=OffsetSlot,0;
+_SetVar=Counter,0;
+_SetVar1=1;
+
+#DO=60000;
+#2DO=60000;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,>0;
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemName],WCHAR[64],InventoryName;
+_IFRegExp=%Var[InventoryName],^Design: ; // If item name begins with "Design: "
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,ItemID;
+UseID=%Var[ItemID];
+Delay=333;
+#ENDIF
+_Calc[Counter]=%Var[Counter]+1;
+_Calc[OffsetSlot]=%Var[Counter]*8;
+_Calc1=%Var1+1;
+#2UNTIL=%Var[Counter],>26;
+
+_SetVar=Counter,0;
+_SetVar=OffsetSlot,0;
+_Calc[OffsetCube]=%Var[OffsetCube]+8;
+#UNTIL=%Var1,>%InventoryMaxSlots;
+
+CreateTimer=1001;
+
+end_LearnDesigns;
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[Nova\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Nova\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Nova\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Nova\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Nova\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[Nova\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dlg_FirstButtonQuestID,(?m)\[Nova\]\n.*?^Dlg_FirstButtonQuestID=(.*?)$;
+_SetVar=CraftAll_X,644;
+_SetVar=CraftAll_Y,319;
+_SetVar=FirstWorkorder_X,477;
+_SetVar=FirstWorkorder_Y,84;
+_SetVar=QuestAccept_X,195;
+_SetVar=QuestAccept_Y,392;
+_SetVar=NPCFunc_UpgradeProfession,NpcFunc41;
+_SetVar=NPCFunc_WorkOrder,NpcFunc53;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;
+
+
+start_DeclareJob;
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L; // Is Elyos
+#EXECUTE=DeclareJob_Elyos;
+#Return
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=D; // Is Asmo
+#EXECUTE=DeclareJob_Asmo;
+#Return
+#ENDIF
+
+#SetVar=Race,Are you Elyos or Asmo?/n/n0 = Elyos/n1 = Asmo; // In case user is transformed it asks for race
+#IF=%Var[Race],=0; // Is Elyos
+#EXECUTE=DeclareJob_Elyos;
+#Return
+#ENDIF
+#IF=%Var[Race],=1; // Is Asmo
+#EXECUTE=DeclareJob_Asmo;
+#Return
+#ENDIF
+
+end_DeclareJob;
+
+
+
+start_DeclareJob_Elyos;
+
+#IF=%Var[Profession],=1; // Alchemy
+_SetVar=Teacher,Diana;
+_SetVar=JobName,Alchemy;
+_SetVar=NPC_XPOS,1846.1;
+_SetVar=NPC_YPOS,1453.7;
+_SetVar=Table_XPOS,1845.3;
+_SetVar=Table_YPOS,1459.7;
+#ENDIF
+
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+#IF=%Var[Profession],=2; // Armorsmithing
+_SetVar=Teacher,Vulcanus;
+_SetVar=JobName,Armorsmithing;
+_SetVar=NPC_XPOS,1883.4;
+_SetVar=NPC_YPOS,1570.5;
+_SetVar=Table_XPOS,1881.77;
+_SetVar=Table_YPOS,1578.71;
+#ENDIF
+
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+#IF=%Var[Profession],=2; // Armoursmithing
+_SetVar=Teacher,Vulcanus;
+_SetVar=JobName,Armoursmithing;
+_SetVar=NPC_XPOS,1883.4;
+_SetVar=NPC_YPOS,1570.5;
+_SetVar=Table_XPOS,1881.77;
+_SetVar=Table_YPOS,1578.71;
+#ENDIF
+
+#IF=%Var[Profession],=3; // Cooking
+_SetVar=Teacher,Hestia;
+_SetVar=JobName,Cooking;
+_SetVar=NPC_XPOS,1847.7;
+_SetVar=NPC_YPOS,1544.5;
+_SetVar=Table_XPOS,1845.8;
+_SetVar=Table_YPOS,1546.5;
+#ENDIF
+
+#IF=%Var[Profession],=4; // Handicrafting
+_SetVar=Teacher,Utsida;
+_SetVar=JobName,Handicrafting;
+_SetVar=NPC_XPOS,1886.7;
+_SetVar=NPC_YPOS,1454.4;
+_SetVar=Table_XPOS,1885.1;
+_SetVar=Table_YPOS,1462.4;
+#ENDIF
+
+#IF=%Var[Profession],=5; // Tailoring
+_SetVar=Teacher,Daphnis;
+_SetVar=JobName,Tailoring;
+_SetVar=NPC_XPOS,1882.6;
+_SetVar=NPC_YPOS,1544.1;
+_SetVar=Table_XPOS,1884.9;
+_SetVar=Table_YPOS,1546.9;
+#ENDIF
+
+#IF=%Var[Profession],=6; // Weaponsmithing
+_SetVar=Teacher,Anteros;
+_SetVar=JobName,Weaponsmithing;
+_SetVar=NPC_XPOS,1849.1;
+_SetVar=NPC_YPOS,1567.5;
+_SetVar=Table_XPOS,1850.9;
+_SetVar=Table_YPOS,1558.5;
+#ENDIF
+
+end_DeclareJob_Elyos;
+
+
+
+
+start_DeclareJob_Asmo;
+
+#IF=%Var[Profession],=1; // Alchemy
+_SetVar=Teacher,Honir;
+_SetVar=JobName,Alchemy;
+_SetVar=NPC_XPOS,1180.9;
+_SetVar=NPC_YPOS,1510.7;
+_SetVar=Table_XPOS,1182.6;
+_SetVar=Table_YPOS,1506.9;
+#ENDIF
+
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENU/;
+#IF=%Var[Profession],=2; // Armorsmithing
+_SetVar=Teacher,Kinterun;
+_SetVar=JobName,Armorsmithing;
+_SetVar=NPC_XPOS,1175.1;
+_SetVar=NPC_YPOS,1579.2;
+_SetVar=Table_XPOS,1177.6;
+_SetVar=Table_YPOS,1575.3;
+#ENDIF
+
+_IFMemRead=%AddrLangPack,CHAR[32],=L10N/ENG/;
+#IF=%Var[Profession],=2; // Armoursmithing
+_SetVar=Teacher,Kinterun;
+_SetVar=JobName,Armoursmithing;
+_SetVar=NPC_XPOS,1175.1;
+_SetVar=NPC_YPOS,1579.2;
+_SetVar=Table_XPOS,1177.6;
+_SetVar=Table_YPOS,1575.3;
+#ENDIF
+
+#IF=%Var[Profession],=3; // Cooking
+_SetVar=Teacher,Lainita;
+_SetVar=JobName,Cooking;
+_SetVar=NPC_XPOS,1167.7;
+_SetVar=NPC_YPOS,1539.6;
+_SetVar=Table_XPOS,1168.8;
+_SetVar=Table_YPOS,1537.1;
+#ENDIF
+
+#IF=%Var[Profession],=4; // Handicrafting
+_SetVar=Teacher,Lanse;
+_SetVar=JobName,Handicrafting;
+_SetVar=NPC_XPOS,1229.7;
+_SetVar=NPC_YPOS,1556.6;
+_SetVar=Table_XPOS,1228.7;
+_SetVar=Table_YPOS,1554.1;
+#ENDIF
+
+#IF=%Var[Profession],=5; // Tailoring
+_SetVar=Teacher,Zyakia;
+_SetVar=JobName,Tailoring;
+_SetVar=NPC_XPOS,1190.0;
+_SetVar=NPC_YPOS,1481.0;
+_SetVar=Table_XPOS,1189.2;
+_SetVar=Table_YPOS,1483.3;
+#ENDIF
+
+#IF=%Var[Profession],=6; // Weaponsmithing
+_SetVar=Teacher,Logi;
+_SetVar=JobName,Weaponsmithing;
+_SetVar=NPC_XPOS,1197.3;
+_SetVar=NPC_YPOS,1589.7;
+_SetVar=Table_XPOS,1195.7;
+_SetVar=Table_YPOS,1594.3;
+#ENDIF
+
+end_DeclareJob_Asmo;

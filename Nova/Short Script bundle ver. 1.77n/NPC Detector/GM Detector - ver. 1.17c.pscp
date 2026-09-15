@@ -1,0 +1,162 @@
+#IF=%FirstTime,;
+Command=;
+Print=Print initialized..;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetArray1=5,6; // Classic Clients
+_SetArray2=100000,100001,100002,100003; // Asmo + Elyos
+_HTTPGetVar=http://pastebin.com/raw/kvP6EM6m,,GMList;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L; // If Elyos
+_SetVar=RaceCode,0;
+#ELSE
+_SetVar=RaceCode,1;
+#ENDIF
+
+
+
+#DO=99999999;
+#2DO=99999999;
+GetEntity=%OffsetNPCID,DWORD,%ARRAY2,%OffsetLevel,BYTE,>0,EntityAddr;
+#2UNTIL=%Var[EntityAddr_Elements],>0;
+
+
+MemPtrWrite=%Var[EntityAddr_1],%OffsetLevel,0,BYTE; // To ignore entity till it got reloaded
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetName,WCHAR[64],Name;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetPosX,FLOAT,PosX_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetPosY,FLOAT,PosY_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetPosZ,FLOAT,PosZ_Decimal;
+_MemReadVar=%AddrMap,DWORD,MapID;
+#EXECUTE=EntityCheckup;
+
+#UNTIL=1,=2;
+
+
+
+
+
+
+
+start_EntityCheckup;
+//Checkups for a found entity
+
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+
+#IF=%Var[MapID],=4294967295; // Loading screen
+#Return
+#ENDIF
+#IF=%Var[Name],=;
+#Return
+#ENDIF
+
+#IF=%Var[Name],=%Var[PlayerName];
+#Return
+#ELSE
+//Print=<%Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 0];
+#ENDIF
+
+
+_SetVar=GM_Found,0;
+_SetArray2=220010000,220010001,220010002,220010003,220010004,220010005,220010006,220010007,220010008,220010009,220010010,220010011,220010012,220010013,220010014,220010015,220010016,220010017,220010018,220010019,220010020,220010021,220010022,220010023,220010024,220010025,210010000,210010001,210010002,210010003,210010004,210010005,210010006,210010007,210010008,210010009,210010010,210010011,210010012,210010013,210010014,210010015,210010016,210010017,210010018,210010019,210010020,210010021,210010022,210010023,210010024,210010025; // Ishalgen, Poeta
+#IF=%Var[MapID],%ARRAY2;
+#ELSE
+#IF=%Var[Level],1-8;
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetName,WCHAR[32],=%Var[Name];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x30,DWORD,%Var[DetectFrom]-%Var[DetectTill];
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,1;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_SetArray2=999,%Var[GMList];
+#IF=%Var[Name],%ARRAY2;
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetName,WCHAR[32],=%Var[Name];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x30,DWORD,%Var[DetectFrom]-%Var[DetectTill];
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,2;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetName,WCHAR[32],=%Var[Name];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x30,DWORD,%Var[DetectFrom]-%Var[DetectTill];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x378,BYTE,=192; // Hide level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,4;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetName,WCHAR[32],=%Var[Name];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x30,DWORD,%Var[DetectFrom]-%Var[DetectTill];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x24,BYTE,=22; // ??
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,5;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetName,WCHAR[32],=%Var[Name];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x30,DWORD,%Var[DetectFrom]-%Var[DetectTill];
+_IFMemPtrRead=%Var[EntityAddr_1],%OffsetData/0x379,BYTE,>2; // Eye level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,6;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=1;
+#EXECUTE=Print;
+_RegExp=%Var[PosX_Decimal],^([0-9]+),PosX_NoDecimal; // Remove Comma
+_RegExp=%Var[PosY_Decimal],^([0-9]+),PosY_NoDecimal; // Remove Comma
+_RegExp=%Var[PosZ_Decimal],^([0-9]+),PosZ_NoDecimal; // Remove Comma
+Print=Logging off in 3..;
+Delay=1000;
+Print=Logging off in 2..;
+Delay=1000;
+Print=Logging off in 1..;
+Delay=1000;
+#QuitAtRound=-1,True;
+#UseNoLoop
+#EndScript
+#ENDIF
+
+end_EntityCheckup;
+
+
+start_GMReport;
+
+_HTTPPost=https://subvanillatool.com/POST/%Var[Token]/post.php,text=<b><font color="#ff0000">[Combat Routine %Var[ScriptVersion]_%ClientID] [Method %Var[GM_Method]]</font></b> [%Var[Name]] (%Var[Level]) detected at Map: %Var[MapID] | X: %Var[XPOSF] | Y: %Var[YPOSF] | Z: %Var[ZPOSF];
+_MemPtrReadVar=%Var[EntityAddr_1],0x0,BYTE[1024],Dump;
+_MemPtrReadVar=%Var[EntityAddr_1],%OffsetData/0x0,BYTE[2048],DataDump;
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__%DAY-%MONTH-%YEAR.txt,%Var[Dump],r;
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__Data__%DAY-%MONTH-%YEAR.txt,%Var[DataDump],r;
+
+end_GMReport;
+
+
+
+start_Print;
+
+#IF=%ClientID,%ARRAY1; // Classic Client
+Print=<GM: %Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+#ELSE
+Print=<GM: %Var[Name]> detected at [pos:Location/:%Var[RaceCode] %Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+#ENDIF
+
+end_Print;
