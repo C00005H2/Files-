@@ -1,0 +1,173 @@
+#IF=%FirstTime,;
+WaitForResponse=This script brands any enemy race player in order by a predeclared priority list (recommended for instances like dredgion)/nBetter run it in a secondary Vanillatool process in background/n/nDefault Priority:/n1 = Spiritmaster/n2 = Cleric/n3 = Chanter/n4 = Sorcerer/n5 = Ranger/n6 = Executor/n7 = Assassin/n8 = Gladiator/n9 = Templar;
+#DisableScrolling
+UseSpeed=1;
+_SetVar=Group_Size,0;
+_SetVar=PriorityList,8|10|11|7|5|13|4|1|2; // Priority list by Class ID, the earlier the ID the higher the priority
+StringSplit=PriorityList,|,%Var[PriorityList];
+#EXECUTE=GetOffsets;
+_SetVar=TabDistance,200;
+#EXECUTE=TabMod;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L;
+_SetVar=EnemyRace,D;
+#ELSE
+_SetVar=EnemyRace,L;
+#ENDIF
+
+
+
+
+#DO=999999999; // Infinite loop
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetRace,CHAR[1],=%Var[EnemyRace],Enemy_Addr;
+#IF=%Var[Enemy_Addr_Elements],>0;
+#EXECUTE=EnemyMain;
+#ENDIF
+#UNTIL=1,=2;
+
+
+
+start_EnemyMain;
+_SetVar=i,1;
+#DO=60000; // Read found characters Name, Class and ID
+_MemPtrReadVar=%Var[Enemy_Addr_%Var[i]],%OffsetName,WCHAR[32],tName;
+_MemPtrReadVar=%Var[Enemy_Addr_%Var[i]],%OffsetClassID,BYTE,tClass;
+_MemPtrReadVar=%Var[Enemy_Addr_%Var[i]],%Var[Offset_Base_TargetID],WORD,tTargetID;
+#EXECUTE=AddEnemy; // Add Character to Group list and set priority
+_IFMemPtrRead=%Var[Enemy_Addr_%Var[i]],%OffsetName,WCHAR[32],=%Var[tName]; // If character still in render distance
+#EXECUTE=BrandEnemy;
+#ENDIF
+_Calc[i]=%Var[i]+1;
+#UNTIL=%Var[i],>%Var[Enemy_Addr_Elements];
+end_EnemyMain;
+
+start_AddEnemy;
+_SetVar=n,1;
+#DO=60000;
+#IF=%Var[Group_Name_%Var[n]],=%Var[tName]; // If current character name is already in group list
+#Return
+#ENDIF
+_Calc[n]=%Var[n]+1;
+#UNTIL=%Var[n],>%Var[Group_Size];
+// if not on group list already add entry
+_Calc[Group_Size]=%Var[Group_Size]+1;
+_SetVar=Group_Name_%Var[Group_Size],%Var[tName];
+_SetVar=Group_Class_%Var[Group_Size],%Var[tClass];
+_SetVar=Group_Priority_%Var[Group_Size],0;
+_SetVar=Priority,0;
+_SetVar=m,1;
+#DO=60000; // Set group priority
+_SetVar=n,1;
+#2DO=60000;
+#IF=%Var[Group_Class_%Var[n]],=%Var[PriorityList_%Var[m]];
+_Calc[Priority]=%Var[Priority]+1;
+#EXECUTE=SubIF;
+#ENDIF
+_Calc[n]=%Var[n]+1;
+#2UNTIL=%Var[n],>%Var[Group_Size];
+_Calc[m]=%Var[m]+1;
+#UNTIL=%Var[m],>%Var[PriorityList_Elements];
+end_AddEnemy;
+
+start_SubIF;
+#IF=%Var[Group_Priority_%Var[n]],=%Var[Priority];
+_SetVar=Group_Branded_%Var[n],1;
+#ELSE
+_SetVar=Group_Branded_%Var[n],0;
+_SetVar=Group_Priority_%Var[n],%Var[Priority];
+#ENDIF
+end_SubIF;
+
+start_BrandEnemy;
+_SetVar=tFound,0;
+_SetVar=n,1;
+#DO=60000; // Get priority of group list by name
+#IF=%Var[Group_Name_%Var[n]],=%Var[tName];
+_SetVar=tPriority,%Var[Group_Priority_%Var[n]];
+_SetVar=tBranded,%Var[Group_Branded_%Var[n]];
+_SetVar=tFound,1;
+#ENDIF
+_Calc[n]=%Var[n]+1;
+#IF=[n],>%Var[Group_Size];
+_SetVar=tFound,2;
+#ENDIF
+#UNTIL=%Var[tFound],>0;
+#IF=%Var[tBranded],=0;
+#IF=%Var[tFound],=1;
+_Calc[Priority_ID]=%Var[tPriority]-1;
+_Calc[Priority_ID]=%Var[Priority_ID]*2;
+_Calc[Priority_ID]=%Var[Priority_ID]+50010;
+#IF=%Var[Priority_ID],50010-50040;
+_MemReadVar=%AddrTargetID,WORD,Main_TargetID; // Save current TargetID for later
+MemWrite=%AddrTargetID,%Var[tTargetID],WORD; // Select Character to brand
+UseID=%Var[Priority_ID];
+_Calc[n]=%Var[n]-1;
+_SetVar=Group_Branded_%Var[n],1;
+MemWrite=%AddrTargetID,%Var[Main_TargetID],WORD; // Restore TargetID
+#ENDIF
+end_BrandEnemy;
+
+
+start_TabMod;
+
+#IF=%Var[TabDistance],=40; // If default distance escape
+#Return
+#ENDIF
+
+#IF=%ClientID,>9; // 4.6
+_SetVar=TabModRedirect_Pattern,E9........F30F1015......................488BD7;
+#ELSE
+_SetVar=TabModRedirect_Pattern,E9........F30F1015........488B;
+#ENDIF
+
+MemWrite=0x520,%Var[TabDistance],FLOAT;
+_MemPattern=%Var[TabModRedirect_Pattern],0x9,False,True;
+#IF=%Var[PatternFound],>0;
+_Calc[Temp]=4294967292-%Var[PatternRet_1];
+_Calc[Temp]=%Var[Temp]+0x520;
+MemWrite=%Var[PatternRet_1],%Var[Temp],DWORD;
+#ENDIF
+
+end_TabMod;
+
+
+start_GetOffsets;
+
+#DO=60000;
+#2DO=5000;
+Delay=250;
+#2UNTIL=%Timer=997,5000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[NA\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[EU\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[Classic\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[Classic EU\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,10-12; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[4\.6\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=14; // 4.8
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[4\.8\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetID,(?m)\[Nova\]\n.*?^Base_TargetID=(.*?)$;
+#ENDIF
+
+CreateTimer=997;
+#UNTIL=%Var[Offset_Base_TargetID],>0;
+
+end_GetOffsets;

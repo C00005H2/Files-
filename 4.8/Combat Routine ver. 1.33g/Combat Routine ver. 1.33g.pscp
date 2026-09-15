@@ -1,0 +1,4503 @@
+//#COMBAT ROUTINE VER 1.33s
+//##################InstaScript Settings###################
+
+#IF=%FirstTime,;
+RequireVersion=9.18;
+#SmoothBackground
+_SetVar=UserPIN,0000001; // Your PIN
+_SetVar=FPSCap,30; // Limits the FPS
+_SetVar=QuitClient,1; // exit aion when script finished - 0 = No | 1 = Yes
+_SetVar=HidePlayers,1; // Hides other Players - 0 = No | 1 = Yes
+_SetVar=Animation,0; // Want to use Animation modifications during combat and morphing? - 0 = No | 1 = Yes
+_SetVar=AntiStuck,1; // Enable Anti-Stuck detection at the beginning of each round? - 0 = No | 1 = Yes
+_SetVar=DiscordURL,0; // Enter your Discord Webhook URL for Discord messages, otherwise enter 0 ( more information at https://vanillatool.com/discord )
+_SetVar=ChangeChannel,0; // Change channel at the end of every round? - 0 = No | 1 = Yes
+_SetVar=Timeout,0; // Want to stop grinding after a certain amount of minutes?/n/nEnter the amount of minutes or 0 if you don't want any time limit
+
+_SetVar=GMDetection,1; // Enable GM Detection? - 0 = No | 1 = Yes - (add more "#EXECUTE=EntityScan;" lines after every few waypoints for better detection)
+_SetVar17=; // (Optional) Declare Player names where you want to close the Client when they're within render distance (110m)
+_SetVar18=; // (Optional) Declare Player names that you want to ignore on the following 5 functions
+_SetVar=NotifyWhenPlayerClose,0; // Gives sound alarm when another player is within 20m radius (Requires "GMDetection") - 0 = No | 1 = Yes
+_SetVar=NotifyWhenPlayerTargets,1; // Gives sound alarm when another player has the bot as target (Requires "GMDetection") - 0 = No | 1 = Yes
+_SetVar=WhisperWhenPlayerTargets,0; // Whispers the player with one of the WhisperAnswers from below, only once for each player (Requires "GMDetection") - 0 = No | 1 = Yes
+_SetVar=ParanoidTargeted,0; // Instantly closes the client when a player targets you (If no Obelisk is within 110m) (Requires "GMDetection")  - 0 = No | 1 = Yes | 2 = Instantly suicides as well
+_SetVar=ParanoidNearby,0; // Instantly suicides and closes the client when another player is within a certain radius (If no Obelisk is within 110m) (Requires "GMDetection") - 0 = Off  | otherwise enter the distance to check
+_SetVar=AutoReplyToWhisper,0; // Auto replies to whispers with one of the WhisperAnswers from below, only once for each player (Requires "GMDetection") - 0 = No | 1 = Yes
+
+_SetVar=StatusInvisible,1; // Sets Status to Invisible on friendlist - 0 = No | 1 = Yes
+_SetVar=SoulHeal,1; // Heals Soulsickness - 0 = No | 1 = Yes
+_SetVar=DisableLooting,0; // Want to stop looting if inventory is full? - 0 = No | 1 = Yes
+_SetVar=PauseAfterDeath,3; // How many minutes you want to wait after death to enemy race?
+_SetVar=StopAfterDeath,1; // Want to stop botting if died to mobs 3 times within 20 minutes? - 0 = No | 1 = Yes
+_SetVar=Morph,0; // Want to morph when ever DP is full? - 0 = No | 1 = Yes
+_SetVar=RecipeID,155000001; // Which Recipe ID you want to morph? - you find them at https://aioncodex.com/usc/recipe/
+_SetVar=PetUsage,0; // Want to take gifts from pet? - 0 = No | 1 = Yes
+_SetVar=RunScroll,0; // Use Greater Running Scroll? - 0 = No | 1 = Yes
+_SetVar=AtkSpeedScroll,0; // Use Greater Courage Scroll? - 0 = No | 1 = Yes
+_SetVar=CritStrikeScroll,0; // Use Fine Crit Strike Scroll? - 0 = No | 1 = Yes
+_SetVar=CastSpeedScroll,0; // Use Greater Awakening Scroll? - 0 = No | 1 = Yes
+_SetVar=CritSpellScroll,0; // Use Fine Crit Spell Running Scroll? - 0 = No | 1 = Yes
+_SetVar=RallySerumAndFocusAgent,5; // Use Rally Serum and Focus Agent? - 0 = No | 1 = Lesser | 2 = Normal | 3 = Greater | 4 = Major | 5 = Fine
+_SetVar=Sell,0; // Enable selling when inventory is full? - 0 = No | 1 = Yes, On recorded sell path | 2 = Yes, in Pande / Sanctum on predeclared sell path
+_SetVar9=5; // Enter the ItemIDs the bot is allowed to sell (Example: 182010036,182010037,182010038) | You can also enter 1 to sell all White rarity Equipment items or enter 2 to sell all White + Green rarity Equipment items or enter 3 to sell all White + Green + Blue rarity Equipment items or enter 4 for my recommended custom list
+_SetVar12=; // (Optional) Declare additional item IDs it's allowed to sell (Example: 182010036,182010037,182010038)
+_SetVar=Disenchant,0; // Enable disenchanting at the beginning of every round? - 0 = No | 1 = Yes
+_SetVar10=4; // Enter the ItemIDs the bot is allowed to disenchant (Example: 182010036,182010037,182010038) | You can also enter 1 to sell all White rarity Equipment items or enter 2 to sell all White + Green rarity Equipment items or enter 3 to sell all White + Green + Blue rarity Equipment items or enter 4 for my recommended custom list
+_SetVar=Destroy,0; // Enable destruction of items when inventory is full? [0 = Off | 1 = Destroy items on list | 2 = Destroy items not on list] (Requires Real Mouse)
+_SetVar11=4; // Enter the ItemIDs the bot is allowed to destroy (Example: 182010036,182010037,182010038) | You can also enter 1 to sell all White rarity Equipment items or enter 2 to sell all White + Green rarity Equipment items or enter 3 to sell all White + Green + Blue rarity Equipment items or enter 4 for my recommended custom list
+_SetVar=WhisperAnswer1,?; // Enter a automatic reply text to whispers, If you don't want to reply to whispers enter nothing (Make sure "T" is binded to "Reply to Whisper" at Aion, and "Thread" option is enabled at script)
+_SetVar=WhisperAnswer2,yes?; // Enter a automatic reply text to whispers
+_SetVar=WhisperAnswer3,sorry busy; // Enter a automatic reply text to whispers
+_SetVar=WhisperAnswer4,hello; // Enter a automatic reply text to whispers
+_SetVar=WhisperAnswer5,我不会说英语; // Enter a automatic reply text to whispers
+_SetVar=PrisonAnswer_1_1,where the hell am I?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_1_2,wtf?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_1_3,what just happend?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_1_4,am I bugged?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_1_5,剛剛發生了什麼; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_2_1,I cannot do anything; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_2_2,can I get out?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_2_3,someone here?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_2_4,how do I get out?; // Enter a automatic text when teleported to the prison
+_SetVar=PrisonAnswer_2_5,我怎樣才能離開這裡; // Enter a automatic text when teleported to the prison
+#EXECUTE=AccountSettings; // Scroll at the very end to setup account specific settings
+#EXECUTE=InstaScriptLogin;
+#ENDIF
+
+//##################END Settings###################
+
+
+
+
+
+
+
+
+//################## Startup ###################
+
+#IF=%FirstTime,;
+UseSpeed=1;
+#UseLoop
+#EnableChatLog
+#ClearChatLog
+#EnableSpeech
+#EXECUTE=CheckInstaScript;
+_Calc[TimeoutMS]=%Var[Timeout]*60000;
+Command=;
+Console=\g_maxfps %Var[FPSCap];
+_SetVar=ScriptVersion,1.33s;
+_SetVar=Token,ImHKGe;
+_SetVar=ScanTimeout,12000; // Each GM scan can take up to 12 seconds
+_SetVar=DetectFrom,100000;
+_SetVar=DetectTill,100003;
+_SetVar=ChannelNumber,1;
+_SetVar=FailedSellAttempts,0;
+_SetVar=TotalDeaths,0;
+_SetVar=DiedToMob,0;
+_SetVar=RecoverableEXP_Cache,0;
+#EXECUTE=GetPetID; // Make sure the Pet is somewhere on Quickbar
+#EXECUTE=CombatSort;
+#EXECUTE=HidePlayers;
+#EXECUTE=DisableClickToMove;
+#EXECUTE=DisablePetCamera;
+#ENDIF
+
+_IFRegExp=%Var[WhisperAnswer1],.+;
+_SetVar=WhisperEnabled,1;
+#ELSE
+_SetVar=WhisperEnabled,0;
+#ENDIF
+
+_IFProcessAlive=%Var[ThreadPID];
+#ELSE
+#IF=%Var[GMDetection],=1;
+#ThreadEXECUTE=ThreadRoutine,True,False,ThreadPID; // frequently checks for nearby GMs and Whispers
+#ENDIF
+
+#IF=%FirstTime,;
+#IF=%Var[StatusInvisible],=1;
+#EXECUTE=SetStatusInvisible;
+#ENDIF
+#IF=%FirstTime,;
+#IF=%Var[Sell],>0;
+#EXECUTE=SetupSellList;
+#ENDIF
+#IF=%FirstTime,;
+#IF=%Var[Disenchant],>0;
+#EXECUTE=SetupDisenchantList;
+#ENDIF
+#IF=%FirstTime,;
+#IF=%Var[Destroy],>0;
+#EXECUTE=SetupDestroyList;
+#ENDIF
+#IF=%FirstTime,;
+#EXECUTE=CombatSort;
+#EXECUTE=StartUpRoutine;
+#EXECUTE=DetectObelisk;
+CreateTimer=9999998;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_ShowLog
+_SetVar=MainVTPID,%VTPID;
+#ENDIF
+
+//############### END Startup ###############
+
+
+//############### Round beginning #############
+
+#EXECUTE=CloseWindows;
+#EXECUTE=CheckBug;
+#EXECUTE=CheckDead;
+#EXECUTE=GetPotionID; // Checks for new potions at the beginning of each round
+
+#IF=%Var[PetUsage],=1;
+#EXECUTE=CheckPetGift; // Checks for pet gift at the beginning of each round (disabled can freeze the camera)
+#ENDIF
+
+#IF=%Var[Sell],>0;
+#IF=%InventoryRemainingSlots,=0;
+#EXECUTE=Set_SellList;
+#EXECUTE=InventoryCheck;
+#ENDIF
+
+#IF=%Var[Destroy],=1;
+#IF=%InventoryRemainingSlots,=0;
+_SetArray2=99,%Var11;
+#EXECUTE=DestroyItem;
+#ENDIF
+
+#IF=%Var[Disenchant],=1;
+#IF=%InventoryRemainingSlots,>1;
+_SetArray2=99,%Var10;
+Disenchant=%ARRAY2;
+#ENDIF
+
+#IF=%InventoryRemainingSlots,=0;
+#IF=%Var[DisableLooting],=1;
+_ACMob_Looting=False;
+#IF=%Var[DisableLooting],=1;
+_SetVar=MSG,has no inventory slots remaining. Looting will be turned off now;
+#EXECUTE=Log;
+_SetVar=DisableLooting,2;
+#ENDIF
+
+#IF=%InventoryRemainingSlots,>1;
+#EXECUTE=Morph;
+#ENDIF
+
+#IF=%Var[Timeout],>0;
+#IF=%Timer=9999998,%Var[TimeoutMS];
+#EXECUTE=Reset;
+Speech=%Var[PlayerName] has finished his grind session after %Var[Timeout] minutes.;
+#EXECUTE=End;
+#ENDIF
+
+
+#IF=%FirstTime,;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,StartPosX;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,StartPosY;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,StartPosZ;
+_Calc[StartPosX1]=%Var[StartPosX]-7.5;
+_Calc[StartPosY1]=%Var[StartPosY]-7.5;
+_Calc[StartPosZ1]=%Var[StartPosZ]-3;
+_Calc[StartPosX2]=%Var[StartPosX]+7.5;
+_Calc[StartPosY2]=%Var[StartPosY]+7.5;
+_Calc[StartPosZ2]=%Var[StartPosZ]+3;
+_Calc[ResetPosZ]=%Var[StartPosZ]+10;
+_SetVar=MSG,started farming;
+#EXECUTE=Log;
+#ELSE
+#LogAddRound
+FlySmooth=%Var[StartPosX],%Var[StartPosY],%Var[StartPosZ];
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,%Var[StartPosX1]-%Var[StartPosX2];
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,%Var[StartPosY1]-%Var[StartPosY2];
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,%Var[StartPosZ1]-%Var[StartPosZ2];
+#ELSE
+#LogAddStuck
+_SetVar=MSG,got stuck. attempting Return..;
+#EXECUTE=Log;
+#IF=%Var[AntiStuck],=1;
+#EXECUTE=Reset;
+#EXECUTE=Return;
+#ENDIF
+
+//############### END Round beginning #############
+
+//############### Grind Path #############
+
+#GRINDMARK
+
+//############### END Grind Path #############
+
+#EXECUTE=ChangeChannel;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//############### FUNCTIONS #############
+
+start_CombatSort;
+
+//;;;;;;;;BASIC SETTINGS;;;;;;;;;;;
+
+#IF=%Var[Animation],=1;
+_ACUseAnimation=True;
+#ENDIF
+
+#IF=%Var[Morph],=1;
+_ACAllowDPSkills=False;
+#ENDIF
+
+_SetVar=PotionHP,70; // Use Potion if HP below 70%
+_SetVar=PotionMP,66; // Use Potion if MP below 66%
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 35%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACTimeoutNoDamage=7000; // combat times out if the mob hasn't taken any damage within the first 7000 milliseconds
+_ACTimeout=300; // Combat times out if the fight takes longer than 300 seconds
+_ACMob_Looting=True; // Enables Looting
+_ACAllowAllMobs=False; // Keeps fighting if enemy has another entity as target
+_ACAllowEnemyRace=False; // Allows combat against enemy race
+_ACEnableAutoAttack=False; // Enables AutoAttacks while fighting
+_ACResetPosition=True; // Reset the player position after a fight to where he was before the fight started
+_ACExperimentalCooldown=True; // Leave that on True
+_ACMob_IgnoreLowLevel=True;
+
+_SetVar1=200000000/99999;
+#IF=%Var[RunScroll],=1;
+_SetVar1=%Var1,164000076/9960; // Greater Running Scroll
+#ENDIF
+#IF=%Var[AtkSpeedScroll],=1;
+_SetVar1=%Var1,164000073/9959; // Greater Courage Scroll
+#ENDIF
+#IF=%Var[CastSpeedScroll],=1;
+_SetVar1=%Var1,164000134/9965; // Greater Awakening Scroll
+#ENDIF
+#IF=%Var[CritStrikeScroll],=1;
+_SetVar1=%Var1,164000255/10766; // Fine Crit Strike Scroll
+#ENDIF
+#IF=%Var[CritSpellScroll],=1;
+_SetVar1=%Var1,164000256/10767; // Fine Crit Spell Scroll
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=1; //Rally Serum and Focus Agent
+_SetVar1=%Var1,160003552/10044,160003558/10051; // Lesser
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=2;
+_SetVar1=%Var1,160003553/10044,160003559/10051; // Normal
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=3;
+_SetVar1=%Var1,160003554/10044,160003560/10051; // Greater
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=4;
+_SetVar1=%Var1,160003555/10044,160003561/10051; // Major
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=5;
+_SetVar1=%Var1,160003556/10044,160003562/10051; // Fine
+#ENDIF
+
+_ACItems=%Var1;
+
+//;;;;;;;END BASIC SETTINGS;;;;;;;;
+
+
+#EXECUTE=GetPotionID;
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Settings Warrior;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=3;
+
+_ACSkills=2865;
+//;;;;;;;End Settings Warrior;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Settings Gladiator;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=11;
+_ACInitialRange=5;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+_ACChainBlacklist=2445,384,309,261; // Crashing Blow (Airbind cancel)
+
+_ACRelyOnLevel=780,>33; //780 Absorbing Fury
+_ACRelyOnLevel=648,>53; //648 Second Wind
+
+_ACRelyOnDistance=780,<7; //780 Absorbing Fury
+_ACRelyOnDistance=705,<7; //INVALID Seismic Wave
+_ACRelyOnDistance=618,>3; //618 Ankle Snare
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=571,<75; //571 Dauntless Spirit
+_ACRelyOnPlayerHP=706,<60; //706 Wall of Steel
+_ACRelyOnPlayerHP=648,<60; //648 Second Wind
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=553,>75; //553 Aerial Lockdown
+_ACRelyOnTargetHP=598,>90; //598 Berserking
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDP=583,4000;   //583 Blessing of Nezekan
+_ACRelyOnDP=599,2000; //599 Daevic Fury
+_ACRelyOnRace=530,Asmo; //530 Explosion of Rage
+_ACRelyOnDP=530,2000; //530 Explosion of Rage
+
+
+_ACSkills=618,757,507,2902,780,705,554,647,544,682,553,530,617,681,538,517,669,2876;
+//618 = Ankle Snare (Long range)
+//757 = Whirling Strike (Long range)
+//507 = Lockdown
+//2902 = Body Smash
+//780 = Absorbing Fury (AoE, Selfheal)
+//705 = Earthquake Wave (AoE)
+//554 = Ferocious Chop (AoE)
+//647 = Piercing Rupture (AoE)
+//544 = Exhausting Wave (AoE)
+//682 = Whirling Advance (AoE)
+//553 = Aerial Lockdown
+//530 = Explosion of Rage (DP 2000, Asmo)
+//617 = Tendon Slice
+//681 = Sharp Strike
+//538 = Crushing Blow
+//517 = Mocking Blast
+//669 = Severe Weaking Blow
+//2876 = Ferocious Strike
+
+
+_ACBuffs=314,321,2932,706,648,571,620,598,599,583,719;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//2932 = Unwavering Devotion
+//706 = Wall of Steel
+//648 = Second Wind
+//571 = Dauntless Spirit
+//620 = Armor of Attrition
+//598 = Berserking
+//599 = Daevic Fury (DP 2000)
+//583 = Blessing of Nezekan (DP 4000)
+//719 = Cleave (Long range)
+//;;;;;;;End Settings Gladiator;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Settings Templar Greatsword;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=4;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+_ACRelyOnDistance=2973,<7; //2973 Punishing Wave
+_ACRelyOnDistance=3123,>4; //3123 = Doom Lure (Long range)
+_ACRelyOnDistance=2967,>4; //2967 = Illusion Chains (Long range, AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=3161,<10; //3161 Hand of Healing
+_ACRelyOnPlayerHP=2931,<60; //2931 Prayer of Victory
+_ACRelyOnPlayerHP=3160,<60; //3160 Prayer of Resilience
+_ACRelyOnPlayerHP=2938,<60; //2938 Aether Armor
+_ACRelyOnPlayerHP=2966,<80; //2966 Holy Shield
+_ACRelyOnPlayerHP=3127,<60; //3127 Iron Skin
+_ACRelyOnPlayerHP=3129,<70; //3129 Empyrean Armor
+_ACRelyOnPlayerHP=2922,<30; //2922 Empyrean Providence
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=3035,>80; //3035 Divine Fury
+_ACRelyOnTargetHP=2933,>80; //2933 Divine Fury
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnRace=544,Elyos; //544 Holy Punishment
+
+_ACRelyOnDP=3161,2000; //3161 Hand of Healing
+_ACRelyOnDP=3030,2000; //3030 Divine Chastisement
+
+
+_ACSkills=3126,2944,3123,2967,3030,2960,3154,2973,3181,4606,544,2876,656;
+//3126 = Sword Storm (Long range, AoE)
+//2944 = Divine Justice (Long range)
+//3123 = Doom Lure (Long range)
+//2967 = Illusion Chains (Long range, AoE)
+//3030 = Divine Chastisement (DP 2000, Elyos)
+//2960 = Inquisitor Blow
+//3154 = Punishing Thrust
+//2973 = Punishing Wave (AoE)
+//3181 = Punishment
+//4606 = Dazing Severe Blow
+//544 = Holy Punishment (Elyos)
+//2876 = Ferocious Strike
+//656 = Siegebreaker
+
+_ACBuffs=314,321,3129,2931,3160,3161,2932,3127,2966,3035,2933,2922,2938;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3129 = Empyrean Armor
+//2931 = Prayer of Victory
+//3160 = Prayer of Resilience
+//3161 = Hand of Healing (DP 2000)
+//2932 = Unwavering Devotion
+//3127 = Iron Skin
+//2966 = Holy Shield
+//3035 = Divine Fury
+//2933 = Empyrean Fury
+//2922 = Empyrean Providence
+//2938 = Aether Armor
+//;;;;;;;End Settings Templar Greatsword;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Settings Scout;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=2;
+
+_ACRelyOnAggro=3195,True;
+_ACRelyOnDistance=3195,<4;
+
+_ACBuffs=3235,3195;
+_ACSkills=3197,3183;
+//;;;;;;;End Settings Scout;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Settings Assassin;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=3;
+_ACTimeoutNoDamage=9000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=20; // Starts sitting when MP drop below 20%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACChainBlacklist=854,826,825; // Crashing Wind Strike
+
+_ACRelyOnRace=3499,Elyos; //3499 Vaizel's Dirk
+_ACRelyOnRace=3495,Asmo; //3495 Triniel's Dirk
+_ACRelyOnRace=2516,Elyos; //2516 Divine Strike
+_ACRelyOnRace=2517,Asmo; //2517 Strike of Darkness
+_ACRelyOnRace=946,Elyos; //946 Divine Rune
+_ACRelyOnRace=3370,Elyos; //3370 Slayer Form
+_ACRelyOnRace=3371,Asmo; //3371 Slayer Form
+
+_ACRelyOnDistance=3195,<4; //3195 Focused Evasion
+_ACRelyOnDistance=3328,<4; //3328 Aethertwisting
+_ACRelyOnDistance=3466,>5; //3466 Dash Attack
+_ACRelyOnDistance=2938,>5; //2938 Dash and Slash
+_ACRelyOnDistance=3338,<7; //3338 Blinding Burst
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=2938,=100; //2938 Dash and Slash
+_ACRelyOnTargetHP=3466,=100; //3466 Dash Attack
+_ACRelyOnTargetHP=3468,>20; //3468 Killer's Eye
+_ACRelyOnTargetHP=3235,>30; //3235 Devotion
+_ACRelyOnTargetHP=3469,>35; //3469 Deadly Focus
+_ACRelyOnTargetHP=3355,=100; //3355 Flurry
+_ACRelyOnTargetHP=3326,=100; //3326 Apply Lethal Venom
+_ACRelyOnTargetHP=2516,>20; //2516 Divine Strike
+_ACRelyOnTargetHP=2517,>20; //2517 Strike of Darkness
+_ACRelyOnTargetHP=3195,>15; //3195 Focused Evasion
+_ACRelyOnTargetHP=3414,>20; //3414 Binding Rune
+_ACRelyOnTargetHP=3384,>15; //3384 Pain Rune
+_ACRelyOnTargetHP=3369,>25; //3369 Ripclaw Strike
+
+_ACRelyOnPlayerHP=3354,<60; //3354 Blood Rune
+_ACRelyOnPlayerHP=2516,<40; //2516 Divine Strike
+_ACRelyOnPlayerHP=2517,<40; //2517 Strike of Darkness
+_ACRelyOnPlayerHP=3338,<25; //3338 Blinding Burst
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+_ACRelyOnAggro=3195,True; //3195 Focused Evasion
+_ACRelyOnAggro=3328,True; //3328 Aethertwisting
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=Rune_1,8303; // Rune lv1 Effect
+_SetVar=Rune_2,8304; // Rune lv2 Effect
+_SetVar=Rune_3,8305; // Rune lv3 Effect
+_SetVar=Rune_4,8306; // Rune lv4 Effect
+_SetVar=Rune_5,8307; // Rune lv5 Effect
+_SetVar=DeadlyPoison,8483; // Apply Deadly Poison Effect (Stun)
+_SetVar=WhirlwindSlash,8223; // Whirlwind Slash (Stun+Back)
+_SetVar=Counterslash_1,555; // Counterslash 1 Effect (Stun)
+_SetVar=Counterslash_2,556; // Counterslash 2 Effect (Stun)
+_SetVar=Counterslash_3,557; // Counterslash 3 Effect (Stun)
+_SetVar=Counterslash_4,558; // Counterslash 4 Effect (Stun)
+_SetVar=Counterslash_5,581; // Counterslash 5 Effect (Stun)
+_SetVar=Counterslash_6,2891; // Counterslash 6 Effect (Stun)
+_SetVar=Ambush_1,803; //Ambush 1 Effect (Stun)
+_SetVar=Ambush_2,804; //Ambush 2 Effect (Stun)
+_SetVar=Ambush_3,870; //Ambush 3 Effect (Stun)
+_SetVar=Ambush_4,928; //Ambush 4 Effect (Stun)
+_SetVar=Ambush_5,938; //Ambush 5 Effect (Stun)
+_SetVar=Ambush_6,3364; //Ambush 6 Effect (Stun)
+_SetVar=Ambush_7,3213; //Ambush 7 Effect (Stun)
+_SetVar=ApplyPoison_1,8252; //Apply Poison 1 Effect (Poison)
+_SetVar=ApplyPoison_2,8322; //Apply Poison 2 Effect (Poison)
+_SetVar=ApplyPoison_3,8323; //Apply Poison 3 Effect (Poison)
+_SetVar=ApplyPoison_4,8383; //Apply Poison 4 Effect (Poison)
+_SetVar=ApplyPoison_5,8404; //Apply Poison 5 Effect (Poison)
+_SetVar=ApplyPoison_6,8777; //Apply Poison 6 Effect (Poison)
+////////////////////////////////////////////////////////////
+
+//If the debuff has a "!" infront the debuff needs to be alive in order for the skill to be used
+//Without the "!" skill is used as long as the target has not this certain debuff
+_ACRelyOnTargetDebuff=946,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //946 = Divine Rune (Runes, Elyos)
+_ACRelyOnTargetDebuff=3414,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]/%Var[DeadlyPoison]/%Var[Ambush_1]/%Var[Ambush_2]/%Var[Ambush_3]/%Var[Ambush_4]/%Var[Ambush_5]/%Var[Ambush_6]/%Var[Ambush_7]/%Var[WhirlwindSlash]/%Var[Counterslash_6]/%Var[Counterslash_5]/%Var[Counterslash_4]/%Var[Counterslash_3]/%Var[Counterslash_2]/%Var[Counterslash_1]; //3414 Binding Rune
+_ACRelyOnTargetDebuff=3384,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]/%Var[DeadlyPoison]/%Var[Ambush_1]/%Var[Ambush_2]/%Var[Ambush_3]/%Var[Ambush_4]/%Var[Ambush_5]/%Var[Ambush_6]/%Var[Ambush_7]/%Var[WhirlwindSlash]/%Var[Counterslash_6]/%Var[Counterslash_5]/%Var[Counterslash_4]/%Var[Counterslash_3]/%Var[Counterslash_2]/%Var[Counterslash_1]; //3384 Pain Rune
+_ACRelyOnTargetDebuff=3311,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //3311 Signed Silence
+_ACRelyOnTargetDebuff=3354,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //3354 Blood Rune
+_ACRelyOnTargetDebuff=3369,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3369 Ripclaw Strike
+_ACRelyOnTargetDebuff=3395,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3395 Rune Carve
+_ACRelyOnTargetDebuff=3426,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3426 Fang Strike
+_ACRelyOnTargetDebuff=3518,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]; //3518 Weakening Blow
+_ACRelyOnTargetDebuff=3208,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]; //3208 Surprise Attack
+_ACRelyOnTargetDebuff=3261,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]; //3261 Venomous Strike
+_ACRelyOnTargetDebuff=3477,!%Var[DeadlyPoison]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_4]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]/!%Var[Counterslash_6]/!%Var[Counterslash_5]/!%Var[Counterslash_4]/!%Var[Counterslash_3]/!%Var[Counterslash_2]/!%Var[Counterslash_1]; //3477 Assassinationn
+_ACRelyOnTargetDebuff=3248,!%Var[DeadlyPoison]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_4]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]/!%Var[Counterslash_6]/!%Var[Counterslash_5]/!%Var[Counterslash_4]/!%Var[Counterslash_3]/!%Var[Counterslash_2]/!%Var[Counterslash_1]; //3248 Quickening Doom
+
+_ACRelyOnDP=2516,2000; //2516 Divine Strike
+_ACRelyOnDP=2517,2000; //2517 Strike of Darkness
+_ACRelyOnDP=3499,2000; //3499 Vaizel's Dirk
+_ACRelyOnDP=3495,2000; //3495 Triniel's Dirk
+
+_ACRelyOnItem=3326,169300010; //3326 Apply Lethal Venom
+_ACRelyOnItem=3481,169300010; //3481 Apply Deadly Poison
+
+_ACRelyOnBuff=3481,3481; // //3481 Apply Deadly Poison
+
+
+_ACSkills=3364,3466,2938,3416,3426,3369,3395,2931,3194;
+//3364 = Ambush (Long range)
+//3466 = Dash Attack (Long range)
+//2938 = Dash and Slash (Long range)
+//2516 = Divine Strike (DP 2000, Elyos)
+//2517 = Strike of Darkness (DP 2000, Asmo)
+//3416 = Massacre (Long Range)
+//3426 = Fang Strike (Apply Rune)
+//3369 = Ripclaw Strike (Apply Rune)
+//3395 = Rune Carve (Apply Rune)
+//2931 = Rune Knife (Apply Rune)
+//3194 = Swift Edge
+
+_ACBuffs=314,321,3208,3518,3261,3499,3495,3477,3248,3414,3354,3384,3311,3481,3326,3320,3370,3371,3355,3480,4614,3469,3468,3235,3328,3195,3338;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3208 = Surprise Attack (Back attack)
+//3518 = Weakening Blow (Back attack)
+//3261 = Venomous Strike (Back attack)
+//3499 = Vaizel's Dirk (Back attack, DP 4000, Elyos)
+//3495 = Triniel's Dirk (Back attack, DP 4000, Asmo)
+//3477 = Assassination (Stun attack)
+//3248 = Quickening Doom (Stun attack)
+//946 = Divine Rune (Runes, Elyos)
+//3414 = Binding Rune (Runes, Airbound)
+//3354 = Blood Rune (Runes, heal)
+//3384 = Pain Rune (Runes, Stuns)
+//3311 = Signed Silence (Runes)
+//3481 = Apply Deadly Poison
+//3326 = Apply Lethal Venom
+//3320 = Deadly Abandon
+//3370 = Slayer Form (Elyos)
+//3371 = Slayer Form (Asmo)
+//3355 = Flurry
+//3480 = Oath of Accuracy
+//4614 = Sensory Boost
+//3469 = Deadly Focus
+//3468 = Killer's Eye
+//3235 = Devotion
+//3328 = Aethertwisting
+//3195 = Focused Evasion
+//3338 = Blinding Burst
+//;;;;;;;End Settings Assassin;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Settings Ranger;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACRelyOnDistance=819,>5; //819 = Lethal Arrow (Cast)
+_ACRelyOnDistance=913,<4; //913 = Nimble Fingers (Speed up traps)
+_ACRelyOnDistance=1147,<4; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnDistance=1154,<4; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnDistance=1059,<4; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnDistance=1058,<4; //1058 = Propelling Trap (Asmo, Instant)
+_ACRelyOnDistance=1009,<4; //1009 = Natures Resolve (Dodge Spell)
+_ACRelyOnDistance=3195,<4; //3195 = Focused Evasion (Dodge Spell)
+_ACRelyOnDistance=839,<4; //839 = Spread Shot (AoE)
+_ACRelyOnDistance=2902,<4; //2902 = Arrow Storm (AoE)
+_ACRelyOnDistance=1134,<4; //1134 = Arrow Deluge (AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=819,=100; //819 = Lethal Arrow (Cast)
+_ACRelyOnTargetHP=913,>70; //913 = Nimble Fingers (Speed up traps)
+_ACRelyOnTargetHP=1147,>70; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnTargetHP=1154,>70; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnTargetHP=1059,>70; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnTargetHP=1058,>70; //1058 = Propelling Trap (Asmo, Instant)
+
+_ACRelyOnAggro=819,False;
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=StunningShot_1,678; // Stunning Shot 1 Effect (Stun)
+_SetVar=StunningShot_2,679; // Stunning Shot 2 Effect (Stun)
+_SetVar=StunningShot_3,680; // Stunning Shot 3 Effect (Stun)
+_SetVar=StunningShot_4,736; // Stunning Shot 4 Effect (Stun)
+_SetVar=StunningShot_5,795; // Stunning Shot 5 Effect (Stun)
+////////////////////////////////////////////////////////////
+
+_ACRelyOnBuff=1147,3355;  //1147 = Sandstorm Trap (Elyos) relies on Nimble Fingers
+_ACRelyOnBuff=1154,3355;  //1147 = Sandstorm Trap (Asmo) relies on Nimble Fingers
+_ACRelyOnBuff=1059,!3355;  //1059 = Propelling Trap (Elyos) relies on not having Nimble Fingers
+_ACRelyOnBuff=1058,!3355;  //1058 = Propelling Trap (Asmo) relies on not having Nimble Fingers
+_ACRelyOnBuff=813,813; //813 = Focused Shots
+_ACRelyOnBuff=889,889; //889 = Bestial Fury
+
+_ACRelyOnLevel=889,>44; //889 = Bestial Fury
+_ACRelyOnLevel=796,<45; //796 = Strong Shots
+
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=813,>50; //813 = Focused Shots
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACIsActive=1126,True; //1126 = Sharpen Arrows (Active)
+
+_ACRelyOnDP=872,2000; //872 = Mau Form (DP 2000)
+
+_ACRelyOnRace=1026,Asmo; //1026 = Shackle Arrow (Asmo)
+_ACRelyOnRace=647,Elyos; //647 = Holy Arrow (Elyos)
+_ACRelyOnRace=648,Asmo; //648 = Deadly Arrow (Asmo)
+_ACRelyOnRace=1147,Elyos; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnRace=1154,Asmo; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnRace=1059,Elyos; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnRace=1058,Asmo; //1058 = Propelling Trap (Asmo, Instant)
+
+_ACRelyOnItem=1147,169300009; // Sandstorm Trap (Elyos) relies on Tripeed Fruit
+_ACRelyOnItem=1154,169300009; // Sandstorm Trap (Asmo) relies on Tripeed Fruit
+_ACRelyOnItem=1059,169300009; // Propelling Trap (Elyos) relies on Tripeed Fruit
+_ACRelyOnItem=1058,169300009; // Propelling Trap (Asmo) relies on Tripeed Fruit
+
+_ACSkills=819,795,848,1117,1026,812,961,647,648,880,839,2902,1134,1052,825,871,1119,1074,1005,1021;
+//819 = Lethal Arrow (Cast)
+//795 = Stunning Show
+//848 = Dizzying Arrow
+//1117 = Explosive Arrow
+//1026 = Shackle Arrow (Asmo)
+//812 = Agonizing Arrow
+//961 = Entangling Shot
+//647 = Holy Arrow (Elyos)
+//648 = Deadly Arrow (Asmo)
+//880 = Dilation Arrow
+//839 = Spread Shot (AoE)
+//2902 = Arrow Storm (AoE)
+//1134 = Arrow Deluge (AoE)
+//1052 = Gale Arrow
+//825 = Heart Shot
+//871 = Lightning Arrow
+//1119 = Unerring Arrow
+//1074 = Silence Arrow
+//1005 = Swift Show
+//1021 = Deadshot
+
+_ACBuffs=314,321,913,1147,1154,1059,1058,1126,847,1057,867,796,813,889,872,1009,3195,3235;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//913 = Nimble Fingers (Speed up traps)
+//1147 = Sandstorm Trap (Elyos)
+//1154 = Sandstorm Trap (Asmo)
+//1059 = Propelling Trap (Elyos, Instant)
+//1058 = Propelling Trap (Asmo, Instant)
+//1126 = Sharpen Arrows (Active)
+//847 = Breath of Nature
+//1057 = Bow of Blessing
+//867 = Speed of Wind
+//796 = Strong Shots
+//813 = Focused Shots
+//889 = Bestial Fury
+//872 = Mau Form (DP 2000)
+//1009 = Natures Resolve (Dodge Spell)
+//3195 = Focused Evasion (Dodge Spell)
+//3235 = Devotion
+//;;;;;;;End Settings Ranger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Settings Mage;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACManaPercentage=80;
+
+_ACIgnoreAtDistance=25;
+_ACInitialRange=23;
+
+_ACRelyOnBuff=1155,1377;//1155 = Stone Skin
+
+_ACRelyOnTargetDebuff=1447,1358; // Erosion
+
+_ACBuffs=1155,1447;
+//1155 = Stone Skin
+//1447 = Erosion
+
+_ACSkills=1363,1282,1328;
+//1363 = Ice Chain
+//1282 = Flame Bolt
+//1328 = Root
+//;;;;;;;End Settings Mage;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Settings Sorcerer;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=17;
+_ACTimeoutNoDamage=12000;
+
+_ACChainBlacklist=2836,1523,1483; // Blocks Magic Fist (Airbind cancel)
+
+_ACRelyOnTargetHP=1509,=100; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnTargetHP=1430,=100; //1430 = Delayed Blast (Delayed)
+_ACRelyOnTargetHP=1432,=100; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnTargetHP=1431,=100; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnTargetHP=1525,>50; //1525 = Flame Spray (Nuke)
+_ACRelyOnTargetHP=1258,>50; //1258 = Balaur Seeker (Nuke)
+_ACRelyOnTargetHP=1326,>50; //1326 = Glacial Shard (Nuke)
+_ACRelyOnTargetHP=1493,>50; //1493 = Storm Strike (Nuke)
+_ACRelyOnTargetHP=1307,>50; //1307 = Wintry Armor
+_ACRelyOnTargetHP=1350,>50; //1350 = Boon of Quickness (Castspeed, Asmo)
+_ACRelyOnTargetHP=1417,<100; //1417 = Curse of Roots (Sleep)
+_ACRelyOnTargetHP=1339,<100; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnTargetHP=1343,<100; //1343 = Somnolence (Sleep, Charge)
+
+_ACRelyOnDistance=1225,<3; //1225 = Freezing Wind (Close range)
+_ACRelyOnDistance=1307,<3; //1307 = Wintry Armor
+_ACRelyOnDistance=1549,<3; //1549 = Illusion (Dodge)
+_ACRelyOnDistance=1549,<3; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnDistance=1328,>3; //1328 = Root
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnAggro=1509,False; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnAggro=1430,False; //1430 = Delayed Blast (Delayed)
+_ACRelyOnAggro=1432,False; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnAggro=1431,False; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+_ACRelyOnAggro=1447,True; //1447 = Erosion (DoT)
+_ACRelyOnAggro=1519,True; //1519 = Flame Cage (DoT)
+_ACRelyOnAggro=1307,True; //1307 = Wintry Armor
+_ACRelyOnAggro=1549,True; //1549 = Illusion (Dodge)
+_ACRelyOnAggro=1555,True; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnAggro=1328,True; //1328 = Root
+_ACRelyOnAggro=1417,True; //1417 = Curse of Roots (Sleep)
+_ACRelyOnAggro=1339,True; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnAggro=1343,True; //1343 = Somnolence (Sleep, Charge)
+
+
+_ACRelyOnRace=1509,Elyos; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnRace=1432,Elyos; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnRace=1431,Asmo; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnRace=1473,Elyos; //1473 = Summon Whirlwind (Elyos)
+_ACRelyOnRace=1465,Asmo; //1465 = Summon Whirlwind (Asmo)
+_ACRelyOnRace=1315,Elyos; //1315 = Ice Sheet (Elyos)
+_ACRelyOnRace=1323,Asmo; //1323 = Ice Sheet (Asmo)
+_ACRelyOnRace=1350,Asmo; //1350 = Boon of Quickness (Castspeed, Asmo)
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=Erosion_1,1447; // Erosion 1 Effect (DoT)
+_SetVar=FlameCage_1,1465; // Flame Cage 1 Effect (DoT)
+_SetVar=FlameCage_2,1466; // Flame Cage 2 Effect (DoT)
+_SetVar=FlameCage_3,1467; // Flame Cage 3 Effect (DoT)
+_SetVar=FlameCage_4,1527; // Flame Cage 4 Effect (DoT)
+_SetVar=FlameCage_5,1519; // Flame Cage 5 Effect (DoT)
+_SetVar=Sleep_2,1496; // Sleep 2 Effect (Sleep)
+_SetVar=Sleep_3,1511; // Sleep 3 Effect (Sleep)
+_SetVar=CurseOfRoots_1,1454; // Curse of Roots 1 Effect (Sleep)
+_SetVar=CurseOfRoots_2,1417; // Curse of Roots 2 Effect (Sleep)
+_SetVar=SleepStorm_1,1443; // Sleeping Storm 1 Effect (Sleep)
+_SetVar=SleepStorm_2,1339; // Sleeping Storm 2 Effect (Sleep)
+_SetVar=Somnolence_1,2715; // Sleeping Storm 1 Charge 1 Effect (Sleep)
+_SetVar=Somnolence_2,2716; // Sleeping Storm 1 Charge 2 Effect (Sleep)
+//////////////////////////////////////////////////////////
+
+//Only uses sleep if no dots and no sleep is on target
+_ACRelyOnTargetDebuff=1417,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1417 = Curse of Roots (Sleep)
+_ACRelyOnTargetDebuff=1339,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnTargetDebuff=1343,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1343 = Somnolence (Sleep, Charge)
+
+//Only use dots when no sleep is on target and dot is not already on it
+_ACRelyOnTargetDebuff=1447,%Var[Erosion_1]/%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]; // Only cast Erosion if it's missing
+_ACRelyOnTargetDebuff=1519,%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]/%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]; // Only cast Flame Cage if it's missing
+
+_ACRelyOnPlayerHP=1401,<80; //1401 = Stamina absorption (HP recover)
+_ACRelyOnPlayerHP=1431,<20; //1431 = Exchange Vitality (Switch HP / MP)
+_ACRelyOnPlayerHP=1446,<40; //1446 = Boon of Iron-Clad (Shield)
+_ACRelyOnPlayerHP=1384,<30; //1384 = Thick Shield  (Shield)
+_ACRelyOnPlayerHP=1555,<40; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=1431,>40; //1431 = Exchange Vitality (Switch HP / MP)
+_ACRelyOnPlayerMP=1203,<60; //1203 = Gain Mana (Mana recover)
+_ACRelyOnPlayerMP=1257,<55; //1257 = Refracting Shard (Mana recover)
+_ACRelyOnPlayerMP=1393,<60; //1393 = Soul absorption (Mana recover)
+_ACRelyOnPlayerMP=1270,>55; //1270 = Vaizel's Wisdom (Castspeed, low CD)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnBuff=1166,1166; //1166 = Stone Skin only use if its not up
+_ACRelyOnBuff=4613,4613; //4613 = Robe of Flame only use if its not up
+
+_ACIsAimable=1432,2; //1432 = Vulcanic Heat (Delayed, Aimable, Elyos)
+_ACIsAimable=1431,2; //1431 = Vulcanic Heat (Delayed, Aimable, Asmo)
+_ACIsAimable=1548,2; //1548 = Flame Meteor (Aimable)
+_ACIsAimable=1315,2; //1315 = Ice Sheet (Aimable, Elyos)
+_ACIsAimable=1323,2; //1323 = Ice Sheet (Aimable, Asmo)
+
+
+_ACSkills=1509,1430,1432,1431,1525,4604,1375,1183,1539,1473,1465,1258,1191,1326,1493,1281,1548,4660,1383,1315,1323,1269,4602,1356,1395,1294,1225;
+//1509 = Big Magma Eruption (Delayed, Elyos)
+//1430 = Delayed Blast (Delayed)
+//1432 = Vulcanic Heat (Delayed, Aimable, Elyos)
+//1431 = Vulcanic Heat (Delayed, Aimable, Asmo)
+//1525 = Flame Spray (Nuke)
+//4604 = Arcane Thunderbolt (Stun)
+//1375 = Ice Chain
+//1183 = Frost (Elyos)
+//1539 = Flame Fusion
+//1473 = Summon Whirlwind (Elyos)
+//1465 = Summon Whirlwind (Asmo)
+//1258 = Balaur Seeker (Nuke)
+//1191 = Aether's Hold (Airbind)
+//1326 = Glacial Shard (Nuke)
+//1493 = Storm Strike (Nuke)
+//1281 = Flame Harpoon
+//1548 = Flame Meteor (Aimable)
+//4660 = Soul Freeze
+//1383 = Ice Harpoon
+//1315 = Ice Sheet (Aimable, Elyos)
+//1323 = Ice Sheet (Aimable, Asmo)
+//1269 = Wind Spear
+//4602 = Wind Cut Down
+//1356 = Summon Rock
+//1395 = Meteorite
+//1294 = Flame Bolt
+//1225 = Freezing Wind (Close range)
+
+
+_ACBuffs=314,321,1328,1203,1257,1393,1401,1431,1166,4613,1446,1384,1402,1307,1432,1350,1549,1445,1270,1417,1339,1343,1447,1519,1555;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//1328 = Root
+//1203 = Gain Mana (Mana recover)
+//1257 = Refracting Shard (Mana recover)
+//1393 = Soul absorption (Mana recover)
+//1401 = Stamina absorption (HP recover)
+//1431 = Exchange Vitality (Switch HP / MP)
+//1166 = Stone Skin
+//4613 = Robe of Flame
+//1446 = Boon of Iron-Clad (Shield)
+//1384 = Thick Shield  (Shield)
+//1402 = Elemental Ward (Def buff)
+//1307 = Wintry Armor
+//1432 = Magic Assist (Small Castspeed and buff)
+//1350 = Boon of Quickness (Castspeed, Asmo)
+//1549 = Illusion (Dodge)
+//1445 = Supplication of Focus
+//1270 = Vaizel's Wisdom (Castspeed, low CD)
+//(Disabled) 1555 = Zikel's Wisdom (M. Boost, low CD)
+//1417 = Curse of Roots (Sleep)
+//1339 = Sleeping Storm (Sleep)
+//1343 = Somnolence (Sleep, Charge)
+//1447 = Erosion (DoT)
+//1519 = Flame Cage (DoT)
+//1555 = Illusion Storm (Stun AoE)
+//;;;;;;;End Settings Sorcerer;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Settings Spiritmaster;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=12000;
+
+_ACRelyOnRace=3807,Elyos; //3807 = Summon Cyclone Servant (Elyos)
+_ACRelyOnRace=3808,Asmo; //3808 = Summon Cyclone Servant (Asmo)
+_ACRelyOnRace=3682,Elyos; //3682 = Summon Water Spirit (Elyos)
+_ACRelyOnRace=3683,Asmo; //3683 = Summon Water Spirit (Asmo)
+_ACRelyOnRace=3704,Elyos; //3704 = Summon Wind Spirit (Elyos)
+_ACRelyOnRace=3705,Asmo; //3705 = Summon Wind Spirit (Asmo)
+_ACRelyOnRace=3728,Elyos; //3728 = Summon Fire Spirit (Elyos)
+_ACRelyOnRace=3729,Asmo; //3729 = Summon Fire Spirit (Asmo)
+_ACRelyOnRace=3662,Elyos; //3662 = Summon Earth Spirit (Elyos)
+_ACRelyOnRace=3663,Asmo; //3663 = Summon Earth Spirit (Asmo)
+_ACRelyOnRace=3591,Elyos; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnRace=3592,Asmo; //3592 = Curse of Water (Fear, Asmo)
+
+_ACRelyOnPet=3779,False; //3779 = Summon Alacrity (Fast Summon) if it's not out
+_ACRelyOnPet=3682,False; //3682 = Summon Water Spirit (Elyos) if it's not out
+_ACRelyOnPet=3683,False; //3683 = Summon Water Spirit (Asmo) if it's not out
+_ACRelyOnPet=3704,False; //3704 = Summon Wind Spirit (Elyos) if it's not out
+_ACRelyOnPet=3705,False; //3705 = Summon Wind Spirit (Asmo) if it's not out
+_ACRelyOnPet=3728,False; //3728 = Summon Fire Spirit (Elyos) if it's not out
+_ACRelyOnPet=3729,False; //3729 = Summon Fire Spirit (Asmo) if it's not out
+_ACRelyOnPet=3662,False; //3662 = Summon Earth Spirit (Elyos) if it's not out
+_ACRelyOnPet=3663,False; //3663 = Summon Earth Spirit (Asmo) if it's not out
+_ACRelyOnPet=3835,True; //3835 = Spirit Detonation Claw (Pet) if pet is out
+_ACRelyOnPet=3643,True; //3643 = Spirit Erosion (Pet) if pet is out
+_ACRelyOnPet=3548,True; //3548 = Spirit Ruinous Offensive (Pet) if pet is out
+_ACRelyOnPet=3852,True; //3852 = Spirit Wrath Position (Pet) if pet is out
+_ACRelyOnPet=3796,True; //3796 = Spirit Armor (Pet) if pet is out
+_ACRelyOnPet=3866,True; //3866 = Spirit Armor of Light (DP 2000, Pet, Elyos) if pet is out
+_ACRelyOnPet=3739,True; //3739 = Enmity Swap (Pet) if pet is out
+_ACRelyOnPet=3639,True; //3639 = Replenish Element (Pet heal, cost own HP) if pet is out
+_ACRelyOnPet=3590,True; //3590 = Healing Spirit (Pet heal) if pet is out
+_ACRelyOnPet=3738,True; //3738 = Spirit Absorption (Mana Recover for Pet HP) if pet is out
+_ACRelyOnPet=3839,True; //3839 = Spirit Preserve (Shield, Pet) if pet is out
+_ACRelyOnPet=3837,True; //3837 = Spirit Disturbance (Pet) if pet is out
+
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=SympatheticMind_1,8723; // Sympathetic Mind 1 Effect
+_SetVar=StoneSkin_1,1155; // Stone Skin 1 Effect
+_SetVar=StoneSkin_2,1378; // Stone Skin 2 Effect
+_SetVar=StoneSkin_3,1379; // Stone Skin 3 Effect
+_SetVar=StoneSkin_4,1380; // Stone Skin 4 Effect
+_SetVar=StoneSkin_5,1166; // Stone Skin 5 Effect
+_SetVar=StoneSkin_6,1166; // Stone Skin 6 Effect
+_SetVar=Erosion_1,1447; // Erosion 1 Effect
+_SetVar=Erosion_2,1359; // Erosion 2 Effect
+_SetVar=Erosion_3,1360; // Erosion 3 Effect
+_SetVar=Erosion_4,1361; // Erosion 4 Effect
+_SetVar=Erosion_5,1459; // Erosion 5 Effect
+_SetVar=Erosion_6,1459; // Erosion 6 Effect
+_SetVar=Sandblaster_1,1772; // Sandblaster 1 Effect
+_SetVar=Sandblaster_2,1773; // Sandblaster 2 Effect
+_SetVar=Sandblaster_3,1795; // Sandblaster 3 Effect
+_SetVar=Sandblaster_4,1795; // Sandblaster 4 Effect
+_SetVar=CurseOfFire_1,3591; // Curse of Fire 1 Effect
+_SetVar=CurseOfFire_2,3591; // Curse of Fire 2 Effect
+_SetVar=CurseOfWater_1,3592; // Curse of Water 1 Effect
+_SetVar=CurseOfWater_2,3592; // Curse of Water 2 Effect
+_SetVar=Fear_1,3775; // Fear 1 Effect
+_SetVar=Fear_2,1637; // Fear 2 Effect
+_SetVar=Fear_3,1708; // Fear 3 Effect
+_SetVar=FearShriek_1,3589; // Fear Shriek 1 Effect
+//////////////////////////////////////////////////////////
+
+_ACRelyOnBuff=1166,%Var[StoneSkin_6]; //1166 = Stone Skin only rebuff if buff not alive
+
+_ACRelyOnTargetDebuff=1459,%Var[Erosion_6]; //1459 = Erosion only reuse if debuff not alive
+_ACRelyOnTargetDebuff=1795,%Var[Sandblaster_4]; //1795 = Sandblaster (AoE) only reuse if debuff not alive
+_ACRelyOnTargetDebuff=3591,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3591 = Curse of Fire (Fear, Elyos) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3592,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3592 = Curse of Water (Fear, Asmo) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3775,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3775 = Fear (Fear) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3589,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3589 = Fear Shriek (Fear, AoE) only use if not feared or sleep
+
+_ACRelyOnLevel=1363,<13; //1363 = Ice Chain
+_ACRelyOnLevel=1282,<22; //1282 = Flame Bolt
+_ACRelyOnLevel=3613,>12; //3613 = Chain of Earth
+_ACRelyOnLevel=3682,<1; //3682 = Summon Water Spirit (Elyos)
+_ACRelyOnLevel=3683,<1; //3683 = Summon Water Spirit (Asmo)
+_ACRelyOnLevel=3704,<1; //3704 = Summon Wind Spirit (Elyos)
+_ACRelyOnLevel=3705,<1; //3705 = Summon Wind Spirit (Asmo)
+_ACRelyOnLevel=3728,<16; //3728 = Summon Fire Spirit (Elyos)
+_ACRelyOnLevel=3729,<16; //3729 = Summon Fire Spirit (Asmo)
+_ACRelyOnLevel=3662,>15; //3662 = Summon Earth Spirit (Elyos)
+_ACRelyOnLevel=3663,>15; //3663 = Summon Earth Spirit (Asmo)
+
+_ACRelyOnPlayerHP=3639,>50; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnPlayerHP=4665,<80; //4665 = Backdraft (HP/MP recover)
+_ACRelyOnPlayerHP=3739,<60; //3739 = Enmity Swap (Pet)
+_ACRelyOnPlayerHP=3839,<50; //3839 = Spirit Preserve (Shield, Pet)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=4665,<80; //4665 = Backdraft (HP/MP recover)
+_ACRelyOnPlayerMP=3738,<65; //3738 = Spirit Absorption (Mana Recover for Pet HP)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnPetHP=3639,<40; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnPetHP=3738,>30; //3738 = Spirit Absorption (Mana Recover for Pet HP)
+_ACRelyOnPetHP=3590,<20; //3590 = Healing Spirit (Pet heal)
+
+_ACRelyOnDP=3866,2000; //3866 = Spirit Armor of Light (DP 2000, Pet, Elyos)
+
+_ACRelyOnDistance=1328,>4; //1328 = Root
+_ACRelyOnDistance=3591,<4; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnDistance=3592,<4; //3592 = Curse of Water (Fear, Asmo)
+_ACRelyOnDistance=3775,<4; //3775 = Fear (Fear)
+_ACRelyOnDistance=3589,<4; //3589 = Fear Shriek (Fear, AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnAggro=3739,True; //3739 = Enmity Swap (Pet)
+_ACRelyOnAggro=3639,False; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnAggro=3591,True; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnAggro=3592,True; //3592 = Curse of Water (Fear, Asmo)
+_ACRelyOnAggro=3775,True; //3775 = Fear (Fear)
+_ACRelyOnAggro=3589,True; //3589 = Fear Shriek (Fear, AoE)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACCustomCooldown=3796,180000; //3796 = Spirit Armor (Pet)
+_ACCooldownDetection=3796,False; //3796 = Spirit Armor (Pet)
+
+_ACSkills=1363,3561,3613,3847,3807,3808,3835,3643,3548,3852,3601,3588,1282;
+//1363 = Ice Chain
+//3561 = Infernal Pain
+//3613 = Chain of Earth
+//3847 = Cyclone Wrath
+//3807 = Summon Cyclone Servant (Elyos)
+//3808 = Summon Cyclone Servant (Asmo)
+//3835 = Spirit Detonation Claw (Pet)
+//3643 = Spirit Erosion (Pet)
+//3548 = Spirit Ruinous Offensive (Pet)
+//3852 = Spirit Wrath Position (Pet)
+//3601 = Vacuum Choke
+//3588 = Weaken Spirit
+//1282 = Flame Bolt
+
+
+_ACBuffs=314,321,3779,3682,3683,3704,3705,3728,3729,3662,3663,1166,3796,3866,3739,3639,3590,3738,3839,3837,4665,3730,3547,3780,3574,1459,1328,3591,3592,3775,3589;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3779 = Summon Alacrity (Fast Summon)
+//3682 = Summon Water Spirit (Elyos)
+//3683 = Summon Water Spirit (Asmo)
+//3704 = Summon Wind Spirit (Elyos)
+//3705 = Summon Wind Spirit (Asmo)
+//3728 = Summon Fire Spirit (Elyos)
+//3729 = Summon Fire Spirit (Asmo)
+//3662 = Summon Earth Spirit (Elyos)
+//3663 = Summon Earth Spirit (Asmo)
+//1166 = Stone Skin
+//3796 = Spirit Armor (Pet)
+//3866 = Spirit Armor of Light (DP 2000, Pet)
+//3739 = Enmity Swap (Pet)
+//3639 = Replenish Element (Pet heal, cost own HP)
+//3590 = Healing Spirit (Pet heal)
+//3738 = Spirit Absorption (Mana Recover for Pet HP)
+//3839 = Spirit Preserve (Shield, Pet)
+//3837 = Spirit Disturbance (Pet)
+//4665 = Backdraft (HP/MP recover)
+//3730 = Contract of Resistance (Dodge)
+//3547 = Infernal Blight (Debuff)
+//3780 = Root of Enervation (Debuff)
+//3574 = Shackle of Vulnerability (Debuff)
+//1459 = Erosion
+//1795 = Sandblaster (AoE) (Removed)
+//1328 = Root
+//3591 = Curse of Fire (Fear, Elyos)
+//3592 = Curse of Water (Fear, Asmo)
+//3775 = Fear (Fear)
+//3589 = Fear Shriek (Fear, AoE)
+//;;;;;;;End Settings Spiritmaster;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Settings Priest;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACHealPercentage=66;
+
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+
+_ACRelyOnBuff=1684,986; //1684 = Blessing of Rock
+
+_ACRelyOnPlayerHP=1839,<75; //1839 = Healing Light
+
+_ACBuffs=1839,1684;
+//1839 = Healing Light
+//1684 = Blessing of Rock
+
+_ACSkills=4013,2966;
+//4013 = Smite
+//2966 = Hallowed Strike
+//;;;;;;;End Settings Priest;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Settings Cleric;;;;;;;;;
+_ACAllowAllMobs=True;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACRegenerateEnabled=True;
+_ACRegMPPercentage=30;
+_ACRegHPPercentage=65;
+
+_ACChainBlacklist=2573,1021; // Blocks Impervious Veil
+
+_ACIsActive=3902,True; //3902 = Sacrificial Power (Active)
+
+_ACRelyOnBuff=1684,1684; //1684 = Blessing of Rock
+_ACRelyOnBuff=3950,3950; //3950 = Light of Rejuvenation (HoT)
+
+_ACRelyOnDistance=4127,>3; //4127 = Root
+_ACRelyOnDistance=4135,<4; //4135 = Blinding Light
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+_ACRelyOnDistance=4011,<4; //4011 = Traumatic Blow
+_ACRelyOnDistance=2966,<4; //2966 = Hallowed Strike
+
+_ACRelyOnAggro=4127,True; //4127 = Root
+_ACRelyOnAggro=4135,True; //4135 = Blinding Light
+
+_ACRelyOnPlayerHP=3904,>90; //3904 = Reverse Condition (HP/MP Switch)
+_ACRelyOnPlayerHP=3950,<95; //3950 = Light of Rejuvenation (HoT)
+_ACRelyOnPlayerHP=4219,<80; //4219 = Light of Recovery (Small Heal)
+_ACRelyOnPlayerHP=3990,<75; //3990 = Summon Healing Servant (Elyos)
+_ACRelyOnPlayerHP=3991,<75; //3991 = Summon Healing Servant (Asmo)
+_ACRelyOnPlayerHP=1839,<70; //1839 = Healing Light (Small Heal)
+_ACRelyOnPlayerHP=3959,<70; //3959 = Flash of Recovery (Instant Heal)
+_ACRelyOnPlayerHP=3997,<65; //3997 = Ripple of Purification (Large Heal)
+_ACRelyOnPlayerHP=3931,<65; //3931 = Saving Grace (Instant Heal)
+_ACRelyOnPlayerHP=4003,<50; //4003 = Splendor of Rebirth (Large Heal, HoT)
+_ACRelyOnPlayerHP=4212,<50; //4212 = Radiant Cure (Large Heal)
+_ACRelyOnPlayerHP=4181,<50; //4181 = Splendor of Recovery (Large Heal)
+_ACRelyOnPlayerHP=3974,<40; //3974 = Vitality's Gift (Large Heal, Charge)
+_ACRelyOnPlayerHP=3917,<60; //3917 = Blessed Shield (Shield, Healboost)
+
+_ACRelyOnPlayerMP=3904,<25; //3904 = Reverse Condition (HP/MP Switch)
+_ACRelyOnPlayerMP=4194,<60; //4194 = Life Curtain (MP recover, Heal, Shield)
+_ACRelyOnPlayerMP=3877,<70; //3877 = Penance (MP recover)
+_ACRelyOnPlayerMP=1166,<40; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnPlayerMP=1171,<40; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+_ACRelyOnPlayerMP=321,<70; //321 = Mana Treatment
+
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnLevel=4219,>30; //4219 = Light of Recovery (Small Heal)
+_ACRelyOnLevel=1839,<31; //1839 = Healing Light (Small Heal)
+
+_ACRelyOnDP=1166,2000; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnDP=1171,2000; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+
+_ACRelyOnRace=4125,Elyos; //4125 = Summon Holy Servant (Elyos)
+_ACRelyOnRace=4126,Asmo; //4126 = Summon Holy Servant (Asmo)
+_ACRelyOnRace=4162,Elyos; //4162 = Summon Noble Energy (Elyos)
+_ACRelyOnRace=4163,Asmo; //4163 = Summon Noble Energy (Asmo)
+_ACRelyOnRace=3990,Elyos; //3990 = Summon Healing Servant (Elyos)
+_ACRelyOnRace=3991,Asmo; //3991 = Summon Healing Servant (Asmo)
+_ACRelyOnRace=1166,Elyos; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnRace=1171,Asmo; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+_ACRelyOnRace=4072,Elyos; //4072 = Slashing Wind (Elyos)
+
+_ACSkills=4166,4169,4053,4072,4151,4143,4011,2966,4013;
+//4166 = Call Lightning (Nuke)
+//4169 = Storm of Aion
+//4053 = Punishing Earth
+//4072 = Slashing Wind (Elyos)
+//4151 = Land's Bargain
+//4143 = Retribution Lightning
+//4011 = Traumatic Blow
+//2966 = Hallowed Strike
+//4013 = Smite
+
+
+_ACBuffs=321,3902,1684,3895,3904,4194,3877,3888,4125,4126,4162,4163,3990,3991,4133,4094,4187,4127,4135,3917,3959,3931,4003,3997,4212,4181,3974,4219,1839,3950;
+//321 = Mana Treatment
+//3902 = Sacrificial Power (Active)
+//1684 = Blessing of Rock
+//3895 = Amplification
+//3904 = Reverse Condition (HP/MP Switch)
+//4194 = Life Curtain (MP recover, Heal, Shield)
+//3877 = Penance (MP recover)
+//1166 = Salvation (MP recover, DP 2000, Elyos)
+//1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+//4125 = Summon Holy Servant (Elyos)
+//4126 = Summon Holy Servant (Asmo)
+//4162 = Summon Noble Energy (Elyos)
+//4163 = Summon Noble Energy (Asmo)
+//3990 = Summon Healing Servant (Elyos)
+//3991 = Summon Healing Servant (Asmo)
+//4133 = Chastise (DoT)
+//4094 = Earth's Wrath (DoT)
+//4187 = Enfeebling Burst (DoT)
+//4127 = Root
+//4135 = Blinding Light
+//3917 = Blessed Shield (Shield, Healboost)
+//3959 = Flash of Recovery (Instant Heal)
+//3931 = Saving Grace (Instant Heal)
+//3888 = Sage's Wisdom (Castspeed)
+//4003 = Splendor of Rebirth (Large Heal, HoT)
+//3997 = Ripple of Purification (Large Heal)
+//4212 = Radiant Cure (Large Heal)
+//4181 = Splendor of Recovery (Large Heal)
+//3974 = Vitality's Gift (Large Heal, Charge)
+//4219 = Light of Recovery (Small Heal)
+//1839 = Healing Light (Small Heal)
+//3950 = Light of Rejuvenation (HoT)
+
+
+_ACRegenerate=3950,4003,3997,4212,4181,3974,4219,1839;
+//3950 = Light of Rejuvenation (HoT)
+//4003 = Splendor of Rebirth (Large Heal, HoT)
+//3997 = Ripple of Purification (Large Heal)
+//4212 = Radiant Cure (Large Heal)
+//4181 = Splendor of Recovery (Large Heal)
+//3974 = Vitality's Gift (Large Heal, Charge)
+//4219 = Light of Recovery (Small Heal)
+//1839 = Healing Light (Small Heal)
+//;;;;;;;End Settings Cleric;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Settings Chanter;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=15;
+_ACInitialRange=3;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=65; // Starts sitting when HP drop below 65%
+
+// Buff ID Notes ///////////////////////////////
+_SetVar=InvincibilityMantra_1,8588; //1234 = Invincibility Mantra 1 Effect
+_SetVar=InvincibilityMantra_2,8595; //4642 = Invincibility Mantra 2 Effect
+_SetVar=HitMantra_1,8281; //1998 = Hit Mantra 1 Effect
+_SetVar=HitMantra_2,8397; //4645 = Hit Mantra 2 Effect
+_SetVar=ClementMindMantra_1,8241; //1204 = Clement Mind Mantra 1 Effect
+_SetVar=ClementMindMantra_2,8277; //1205 = Clement Mind Mantra 2 Effect
+_SetVar=ClementMindMantra_3,8398; //1269 = Clement Mind Mantra 3 Effect
+_SetVar=ClementMindMantra_4,8779; //INVALID = Clement Mind Mantra 4 Effect
+_SetVar=IntensityMantra_1,8497; //1322 = Intensity Mantra 1 Effect
+_SetVar=IntensityMantra_2,8534; //1349 = Intensity Mantra 2 Effect
+_SetVar=IntensityMantra_3,8596; //INVALID = Intensity Mantra 3 Effect
+_SetVar=RevivalMantra_1,8490; //1316 = Revival Mantra 1 Effect
+_SetVar=RevivalMantra_2,8491; //1317 = Revival Mantra 2 Effect
+_SetVar=RevivalMantra_3,8517; //1332 = Revival Mantra 3 Effect
+_SetVar=RevivalMantra_4,8742; //1753 = Revival Mantra 4 Effect
+_SetVar=ShieldMantra_1,8484; //1309 = Shield Mantra 1 Effect
+_SetVar=ShieldMantra_2,8485; //1310 = Shield Mantra 2 Effect
+_SetVar=ShieldMantra_3,8486; //1311 = Shield Mantra 3 Effect
+_SetVar=ShieldMantra_4,8532; //1347 = Shield Mantra 4 Effect
+_SetVar=ShieldMantra_5,8780; //1666 = Shield Mantra 5 Effect
+_SetVar=VictoryMantra_1,8234; //1207 = Victory Mantra 1 Effect
+_SetVar=VictoryMantra_2,8243; //1208 = Victory Mantra 2 Effect
+_SetVar=VictoryMantra_3,8280; //1209 = Victory Mantra 3 Effect
+_SetVar=VictoryMantra_4,8396; //1259 = Victory Mantra 4 Effect
+_SetVar=VictoryMantra_5,8743; //INVALID = Victory Mantra 5 Effect
+_SetVar=BlessingOfHealth_1,951; //951 = Blessing of Health 1 Effect
+_SetVar=BlessingOfRock_1,1684; //1684 = Blessing of Rock 1 Effect
+_SetVar=BlessingOfStone_1,1230; //1230 = Blessing of Stone 1 Effect
+_SetVar=BlessingOfStone_2,2159; //2159 = Blessing of Stone 2 Effect
+_SetVar=BlessingOfStone_3,2165; //2165 = Blessing of Stone 3 Effect
+_SetVar=BlessingOfStone_4,1756; //1756 = Blessing of Stone 4 Effect
+_SetVar=RageSpell_1,1315; //1315 = Rage Spell 1 Effect
+_SetVar=PromiseOfWind_1,969; //969 = Promise of Wind 1 Effect
+_SetVar=PromiseOfWind_2,970; //970 = Promise of Wind 2 Effect
+_SetVar=PromiseOfWind_3,971; //971 = Promise of Wind 3 Effect
+_SetVar=PromiseOfWind_4,989; //989 = Promise of Wind 4 Effect
+_SetVar=PromiseOfAether_1,1318; //1318 = Promise of Aether 1 Effect
+_SetVar=PromiseOfAether_2,1319; //1319 = Promise of Aether 2 Effect
+_SetVar=PromiseOfAether_3,1342; //1342 = Promise of Aether 3 Effect
+_SetVar=PromiseOfAether_4,2183; //2183 = Promise of Aether 4 Effect
+_SetVar=PromiseOfAether_5,2944; //2944 = Promise of Aether 5 Effect
+_SetVar=WordOfProtection_1,1755; //1755 = Word of Protection 1 Effect
+_SetVar=WordOfInspiration_1,1579; //1579 = Word of Inspiration 1 Effect
+_SetVar=Lucidity_1,1556; //1556 = Lucidity 1 Effect
+_SetVar=WordOfRevival_1,1306; //1306 = Word of Revival 1 Effect
+_SetVar=WordOfRevival_2,1307; //1307 = Word of Revival 2 Effect
+_SetVar=WordOfRevival_3,1308; //1308 = Word of Revival 3 Effect
+_SetVar=WordOfRevival_4,1339; //1339 = Word of Revival 4 Effect
+_SetVar=WordOfRevival_5,1745; //1745 = Word of Revival 5 Effect
+////////////////////////////////////////////////
+
+_ACRelyOnBuff=1666,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]/%Var[HitMantra_1]/%Var[HitMantra_2]/%Var[IntensityMantra_1]/%Var[IntensityMantra_2]/%Var[IntensityMantra_3]/%Var[ShieldMantra_1]/%Var[ShieldMantra_2]/%Var[ShieldMantra_3]/%Var[ShieldMantra_4]/%Var[ShieldMantra_5]; //1666 = Shield Mantra (Def, >12)
+_ACRelyOnBuff=1753,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]/%Var[HitMantra_1]/%Var[HitMantra_2]/%Var[ClementMindMantra_1]/%Var[ClementMindMantra_2]/%Var[ClementMindMantra_3]/%Var[ClementMindMantra_4]/%Var[RevivalMantra_1]/%Var[RevivalMantra_2]/%Var[RevivalMantra_3]/%Var[RevivalMantra_4]; //1753 = Revival Mantra (HP Recover, >21)
+_ACRelyOnBuff=4645,%Var[HitMantra_1]/%Var[HitMantra_2]; //4645 = Hit Mantra (Crit, >53, Stigma)
+_ACRelyOnBuff=4642,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]; //4642 = Invincibility Mantra (>49, Stigma)
+_ACRelyOnBuff=1684,%Var[BlessingOfRock_1]/%Var[BlessingOfStone_1]/%Var[BlessingOfStone_2]/%Var[BlessingOfStone_3]/%Var[BlessingOfStone_4];//1684 = Blessing of Rock
+_ACRelyOnBuff=1756,%Var[BlessingOfStone_1]/%Var[BlessingOfStone_2]/%Var[BlessingOfStone_3]/%Var[BlessingOfStone_4]; //1756 = Blessing of Stone
+_ACRelyOnBuff=1315,%Var[RageSpell_1]; //1315 = Rage Spell
+_ACRelyOnBuff=2944,%Var[PromiseOfAether_1]/%Var[PromiseOfAether_2]/%Var[PromiseOfAether_3]/%Var[PromiseOfAether_4]/%Var[PromiseOfAether_5]; //2944 = Promise of Aether
+_ACRelyOnBuff=1556,%Var[Lucidity_1]; //1556 = Lucidity (Atk buff)
+_ACRelyOnBuff=1579,%Var[Lucidity_1]/%Var[WordOfInspiration_1]; //1579 = Word of Inspiration (Atk buff, <60)
+_ACRelyOnBuff=1755,%Var[WordOfProtection_1]; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnBuff=1745,%Var[WordOfRevival_1]/%Var[WordOfRevival_2]/%Var[WordOfRevival_3]/%Var[WordOfRevival_4]/%Var[WordOfRevival_5]; //1745 = Word of Revival (HoT)
+
+_ACRelyOnLevel=1666,<31; //1666 = Shield Mantra replaced by Intensity Mantra
+_ACRelyOnLevel=1753,<24; //1753 = Revival Mantra replaced by Clement Mind Mantra
+_ACRelyOnLevel=4013,<42; //4013 = Smite replaced by other ranged skills
+
+_ACRelyOnRace=1600,Elyos; //1600 = Inescapable Judgement (Long range, Elyos)
+
+_ACRelyOnDP=1328,2000; //1328 = Word of Wind (DP 2000)
+_ACRelyOnDP=1638,2000; //1638 = Marchutan's Protection (DP 2000, Asmo)
+
+_ACRelyOnPlayerHP=1698,<65; //1698 = Protective Ward (Shield)
+_ACRelyOnPlayerHP=1745,<98; //1745 = Word of Revival (HoT)
+_ACRelyOnPlayerHP=1326,<30; //1326 = Word of Quickness (Castspeed)
+_ACRelyOnPlayerHP=1862,<80; //1862 = Recovery Spell (Heal)
+_ACRelyOnPlayerHP=1857,<65; //1857 = Healing Burst (Heal)
+_ACRelyOnPlayerHP=2960,<40; //2960 = Word of Life (Heal)
+_ACRelyOnPlayerHP=4638,<65; //4638 = Healing Conduit (Heal)
+_ACRelyOnPlayerHP=1839,<65; //1839 = Healing Light (Heal)
+
+_ACRelyOnPlayerMP=1606,<70; //1606 = Stamina Restoration (Heal, MP recover)
+_ACRelyOnPlayerMP=1755,>80; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnPlayerMP=1755,>45; //1579 = Word of Inspiration (Atk buff, <60)
+_ACRelyOnPlayerMP=321,<70; //321 = Mana Treatment
+
+_ACRelyOnAggro=1834,True; //1834 = Elemental Screen (Def buff)
+_ACRelyOnAggro=1755,True; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnAggro=1698,True; //1698 = Protective Ward (Shield)
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDistance=1834,<4; //1834 = Elemental Screen (Def buff)
+_ACRelyOnDistance=1755,<4; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnDistance=1698,<4; //1698 = Protective Ward (Shield)
+_ACRelyOnDistance=1656,<4; //1656 = Blessing of Wind
+_ACRelyOnDistance=4013,>7; //4013 = Smite
+
+_ACSkills=1868,1647,4629,1837,1789,2966;
+//1868 = Disorienting Blow
+//1647 = Annihilation
+//4629 = Leaping Flash (Charge)
+//1837 = Numbing Blow
+//1789 = Meteor Strike
+//2966 = Hallowed Strike
+
+_ACBuffs=321,1666,1753,4645,4642,1756,1684,1315,2944,1328,1638,1556,1755,1579,1834,1637,1656,1225,1759,1874,1600,1726,4013,1698,1745,1326,1862,1606,1857,2960,4638,1839;
+//321 = Mana Treatment
+//1666 = Shield Mantra (Def, >12, Priority 7)
+//1753 = Revival Mantra (HP Recover, >21, Priority 6)
+//4645 = Hit Mantra (Crit, >53, Stigma, Priority 2)
+//4642 = Invincibility Mantra (>49, Stigma, Priority 1)
+//1756 = Blessing of Stone
+//1684 = Blessing of Rock
+//1315 = Rage Spell
+//2944 = Promise of Aether
+//1328 = Word of Wind (DP 2000)
+//1638 = Marchutan's Protection (DP 2000)
+//1556 = Lucidity (Atk buff)
+//1755 = Word of Protection (Def buff, only on high mana)
+//1579 = Word of Inspiration (Atk buff, <60)
+//1834 = Elemental Screen (Def buff)
+//1637 = Unstoppable
+//1656 = Blessing of Wind
+//1225 = Focused Parry
+//1759 = Perfect Parry
+//1874 = Mountain Crash (Long range)
+//1600 = Inescapable Judgement (Long range, Elyos)
+//1726 = Thunderbolt Strike (Long range)
+//4013 = Smite (Long range)
+//1698 = Protective Ward (Shield)
+//1745 = Word of Revival (HoT)
+//1326 = Word of Quickness (Castspeed)
+//1862 = Recovery Spell (Heal)
+//1606 = Stamina Restoration (Heal, MP recover)
+//1857 = Healing Burst (Heal)
+//2960 = Word of Life (Heal)
+//4638 = Healing Conduit (Heal)
+//1839 = Healing Light (Heal)
+
+
+_ACRegenerate=1745,1862,1857,1606,1839;
+//1745 = Word of Revival (HoT)
+//1862 = Recovery Spell (Heal)
+//1857 = Healing Burst (Heal)
+//1606 = Stamina Restoration (Heal, MP recover)
+//1839 = Healing Light (Heal)
+//;;;;;;;End Settings Chanter;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=12;
+//;;;;;;;;;Settings Technist;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+
+_ACSkills=1958,2220;
+//INVALID = Packed Bomb
+//1958 = Gunshot
+//2220 = Precision Shot
+
+_ACBuffs=2168;
+//2168 = Bullet Resistance
+//;;;;;;;End Settings Technist;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=14;
+//;;;;;;;;;Settings Gunslinger;;;;;;;;;
+// Requires 2 Pistols and Cannon
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+
+_SetVar=Atkspeed_Pistol,2250;
+_SetVar=Atkspeed_Cannon,2800;
+
+_ACWeaponSwitching=True;
+_ACRelyOnWeapon=2179,%Var[Atkspeed_Pistol]; //2179 = Crosstrigger (Mana recover, Pistol)
+_ACRelyOnWeapon=2054,%Var[Atkspeed_Pistol]; //2054 = Autoload (Reload, Pistol)
+_ACRelyOnWeapon=2053,%Var[Atkspeed_Pistol]; //2053 = Reload (Reload, Pistol)
+_ACRelyOnWeapon=1969,%Var[Atkspeed_Pistol]; //1969 = Gunshot (Pistol)
+_ACRelyOnWeapon=1981,%Var[Atkspeed_Pistol]; //1981 = Hemorrhage Shot (Pistol)
+_ACRelyOnWeapon=1953,%Var[Atkspeed_Pistol]; //1953 = Hot Shot (Pistol)
+_ACRelyOnWeapon=2166,%Var[Atkspeed_Pistol]; //2166 = Green Grenade (root, Pistol)
+_ACRelyOnWeapon=2068,%Var[Atkspeed_Pistol]; //2068 = Dazzling Fire (stun, Pistol)
+_ACRelyOnWeapon=2263,%Var[Atkspeed_Pistol]; //2263 = Quieting Gale (Any weapon)
+_ACRelyOnWeapon=2123,%Var[Atkspeed_Pistol]; //2123 = Steady Fire (Pistol)
+_ACRelyOnWeapon=1983,%Var[Atkspeed_Pistol]; //1983 = Spinning Fire (Pistol)
+_ACRelyOnWeapon=2003,%Var[Atkspeed_Pistol]; //2003 = Wing Clip (Pistol)
+_ACRelyOnWeapon=2231,%Var[Atkspeed_Pistol]; //2231 = Precision Shot (Pistol)
+_ACRelyOnWeapon=2052,%Var[Atkspeed_Pistol]; //2052 = Pressurized Chamber (Pistol)
+_ACRelyOnWeapon=2045,%Var[Atkspeed_Pistol]; //2045 = Aion's Favor (Pistol)
+_ACRelyOnWeapon=2349,%Var[Atkspeed_Pistol]; //2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+_ACRelyOnWeapon=2367,%Var[Atkspeed_Pistol]; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnWeapon=3468,%Var[Atkspeed_Cannon]; //3468 = Frozen Blitz (root, Cannon)
+_ACRelyOnWeapon=1954,%Var[Atkspeed_Cannon]; //1954 = Freeze Cannon (sleep, Cannon)
+_ACRelyOnWeapon=2114,%Var[Atkspeed_Cannon]; //2114 = Paralysis Cannon (airbind, Cannon)
+_ACRelyOnWeapon=2207,%Var[Atkspeed_Cannon]; //2207 = Aetheric Bombardment (Cannon)
+_ACRelyOnWeapon=2090,%Var[Atkspeed_Cannon]; //2090 = Fiery Blast (Cannon)
+_ACRelyOnWeapon=2346,%Var[Atkspeed_Cannon]; //2346 = Incendiary Shell (Cannon)
+_ACRelyOnWeapon=2201,%Var[Atkspeed_Cannon]; //2201 = Shellshock (Cannon)
+_ACRelyOnWeapon=1975,%Var[Atkspeed_Cannon]; //1975 = Juggernaut Cannon (Cannon)
+_ACRelyOnWeapon=2253,%Var[Atkspeed_Cannon]; //2253 = Shock and Awe (Cannon)
+_ACRelyOnWeapon=2218,%Var[Atkspeed_Cannon]; //2218 = Harassing Fire (Cannon)
+_ACRelyOnWeapon=2108,%Var[Atkspeed_Cannon]; //2108 = Snow Shell (Cannon)
+_ACRelyOnWeapon=2004,%Var[Atkspeed_Cannon]; //2004 = Aerial Fury (Cannon)
+_ACRelyOnWeapon=2014,%Var[Atkspeed_Cannon]; //2014 = Watery Grave (DP 2000, Cannon)
+
+// Debuff ID notes ///////////////////////////////////////////
+_SetVar=FrozenBlitz_1,3463; //3463 = Frozen Blitz 1 Effect
+_SetVar=FrozenBlitz_2,3464; //3464 = Frozen Blitz 2 Effect
+_SetVar=FrozenBlitz_3,3465; //3465 = Frozen Blitz 3 Effect
+_SetVar=FrozenBlitz_4,3466; //3466 = Frozen Blitz 4 Effect
+_SetVar=FrozenBlitz_5,3467; //3467 = Frozen Blitz 5 Effect
+_SetVar=FrozenBlitz_6,3468; //3468 = Frozen Blitz 6 Effect
+_SetVar=FreezeCannon_1,3442; //1954 = Freeze Cannon 1 Effect
+_SetVar=ParalysisCannon,8224; //2114 = Paralysis Cannon 5 Effect
+_SetVar=GreenGrenade_1,3391; //3391 = Green Grenade 1 Effect
+_SetVar=GreenGrenade_2,3568; //3568 = Green Grenade 2 Effect
+_SetVar=GreenGrenade_3,3569; //3569 = Green Grenade 3 Effect
+_SetVar=GreenGrenade_4,3570; //3570 = Green Grenade 4 Effect
+_SetVar=GreenGrenade_5,2166; //2166 = Green Grenade 5 Effect
+_SetVar=DazzlingFire_1,3327; //3327 = Dazzling Fire 1 Effect
+_SetVar=DazzlingFire_2,3328; //3328 = Dazzling Fire 2 Effect
+_SetVar=DazzlingFire_3,3329; //3329 = Dazzling Fire 3 Effect
+_SetVar=DazzlingFire_4,2068; //2068 = Dazzling Fire 4 Effect
+///////////////////////////////////////////////////////////////
+
+//Only use CC skills if not already in CC
+_ACRelyOnTargetDebuff=3468,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //3468 = Frozen Blitz (root, Cannon)
+_ACRelyOnTargetDebuff=1954,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //1954 = Freeze Cannon (sleep, Cannon)
+_ACRelyOnTargetDebuff=2114,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2114 = Paralysis Cannon (airbind, Cannon)
+_ACRelyOnTargetDebuff=2166,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2166 = Green Grenade (root, Pistol)
+_ACRelyOnTargetDebuff=2068,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2068 = Dazzling Fire (stun, Pistol)
+
+_ACIsActive=2115,True; //2115 = Stable Stance (Active, Any Weapon)
+
+_ACRelyOnAggro=3847,True; //3847 = Manifest Wall (Shield, Any Weapon)
+_ACRelyOnAggro=1923,True; //1923 = Bulletproof (Dodge, Any Weapon)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDistance=3847,<4; //3847 = Manifest Wall (Shield, Any Weapon)
+_ACRelyOnDistance=1923,<4; //1923 = Bulletproof (Dodge, Any Weapon)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnDP=2014,2000; //2014 = Watery Grave (DP 2000, Cannon)
+_ACRelyOnDP=2007,2000; //2007 = Spend Success (DP 2000, Any Weapon)
+
+_ACRelyOnPlayerMP=2179,<70; //2179 = Crosstrigger (Mana recover, Pistol)
+_ACRelyOnPlayerMP=1969,>70; //1969 = Gunshot (Pistol)
+_ACRelyOnPlayerMP=2349,<60; //2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+_ACRelyOnPlayerMP=2367,<70; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=2367,<70; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+
+_ACSkills=2207,2090,2346,2201,1975,2253,2218,2108,2004,2014,2179,1969,2054,2179,1969,2053,2179,1969,1981,1953,2263,2123,1983,2003,2231;
+//2207 = Aetheric Bombardment (Cannon)
+//2090 = Fiery Blast (Cannon)
+//2346 = Incendiary Shell (Cannon)
+//2201 = Shellshock (Cannon)
+//1975 = Juggernaut Cannon (Cannon)
+//2253 = Shock and Awe (Cannon)
+//2218 = Harassing Fire (Cannon)
+//2108 = Snow Shell (Cannon)
+//2004 = Aerial Fury (Cannon)
+//2014 = Watery Grave (DP 2000, Cannon)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//2054 = Autoload (Reload, Pistol)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//2053 = Reload (Reload, Pistol)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//1981 = Hemorrhage Shot (Pistol)
+//1953 = Hot Shot (Pistol)
+//2263 = Quieting Gale (Any weapon)
+//2123 = Steady Fire (Pistol)
+//1983 = Spinning Fire (Pistol)
+//2003 = Wing Clip (Pistol)
+//2231 = Precision Shot (Pistol)
+
+
+_ACBuffs=314,321,2115,2040,2045,2046,2273,2007,3847,1923,2052,2349,2367,3468,1954,2114,2166,2068;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//2115 = Stable Stance (Active, Any Weapon)
+//2040 = Nature's Favor (Any Weapon)
+//2045 = Aion's Favor (Pistol)
+//2046 = Stopping Power (Any Weapon)
+//2273 = Sighting (Any Weapon)
+//2007 = Spend Success (DP 2000, Any Weapon)
+//3847 = Manifest Wall (Shield, Any Weapon)
+//1923 = Bulletproof (Dodge, Any Weapon)
+//2052 = Pressurized Chamber (Pistol)
+//2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+//2367 = Power Grab (HP/MP Recover, Pistol)
+//3468 = Frozen Blitz (root, Cannon)
+//1954 = Freeze Cannon (sleep, Cannon)
+//2114 = Paralysis Cannon (airbind, Cannon)
+//2166 = Green Grenade (root, Pistol)
+//2068 = Dazzling Fire (stun, Pistol)
+//;;;;;;;End Settings Gunslinger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=15;
+//;;;;;;;;;Settings Muse;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=12000;
+
+_ACRelyOnPlayerHP=4339,<70; //4339 = Soothing Melody
+
+_ACSkills=4300,4222,4409;
+//4300 = Fiery Descant
+//4222 = Song of Ice
+//4409 = Pulse
+
+_ACBuffs=4339;
+//4339 = Soothing Melody
+//;;;;;;;End Settings Muse;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=16;
+//;;;;;;;;;Settings Songweaver;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True;
+_ACRegMPPercentage=30;
+_ACRegHPPercentage=65;
+
+_ACRelyOnTargetDebuff=4402,3043/4521/3160; //4402 = Captivate (root)
+_ACRelyOnTargetDebuff=4521,4402/4521/3160/3126/3125/3124/4299/3093/3092/3091/3090/4529/3135/3134/3133/3132/3131; //4521 = Freestyle (sleep)
+_ACRelyOnTargetDebuff=3160,4402/4521/3160; //3160 = Staggered Rest (Paralysis)
+_ACRelyOnTargetDebuff=4299,4521; //4299 = Fluttered Note (DoT)
+_ACRelyOnTargetDebuff=4529,4521; //4529 = Paean of Pain (DoT)
+
+_ACRelyOnBuff=4449,3085; //4449 = Etude
+_ACRelyOnBuff=4442,3054; //4442 = Protective Ode (Shield)
+_ACRelyOnBuff=4502,3138; //4502 = Mvt. Autumn
+
+_ACIsActive=4590,True; //4590 = Impassion (Active)
+
+_ACRelyOnDistance=4400,<4; //4400 = Mvt. Winter (Shield)
+_ACRelyOnDistance=4402,>3; //4402 = Captivate (root)
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=4400,<60; //4400 = Mvt. Winter (Shield)
+_ACRelyOnPlayerHP=4537,<80; //4537 = Hymn of Rejuvenation (HoT)
+_ACRelyOnPlayerHP=4518,<65; //4518 = Soothing Hymn (Charge, Heal)
+_ACRelyOnPlayerHP=4351,<70; //4351 = Soothing Melody (Heal)
+
+_ACRelyOnPlayerMP=4383,<70; //4383 = Resonating Melody (Mana recover)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=4529,>25; //4529 = Paean of Pain (DoT)
+
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDP=4468,2000; //4468 = Minstel's Flair (DP 2000)
+
+
+_ACSkills=3126,4550,4405,4523,3035,4489,3161,4428,4333,4561,4468,4272,4420;
+//3126 = Syncopated Echo (Delayed)
+//4550 = Stinging Note
+//4405 = Adagio (Slow)
+//4523 = Sonic Gust
+//3035 = Song of Ice
+//4489 = Treble Cleave
+//3161 = Fiery Requiem (Charge)
+//4428 = Harpist's Pod (Charge)
+//4333 = Fiery Descant (Charge)
+//4561 = Dragon Song (Charge)
+//4468 = Minstel's Flair (DP 2000)
+//4272 = Bright Strike
+//4420 = Pulse
+
+
+_ACBuffs=321,4449,4442,4502,4590,4400,4401,4537,4518,4351,4383,4299,4529,4402,4521,3160;
+//321 = Mana Treatment
+//4449 = Etude
+//4442 = Protective Ode (Shield)
+//4502 = Mvt. Autumn
+//4590 = Impassion (Active)
+//4400 = Mvt. Winter (Shield)
+//4401 = Song of Celerity
+//4537 = Hymn of Rejuvenation (HoT)
+//4518 = Soothing Hymn (Charge, Heal)
+//4351 = Soothing Melody (Heal)
+//4383 = Resonating Melody (Mana recover)
+//4299 = Fluttered Note (DoT)
+//4529 = Paean of Pain (DoT)
+//4402 = Captivate (root)
+//4521 = Freestyle (sleep)
+//3160 = Staggered Rest (Paralysis)
+
+_ACRegenerate=4537,4518,4351;
+//4537 = Hymn of Rejuvenation (HoT)
+//4518 = Soothing Hymn (Charge, Heal)
+//4351 = Soothing Melody (Heal)
+//;;;;;;;End Settings ,er;;;;;;;
+#ENDIF
+
+
+//Global Rule | Only use when item is available
+_ACRelyOnItem=314,169300007; // 314 Herb Treatment VI
+_ACRelyOnItem=321,169300007; // 321 Mana Treatment VI
+_ACRelyOnItem=314,169300006; // 314 Herb Treatment V
+_ACRelyOnItem=321,169300006; // 321 Mana Treatment V
+_ACRelyOnItem=1825,169300005; // 1825 Herb Treatment IV
+_ACRelyOnItem=1826,169300005; // 1826 Mana Treatment IV
+_ACRelyOnItem=1805,169300004; // 1805 Herb Treatment III
+_ACRelyOnItem=1824,169300004; // 1824 Mana Treatment III
+_ACRelyOnItem=1804,169300003; // 1804 Herb Treatment II
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment II
+_ACRelyOnItem=1804,169300003; // 1803 Herb Treatment I
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment I
+
+end_CombatSort;
+
+
+
+
+start_StartUpRoutine;
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+//;;;;;;;;; Skills declared here will be used when the Script gets started and after Death ;;;;;;;;;;;;;
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#EXECUTE=CheckAutoLoot;
+#EXECUTE=CheckAutoBuff;
+
+_IFBuffAlive=9960; // 30% Movement Scroll buff
+#ELSE
+#IF=%Var[RunScroll],=1;
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player; // if not in loading screen
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,>0; // if alive
+_IFInventoryContains=164000076; // Greater Running Scroll
+UseID=164000076;
+Delay=333;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Startup Warrior;;;;;;;;;
+
+//;;;;;;;End Startup Warrior;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Startup Gladiator;;;;;;;;;
+_ACUseSkill=182; //182 Charge
+//;;;;;;;End Startup Gladiator;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Startup Templar Greatsword;;;;;;;;;
+_ACUseSkill=182; //182 Charge
+//;;;;;;;End Startup Templar Greatsword;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Startup Scout;;;;;;;;;
+
+//;;;;;;;End Startup Scout;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Startup Assassin;;;;;;;;;
+
+//;;;;;;;End Startup Assassin;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Startup Ranger;;;;;;;;;
+_ACUseSkill=729; //729 Breath of Nature
+_ACUseSkill=641; //641 Speed of the Wind
+//;;;;;;;End Startup Ranger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Startup Mage;;;;;;;;;
+_ACUseSkill=1155; // Stoneskin
+//;;;;;;;End Startup Mage;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Startup Sorcerer;;;;;;;;;
+_ACUseSkill=1155; // Stoneskin
+//;;;;;;;End Startup Sorcerer;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Startup Spiritmaster;;;;;;;;;
+_ACUseSkill=3682; // Water Spirit (Elyos)
+_ACUseSkill=3683; // Water Spirit (Asmo)
+_ACUseSkill=3704; // Wind Spirit (Elyos)
+_ACUseSkill=3705; // Wind Spirit (Asmo)
+_ACUseSkill=3728; // Fire Spirit (Elyos)
+_ACUseSkill=3729; // Fire Spirit (Asmo)
+_ACUseSkill=1649; // Earth Spirit Elyos
+_ACUseSkill=1615; // Earth Spirit Asmo
+_ACUseSkill=1155; // Stoneskin
+//;;;;;;;End Startup Spiritmaster;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Startup Priest;;;;;;;;;
+_ACUseSkill=951; // Blessing of Health
+_ACUseSkill=1684; // Blessing of Rock
+_ACUseSkill=969; // Promise of Wind
+//;;;;;;;End Startup Priest;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Startup Cleric;;;;;;;;;
+_ACUseSkill=1684; //Blessing of Rock
+_ACUseSkill=951; //Blessing of Health
+_ACUseSkill=969; //promisse of wind
+//;;;;;;;End Startup Cleric;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Startup Chanter;;;;;;;;;
+_ACUseSkill=1666; //1666 = Shield Mantra (Def, >12, Priority 7)
+_ACUseSkill=1753; //1753 = Revival Mantra (HP Recover, >21, Priority 6)
+_ACUseSkill=4645; //4645 = Hit Mantra (Crit, >53, Stigma, Priority 2)
+_ACUseSkill=4642; //4642 = Invincibility Mantra (>49, Stigma, Priority 1)
+_ACUseSkill=1756; //1756 = Blessing of Stone
+_ACUseSkill=1684; //1684 = Blessing of Rock
+_ACUseSkill=1315; //1315 = Rage Spell
+_ACUseSkill=2944; //2944 = Promise of Aether
+//;;;;;;;End Startup Chanter;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=14;
+//;;;;;;;;;Startup Gunslinger;;;;;;;;;
+
+//;;;;;;;End Startup Gunslinger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=16;
+//;;;;;;;;;Startup ,er;;;;;;;;;
+
+//;;;;;;;End Startup ,er;;;;;;;
+#ENDIF
+
+end_StartUpRoutine;
+
+
+start_ThreadRoutine;
+
+Print=Thread started..;
+
+_HTTPGetVar=http://pastebin.com/raw/kvP6EM6m,,GMList;
+
+#DO=999999999;
+
+_SetArray1=dark_binding_stone_01a,Binding_stone_01a,yun_binding_stone_01,Binding_stone_user_01a;
+GetEntity=%OffsetRace,CHAR[32],%ARRAY1,Obelisk_Addr;
+
+#IF=%Var[Obelisk_Addr_Elements],=0; // no obelisk within 100m
+#IF=%Var[ParanoidTargeted],>0;
+#EXECUTE=ParanoidTargeted;
+#ENDIF
+
+#IF=%Var[Obelisk_Addr_Elements],=0; // no obelisk within 100m
+#IF=%Var[ParanoidNearby],>0;
+#EXECUTE=ParanoidNearby;
+#UNTIL=1,=2;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player;
+#IF=%Timer=101,12000; // If Timer with ID 101 has been running for 12000ms
+#EXECUTE=GMScan; // Checks for nearby GM
+CreateTimer=101; // Restart Timer with ID 101
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[6],=Player;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,=0;
+#IF=%Timer=46,5000;
+#EXECUTE=CheckWhisper;
+#EXECUTE=EntityFilter;
+CreateTimer=46; // Restart Timer with ID 46
+#ENDIF
+
+_SetArray1=520010000,510010000;
+_IFMemRead=%AddrMap,DWORD,%ARRAY1; // In prison
+#EXECUTE=Prison;
+#ENDIF
+
+Delay=1000;
+
+#UNTIL=1,=2;
+
+end_ThreadRoutine;
+
+
+start_ParanoidTargeted;
+
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_EntityID],DWORD,Player_EntityID;
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetData/%Var[Offset_Base_TargetNPCID],DWORD,=%Var[Player_EntityID],PlayerTargets_Addr;
+
+#IF=%Var[PlayerTargets_Addr_Elements],=0;
+#Return
+#ENDIF
+
+_MemPtrReadVar=%Var[PlayerTargets_Addr_1],%OffsetName,WCHAR[64],tName;
+_SetVar=MSG,Player [%Var[tName]] targeted %Var[PlayerName].. closing client..;
+#EXECUTE=Log;
+
+#IF=%Var[ParanoidTargeted],=2; // Suicide
+MemPtrWrite=%PlayerBase,%OffsetPosZ,0,FLOAT;
+#ENDIF
+
+#QuitAtRound=-1,True;
+ProcessKill=%Var[MainVTPID];
+#EXECUTE=End;
+
+end_ParanoidTargeted;
+
+
+start_ParanoidNearby;
+
+_SetArray2=999,%Var18;
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetName,WCHAR[16],!%ARRAY2,%Distance,FLOAT,<%Var[ParanoidNearby],PlayerNearby_Addr;
+
+#IF=%Var[PlayerNearby_Addr_Elements],=0;
+#Return
+#ENDIF
+
+_MemPtrReadVar=%Var[PlayerTargets_Addr_1],%OffsetName,WCHAR[64],tName;
+_SetVar=MSG,Player [%Var[tName]] is too close.. closing client..;
+#EXECUTE=Log;
+
+MemPtrWrite=%PlayerBase,%OffsetPosZ,0,FLOAT;
+
+#QuitAtRound=-1,True;
+ProcessKill=%Var[MainVTPID];
+#EXECUTE=End;
+
+end_ParanoidNearby;
+
+
+start_Prison;
+
+ProcessPause=%Var[MainVTPID],True;
+#SetAsActive
+
+_SetVar=MSG,Got teleported to Prison;
+#EXECUTE=Log;
+
+Command=/say %Var[PrisonAnswer_1_%RNG{1|5}];
+#Alarm
+
+Delay=%RNG{8000|15000};
+
+_IFMemRead=%AddrMap,DWORD,%ARRAY1; // still in prison
+Command=/say %Var[PrisonAnswer_2_%RNG{1|5}];
+Delay=%RNG{8000|23000};
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,%ARRAY1; // still in prison
+_SetVar=MSG,Is still in prison.. logging out.;
+#EXECUTE=Log;
+#ELSE
+_SetVar=MSG,Is not in prison anymore.. logging out.;
+#EXECUTE=Log;
+#ENDIF
+
+Command=/logout;
+Delay=15000;
+#QuitAtRound=-1,True;
+ProcessKill=%Var[MainVTPID];
+
+end_Prison;
+
+
+start_SetStatusInvisible;
+
+FrameActionByName=who_dialog,STATE,SHOW;
+FrameActionByName=who_dialog,XPOS,0;
+FrameActionByName=who_dialog,YPOS,0;
+Delay=500;
+Mouse=240,44;
+Delay=750;
+Mouse=192,76;
+Delay=500;
+SendKey=0x1B;
+Delay=45;
+SendKey=0x1B;
+Delay=45;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_SetStatusInvisible;
+
+
+start_ChangeChannel;
+
+_SetArray3=220020000,220040000,210020000,210040000; // Blacklist for Morheim, Beluslan, Eltnen, Heiron
+_IFMemRead=%AddrMap,DWORD,%ARRAY3;
+#Return
+#ENDIF
+
+#IF=%Timer=10011,300000;
+#IF=%Var[ChangeChannel],=1;
+_ACDetectIfAttacked=;
+Delay=450;
+_ACDetectIfAttacked=;
+Delay=450;
+_Calc[ChannelNumber]=%Var[ChannelNumber]+1;
+FrameActionByName=channel_dialog,STATE,SHOW;
+FrameActionByName=channel_dialog,XPOS,0;
+FrameActionByName=channel_dialog,YPOS,0;
+MemPtrWrite=%PlayerBase,%OffsetAFK,1000000,FLOAT;
+MemPtrWrite=%AddrFrameName[channel_dialog],%Var[Offset_Channel_Display],%Var[ChannelNumber],DWORD;
+MemPtrWrite=%AddrFrameName[channel_dialog],%Var[Offset_Channel_Writeable],%Var[ChannelNumber],DWORD;
+MemPtrWrite=%AddrFrameName[channel_dialog],%Var[Offset_Channel_Button],7,BYTE;
+Delay=450;
+Mouse=64,61; // Move
+Delay=250;
+Mouse=64,61; // Move
+#DO=10000;
+Delay=250;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,<1000000;
+Delay=9000;
+CreateTimer=10011;
+FrameActionByName=channel_dialog,STATE,HIDE;
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8; // Spiritmaster
+#EXECUTE=StartUpRoutine;
+#ENDIF
+
+end_ChangeChannel;
+
+
+start_CheckDead;
+
+_SetVar=Dead,0;
+
+_IFFrameVisibleByName=resurrect_dialog;
+_SetVar=Dead,1;
+#ENDIF
+
+_IFMemRead=%AddrResurrect,FLOAT,>0;
+_SetVar=Dead,1;
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetHP,DWORD,=0;
+_SetVar=Dead,1;
+#ENDIF
+
+_IFDebuffAlive=8299; // Soul sickness
+_SetVar=Dead,1;
+#ENDIF
+
+#IF=%Var[Dead],=1;
+CreateTimer=105; // Restart Timer with ID 105
+#SetWindow
+#LogAddDeath
+#DO=60000;
+MemWrite=%AddrResurrect,0,FLOAT; <- Resurrect
+Delay=500;
+_UNTILMemPtrRead=%PlayerBase,%OffsetHP,DWORD,>0;
+Delay=5000;
+#EXECUTE=CheckBug;
+#EXECUTE=FindSoulHealer;
+#EXECUTE=CheckPause;
+Delay=1000;
+#EXECUTE=StartUpRoutine;
+#EXECUTE=Return;
+#EXECUTE=CheckAutoLoot;
+#ENDIF
+
+end_CheckDead;
+
+
+start_CheckPause;
+
+_Calc[AddrRecoverableEXP]=%AddrMaxEXP+0x8;
+_IFMemRead=%Var[AddrRecoverableEXP],DWORD,=0; // Has no recoverable exp (died to enemy race)
+#IF=%Var[PauseAfterDeath],>0;
+_SetVar=MSG,has died to enemy race;
+#EXECUTE=Log;
+_Calc[PauseAfterDeathTime]=%Var[PauseAfterDeath]*60000;
+#DO=%Var[PauseAfterDeathTime];
+Delay=1000;
+#UNTIL=%Timer=105,%Var[PauseAfterDeathTime]; // If Timer with ID 105 has been running for ..ms
+#Return
+#ENDIF
+
+_SetVar=temp,0;
+_IFMemRead=%Var[AddrRecoverableEXP],DWORD,=%Var[RecoverableEXP_Cache];
+_SetVar=temp,1;
+#ENDIF
+_IFMemRead=%Var[AddrRecoverableEXP],DWORD,=0;
+_SetVar=temp,1;
+#ENDIF
+
+#IF=%Var[temp],=1; // If recoverable EXP equals cache or 0 return
+#Return
+#ELSE
+_SetVar=MSG,has died to a mob;
+#EXECUTE=Log;
+_MemReadVar=%Var[AddrRecoverableEXP],DWORD,RecoverableEXP_Cache;
+#ENDIF
+
+_Calc[DiedToMob]=%Var[DiedToMob]+1;
+_Calc[TotalDeaths]=%Var[TotalDeaths]+1;
+
+#IF=%Var[DiedToMob],=4;
+_SetVar=DiedToMob,1;
+#ENDIF
+
+#IF=%Var[DiedToMob],=1;
+CreateTimer=10001;
+#ENDIF
+#IF=%Var[DiedToMob],=2;
+CreateTimer=10002;
+#ENDIF
+#IF=%Var[DiedToMob],=3;
+CreateTimer=10003;
+#ENDIF
+
+_SetVar=temp,0;
+#IF=%Timer=10001,1200000;
+_SetVar=temp,1;
+#ENDIF
+#IF=%Timer=10002,1200000;
+_SetVar=temp,1;
+#ENDIF
+#IF=%Timer=10003,1200000;
+_SetVar=temp,1;
+#ENDIF
+
+#IF=%Var[temp],=0; // If all 3 timers haven't passed 20 minutes yet
+#IF=%Var[TotalDeaths],>2;
+#IF=%Var[StopAfterDeath],=1;
+_SetVar=MSG,has died more than 3 times within 20 minutes. ending script..;
+#EXECUTE=Log;
+#EXECUTE=End;
+#ENDIF
+
+end_CheckPause;
+
+
+start_CheckBug;
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+#Return
+#ELSE
+Delay=9000;
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+#Return
+#ELSE
+_SetVar=MSG,Player pointer got bugged. trying to relog character to repair..;
+#EXECUTE=Log;
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--Combat_Log.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] Player pointer got bugged. trying to relog character to repair../n,+;
+//Log on same char till ptr correct
+#DO=360000;
+Command=/logout;
+#2DO=30000;
+Delay=500;
+_2UNTILMemRead=%AddrCharacterScene,DWORD,=11; // if in char selection
+Delay=25000;
+Mouse=47,503; // First slot
+Delay=500;
+Mouse=47,503; // First slot
+Delay=1000;
+Mouse=298,572; // Start
+Delay=2000;
+//#EXECUTE=PINCheck;
+#2DO=60000;
+Delay=500;
+_2UNTILMemPtrRead=%PlayerBase,%OffsetAFK,FLOAT,3-10;
+#2DO=6000;
+Delay=25;
+_UNTILMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+#2UNTIL=1,=2;
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+_SetVar=MSG,Player pointer successfully repaired;
+#EXECUTE=Log;
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--Combat_Log.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] Player pointer successfully repaired/n,+;
+#ENDIF
+
+end_CheckBug;
+
+
+start_IsCloseToBindpoint;
+
+#IF=%ClientID,5-6; // Classic
+_Calc[Addr_BindPoint_MapID]=%AddrResurrect+%Var[Offset_BindPoint_MapID];
+_Calc[Addr_BindPoint_PosX]=%AddrResurrect+%Var[Offset_BindPoint_PosX];
+_Calc[Addr_BindPoint_PosY]=%AddrResurrect+%Var[Offset_BindPoint_PosY];
+_Calc[Addr_BindPoint_PosZ]=%AddrResurrect+%Var[Offset_BindPoint_PosZ];
+#ENDIF
+
+#IF=%ClientID,10-14; // 4.x
+#EXECUTE=GetBindPoint_4.x;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_Calc[Addr_BindPoint_MapID]=%AddrCurrentTime-%Var[Offset_BindPoint_MapID];
+_Calc[Addr_BindPoint_PosX]=%AddrCurrentTime-%Var[Offset_BindPoint_PosX];
+_Calc[Addr_BindPoint_PosY]=%AddrCurrentTime-%Var[Offset_BindPoint_PosY];
+_Calc[Addr_BindPoint_PosZ]=%AddrCurrentTime-%Var[Offset_BindPoint_PosZ];
+#ENDIF
+
+#IF=%Var[BindPoint_PosX1],=;
+_MemReadVar=%Var[Addr_BindPoint_MapID],DWORD,BindPoint_MapID;
+_Calc[cTemp]=%Var[BindPoint_MapID]/100;
+_RegExp=%Var[cTemp],^([0-9]+),cTemp; // Remove Comma
+_Calc[BindPoint_MapID]=%Var[cTemp]*100;
+
+_MemReadVar=%Var[Addr_BindPoint_PosX],FLOAT,BindPoint_PosX;
+_MemReadVar=%Var[Addr_BindPoint_PosY],FLOAT,BindPoint_PosY;
+_MemReadVar=%Var[Addr_BindPoint_PosZ],FLOAT,BindPoint_PosZ;
+
+_Calc[BindPoint_PosX1]=%Var[BindPoint_PosX]-7.5;
+_Calc[BindPoint_PosY1]=%Var[BindPoint_PosY]-7.5;
+_Calc[BindPoint_PosZ1]=%Var[BindPoint_PosZ]-3;
+_Calc[BindPoint_PosX2]=%Var[BindPoint_PosX]+7.5;
+_Calc[BindPoint_PosY2]=%Var[BindPoint_PosY]+7.5;
+_Calc[BindPoint_PosZ2]=%Var[BindPoint_PosZ]+3;
+#ENDIF
+
+#EXECUTE=GetMapID;
+#IF=%Var[MapID],=%Var[BindPoint_MapID];
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,%Var[BindPoint_PosX1]-%Var[BindPoint_PosX2];
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,%Var[BindPoint_PosY1]-%Var[BindPoint_PosY2];
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,%Var[BindPoint_PosZ1]-%Var[BindPoint_PosZ2];
+_Calc[BindPoint_RandomPosX]=%Var[BindPoint_PosX]-1.5;
+_Calc[BindPoint_RandomPosY]=%Var[BindPoint_PosY]-1.5;
+_Calc[BindPoint_RandomPosX]=%Var[BindPoint_RandomPosX]+%RNG{0-3};
+_Calc[BindPoint_RandomPosY]=%Var[BindPoint_RandomPosY]+%RNG{0-3};
+FlySmooth=%Var[BindPoint_RandomPosX],%Var[BindPoint_RandomPosY],%Var[BindPoint_PosZ];
+Delay=75;
+MoveTo=%Var[BindPoint_RandomPosX],%Var[BindPoint_RandomPosY],%Var[BindPoint_PosZ];
+_SetVar=BindPoint_IsClose,1;
+#ELSE
+_SetVar=BindPoint_IsClose,0;
+#ENDIF
+
+end_IsCloseToBindpoint;
+
+start_GetBindPoint_4.x;
+
+#IF=%Var[AddrBindPoint],>0;
+_MemReadVar=%Var[AddrBindPoint],WCHAR[128],BindPoint;
+_MemReadVar=%Var[Addr_BindPoint_MapID],DWORD,BindPoint_MapID;
+_MemReadVar=%Var[Addr_BindPoint_PosX],FLOAT,BindPoint_PosX;
+_MemReadVar=%Var[Addr_BindPoint_PosY],FLOAT,BindPoint_PosY;
+_MemReadVar=%Var[Addr_BindPoint_PosZ],FLOAT,BindPoint_PosZ;
+#Return
+#ENDIF
+
+_MemPattern=FFFFFFFFFFFFFFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000...........................................010003,0xD4,False,True;
+#IF=%Var[PatternFound],=0;
+#IF=%ClientID,10-12; // 4.6
+_Calc[PatternRet_1]=0x120EA88+0xD4;
+_SetVar=PatternFound,1;
+#ENDIF
+#IF=%Var[PatternFound],=0;
+#IF=%ClientID,=14; // 4.8
+_Calc[PatternRet_1]=0x1316DE0+0xD4;
+_SetVar=PatternFound,1;
+#ENDIF
+
+#IF=%Var[PatternFound],>0;
+_SetVar=AddrBindPoint,%Var[PatternRet_1];
+_Calc[Addr_BindPoint_MapID]=%Var[AddrBindPoint]-0x10;
+_Calc[Addr_BindPoint_PosX]=%Var[AddrBindPoint]-0xC;
+_Calc[Addr_BindPoint_PosY]=%Var[AddrBindPoint]-0x8;
+_Calc[Addr_BindPoint_PosZ]=%Var[AddrBindPoint]-0x4;
+_MemReadVar=%Var[AddrBindPoint],WCHAR[128],BindPoint;
+_MemReadVar=%Var[Addr_BindPoint_MapID],DWORD,BindPoint_MapID;
+_MemReadVar=%Var[Addr_BindPoint_PosX],FLOAT,BindPoint_PosX;
+_MemReadVar=%Var[Addr_BindPoint_PosY],FLOAT,BindPoint_PosY;
+_MemReadVar=%Var[Addr_BindPoint_PosZ],FLOAT,BindPoint_PosZ;
+#ELSE
+_SetVar=BindPoint,NotFound;
+#ENDIF
+
+end_GetBindPoint_4.x;
+
+
+start_GetMapID;
+
+_MemReadVar=%AddrMap,DWORD,MapID;
+_Calc[cTemp]=%Var[MapID]/100;
+_RegExp=%Var[cTemp],^([0-9]+),cTemp; // Remove Comma
+_Calc[MapID]=%Var[cTemp]*100;
+
+end_GetMapID;
+
+
+start_Reset;
+
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#Return
+#ELSE
+#EXECUTE=Recall;
+#ENDIF
+
+end_Reset;
+
+
+start_DetectObelisk;
+
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#EXECUTE=Return;
+#ENDIF
+
+end_DetectObelisk;
+
+
+start_FindSoulHealer;
+
+MemWrite=%AddrCamY,85,FLOAT;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,30,FLOAT;
+Delay=100;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,30,FLOAT;
+Delay=100;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,30,FLOAT;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,30,FLOAT;
+#IF=%Var[SoulHeal],=1;
+#DO=7000;
+SendKey=0x77;
+Delay=35;
+_UNTILMemPtrRead=%TargetBase,%OffsetRace,CHAR[10],=soulhealer;
+_IFMemPtrRead=%TargetBase,%OffsetRace,CHAR[10],=soulhealer;
+#DO=15000;
+Command=/attack;
+Delay=1550;
+DialogClick=NpcFunc35;
+Delay=750;
+_UNTILMemPtrRead=%AddrFrameID[%ConfirmFrameID],%Var[Offset_Frame_State],BYTE,=175;
+FrameAction=%ConfirmFrameID,XPOS,0;
+FrameAction=%ConfirmFrameID,YPOS,0;
+Delay=550;
+SendKey=0x0D;
+Delay=125;
+Command=;
+Delay=625;
+_UNTILMemPtrRead=%PlayerBase,%OffsetPercentHP,BYTE,=100;
+_IFMemPtrRead=%PlayerBase,%OffsetPercentHP,BYTE,=100;
+#ELSE
+SendKey=0x1B;
+Delay=15;
+SendKey=0x1B;
+MemPtrWrite=%AddrFrameName[system_menu_dialog],%Var[Offset_Frame_State],142,BYTE;
+_ACReg=;
+#ENDIF
+SendKey=0x1B;
+Delay=15;
+SendKey=0x1B;
+MemPtrWrite=%AddrFrameName[system_menu_dialog],%Var[Offset_Frame_State],142,BYTE;
+MemWrite=%AddrCamY,25,FLOAT;
+
+#DO=300000;
+Delay=1000;
+_SetVar=temp,0;
+_IFDebuffAlive=8291; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8292; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8293; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8294; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8295; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8296; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8297; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8298; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+_IFDebuffAlive=8299; // Soulsickness
+_SetVar=temp,1;
+#ENDIF
+#UNTIL=%Var[temp],=0;
+
+end_FindSoulHealer;
+
+
+start_StartFreeFlight;
+
+#DO=10000;
+#EXECUTE=WaitForFlightCD;
+SendAction=3,4;
+Delay=2500;
+_UNTILMemRead=%AddrFlightStatus,BYTE,=1;
+#EXECUTE=TakingOffRoutine;
+
+end_StartFreeFlight;
+
+
+start_StopFreeFlight;
+
+#DO=10000;
+SendAction=3,8;
+Delay=2500;
+_UNTILMemRead=%AddrFlightStatus,BYTE,=0;
+#EXECUTE=LandingRoutine;
+
+end_StopFreeFlight;
+
+
+start_CheckAutoLoot;
+
+_IFMemRead=%AddrPet,BYTE,=0;
+#IF=%Var[PetAvailable],=1;
+UseID=%Var[PetID],%Var[PetType];
+Delay=250;
+#ENDIF
+
+_Calc[CATempAddr]=%AddrPet+0x2D8;
+
+_IFMemRead=%AddrPet,BYTE,>0;
+_IFMemRead=%Var[CATempAddr],DWORD,=0;
+#DO=1000;
+UseID=50045;
+Delay=250;
+_UNTILMemRead=%Var[CATempAddr],DWORD,=1;
+#ENDIF
+
+_IFMemRead=%Var[CATempAddr],DWORD,=0;
+_ACMob_Looting=True;
+#ELSE
+_ACMob_Looting=False;
+#ENDIF
+
+end_CheckAutoLoot;
+
+
+start_CheckAutoBuff;
+
+_IFMemRead=%AddrPet,BYTE,=0;
+#IF=%Var[PetAvailable],=1;
+UseID=%Var[PetID],%Var[PetType];
+Delay=250;
+#ENDIF
+
+_Calc[CATempAddr]=%AddrPet+0x2A8;
+
+_IFMemRead=%AddrPet,BYTE,>0;
+_IFMemRead=%Var[CATempAddr],DWORD,=0;
+#DO=1000;
+UseID=50044;
+Delay=250;
+_UNTILMemRead=%Var[CATempAddr],DWORD,=1;
+#ENDIF
+
+end_CheckAutoBuff;
+
+
+start_GetPetID;
+
+_SetVar=PetAvailable,0;
+
+_IFMemRead=%AddrPet,BYTE,>0;
+_SetVar=PetAvailable,1;
+_Calc[CATempAddr]=%AddrPet-4;
+_MemReadVar=%Var[CATempAddr],DWORD,PetID;
+_SetVar=PetType,46;
+#ELSE
+_IFMemPtrRead=%PlayerBase,%OffsetLevel,BYTE,>9;
+#EXECUTE=FindPet; //This takes a while, preferable put the Pet into quickbar page 1, the further away the quickbar page is away the longer it will take
+#ENDIF
+
+end_GetPetID;
+
+
+start_FindPet;
+
+_SetVar=temp,0;
+#DO=90000;
+_Calc[tOffset]=%Var[temp]*0x10;
+_Calc[tAddr]=%AddrFirstSlotType+%Var[tOffset];
+_IFMemRead=%Var[tAddr],DWORD,=46; // Is Pet
+_Calc[tAddr2]=%AddrFirstSlotID+%Var[tOffset];
+_MemReadVar=%Var[tAddr2],DWORD,PetID;
+_SetVar=PetAvailable,1;
+_SetVar=PetType,46;
+UseID=%Var[PetID],%Var[PetType];
+#Return
+#ENDIF
+_Calc[temp]=%Var[temp]+1;
+#UNTIL=%Var[temp],>100; // Total: 480
+
+end_FindPet;
+
+
+start_CheckPetGift;
+
+_IFMemRead=%AddrPet,BYTE,>0;
+_Calc[AddrMood]=%AddrPet+0x60;
+_MemReadVar=%AddrPet,WCHAR[32],PetName;
+_MemReadVar=%Var[AddrMood],WORD,PetMood;
+GetCooldown=50042,PetCooldown;
+GetCooldown=50043,GiftCooldown;
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PetCooldown],=0;
+#IF=%Var[PetMood],<9000;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+Command=/select %Var[PetName];
+Delay=125;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[64],=%Var[PetName];
+UseID=50042;
+Delay=2250;
+UseID=114,34;
+Delay=9500;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+_MemReadVar=%Var[AddrMood],WORD,PetMood;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+Command=/select %Var[PlayerName];
+Delay=125;
+SendAction=3,1; // Jump
+Delay=250;
+#EXECUTE=CloseWindows;
+Delay=250;
+#ENDIF
+
+#IF=%Var[GiftCooldown],=0;
+#IF=%Var[PetMood],>8999;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+Command=/select %Var[PetName];
+Delay=125;
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[64],=%Var[PetName];
+UseID=50043;
+Delay=9500;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+Command=/select %Var[PlayerName];
+Delay=125;
+SendAction=3,1; // Jump
+Delay=250;
+#EXECUTE=CloseWindows;
+Delay=250;
+#ENDIF
+
+_IFInventoryContains=188051378; // Pet's Gift Bundle
+UseID=188051378;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051379; // Coin Bundle
+UseID=188051379;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051380; // [Event] Elemental Stone Pouch II
+UseID=188051380;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051381; // [Event] Balaur Materials Pouch
+UseID=188051381;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051382; // [Event] Refining Stone Pouch
+UseID=188051382;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051383; // [Event] Jewel Pouch II
+UseID=188051383;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051162; // Coin Bundle
+UseID=188051162;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051161; // Antique Enchantment Stone Box Bundle
+UseID=188051161;
+Delay=3250;
+#ENDIF
+_IFInventoryContains=188051160; // Antique Enchantment Stone Box
+UseID=188051160;
+Delay=3250;
+#ENDIF
+
+end_CheckPetGift;
+
+
+start_Recall;
+
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+#DO=1210000; // 20 minutes
+_ACDetectIfAttacked=;
+#EXECUTE=CheckDead;
+Delay=650;
+UseID=243; // Recall
+Delay=250;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,=0;
+UseID=50046; // Retreat
+Delay=250;
+#ENDIF
+_UNTILMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+#EXECUTE=WaitForTeleport;
+Delay=3000;
+#ENDIF
+#EXECUTE=IsCloseToBindpoint;
+#UNTIL=%Var[BindPoint_IsClose],=1;
+
+end_Recall;
+
+
+start_ReturnToSanctum;
+
+_IFMemRead=%AddrMap,DWORD,=110010000; // If is already in Sanctum
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1471-1481;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1590-1600;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,567-578; // Nearby Obelisk
+FlySmooth=1364.482,1511.813,569.177;
+FlySmooth=1364.482,1511.813,569.177;
+FlySmooth=1364.482,1511.813,569.177;
+FlySmooth=1364.482,1511.813,569.177;
+FlySmooth=1364.482,1511.813,569.177;
+#ELSE
+#EXECUTE=GetBindPoint;
+#IF=%Var[BindPoint],=Exalted Path; // If bound to Sanctum Exalted Path
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=243; // Recall
+Delay=750;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+#EXECUTE=WaitForTeleport;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=110010000; // If is already in Sanctum
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1471-1481;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1590-1600;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,567-578; // Nearby Obelisk
+#ELSE
+_IFInventoryContains=164000085;
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=164000085; // Sanctum return scroll
+#EXECUTE=WaitForTeleport;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=110010000; // If is already in Sanctum
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1471-1481;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1590-1600;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,567-578; // Nearby Obelisk
+_SetVar=Return,1;
+#ELSE
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetVar=MSG,couldn't return to Sanctum;
+#EXECUTE=Log;
+_SetVar=Return,0;
+#ENDIF
+
+end_ReturnToSanctum;
+
+
+start_SellToMerchant_Sanctum;
+
+FlySmooth=1476.3,1595.5,572.9;
+FlySmooth=1478.5,1602.1,573.1;
+FlySmooth=1474.3,1606.5,573.1;
+FlySmooth=1469.8,1611.2,572.9;
+FlySmooth=1466,1615.7,572.9;
+FlySmooth=1462,1620.4,572.9;
+FlySmooth=1458.1,1625,572.9;
+FlySmooth=1453.7,1628.6,572.9;
+FlySmooth=1452.9,1633.1,572.9;
+FlySmooth=1455.8,1638.5,572.9;
+FlySmooth=1459.9,1642.9,573.2;
+FlySmooth=1464.9,1646.7,573.2;
+FlySmooth=1469.8,1650.1,573.2;
+FlySmooth=1472.1,1651.6,573.2;
+
+#DO=25000;
+#EXECUTE=CloseWindows;
+Delay=450;
+Command=/select Elephenor;
+Delay=150;
+Command=/attack;
+Delay=1250;
+_UNTILMemPtrRead=%AddrDialoghwnd,%OffsetDialoghwnd,BYTE,=175;
+_IFMemPtrRead=%AddrDialoghwnd,%OffsetDialoghwnd,BYTE,=175;
+#EXECUTE=Dialog_Select_LowestButton;
+Delay=1250;
+_UNTILMemPtrRead=%AddrFrameName[trade_dialog],%Var[Offset_Frame_State],BYTE,=175;
+_IFMemPtrRead=%AddrFrameName[trade_dialog],%Var[Offset_Frame_State],BYTE,=175;
+FrameActionByName=trade_dialog,XPOS,0;
+FrameActionByName=trade_dialog,YPOS,0;
+Delay=150;
+Mouse=43,238;
+Delay=650;
+Mouse=186,238;
+Delay=650;
+Mouse=43,238;
+Delay=650;
+Mouse=186,238;
+Delay=650;
+SellItems=%ARRAY2,186,238;
+SellItems=%ARRAY2,186,238;
+SellItems=%ARRAY2,186,238;
+#ENDIF
+#EXECUTE=CloseWindows;
+
+#DO=1210000; // 20 minutes
+#EXECUTE=CheckDead;
+GetCooldown=243,RecallCooldown;
+#UNTIL=%Var[RecallCooldown],=0;
+#2DO=10000;
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=243; // Recall
+Delay=750;
+_2UNTILMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+#EXECUTE=WaitForTeleport;
+#ENDIF
+GetCooldown=243,RecallCooldown;
+#UNTIL=%Var[RecallCooldown],>0;
+
+end_SellToMerchant_Sanctum;
+
+
+
+start_ReturnToPande;
+
+_IFMemRead=%AddrMap,DWORD,=120010000; // If is already in Pande
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1450-1460;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1413-1423;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,172-182; // Nearby Obelisk
+FlySmooth=1605.573,1390.039,193.129;
+FlySmooth=1605.573,1390.039,193.129;
+FlySmooth=1605.573,1390.039,193.129;
+FlySmooth=1605.573,1390.039,193.129;
+FlySmooth=1605.573,1390.039,193.129;
+#ELSE
+#EXECUTE=GetBindPoint;
+#IF=%Var[BindPoint],=Vifrost Bridge; // If bound to Pande Vifrost Bridge
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=243; // Recall
+Delay=750;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+#EXECUTE=WaitForTeleport;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=120010000; // If is already in Pande
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1450-1460;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1413-1423;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,172-182; // Nearby Obelisk
+#ELSE
+_IFInventoryContains=164000089;
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=164000089; // Pande return scroll
+#EXECUTE=WaitForTeleport;
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,=120010000; // If is already in Pande
+_IFMemPtrRead=%PlayerBase,%OffsetPosX,FLOAT,1450-1460;
+_IFMemPtrRead=%PlayerBase,%OffsetPosY,FLOAT,1413-1423;
+_IFMemPtrRead=%PlayerBase,%OffsetPosZ,FLOAT,172-182; // Nearby Obelisk
+_SetVar=Return,1;
+#ELSE
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_SetVar=MSG,couldn't return to Pande;
+#EXECUTE=Log;
+_SetVar=Return,0;
+#ENDIF
+
+end_ReturnToPande;
+
+
+start_SellToMerchant_Pande;
+
+FlySmooth=1456.6,1415.9,177.5;
+FlySmooth=1460.5,1417.9,177.5;
+FlySmooth=1467.9,1418.1,177.5;
+FlySmooth=1475.1,1416.7,177.5;
+
+#DO=25000;
+#EXECUTE=CloseWindows;
+Delay=450;
+Command=/select Vidarini;
+Delay=150;
+Command=/attack;
+Delay=1250;
+_UNTILMemPtrRead=%AddrDialoghwnd,%OffsetDialoghwnd,BYTE,=175;
+_IFMemPtrRead=%AddrDialoghwnd,%OffsetDialoghwnd,BYTE,=175;
+#EXECUTE=Dialog_Select_LowestButton;
+Delay=1250;
+_UNTILMemPtrRead=%AddrFrameName[trade_dialog],%Var[Offset_Frame_State],BYTE,=175;
+_IFMemPtrRead=%AddrFrameName[trade_dialog],%Var[Offset_Frame_State],BYTE,=175;
+FrameActionByName=trade_dialog,XPOS,0;
+FrameActionByName=trade_dialog,YPOS,0;
+Delay=150;
+Mouse=43,238;
+Delay=650;
+Mouse=186,238;
+Delay=650;
+Mouse=43,238;
+Delay=650;
+Mouse=186,238;
+Delay=650;
+SellItems=%ARRAY2,186,238;
+SellItems=%ARRAY2,186,238;
+SellItems=%ARRAY2,186,238;
+#ENDIF
+#EXECUTE=CloseWindows;
+
+#DO=1210000; // 20 minutes
+#EXECUTE=CheckDead;
+GetCooldown=243,RecallCooldown;
+#UNTIL=%Var[RecallCooldown],=0;
+#2DO=10000;
+_MemPtrReadVar=%PlayerBase,%OffsetData,UINT64,tPtr;
+UseID=243; // Recall
+Delay=750;
+_2UNTILMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,WORD,>0;
+#EXECUTE=WaitForTeleport;
+#ENDIF
+GetCooldown=243,RecallCooldown;
+#UNTIL=%Var[RecallCooldown],>0;
+
+end_SellToMerchant_Pande;
+
+
+start_WaitForTeleport;
+
+#DO=60000;
+Delay=500;
+_IFMemPtrRead=%PlayerBase,%OffsetData,UINT64,=%Var[tPtr];
+_SetVar=Ported,0;
+#ELSE
+_SetVar=Ported,1;
+#ENDIF
+#UNTIL=%Var[Ported],=1;
+Delay=7000;
+
+end_WaitForTeleport;
+
+
+start_GetBindPoint;
+
+#IF=%Var[AddrBindPoint],>0;
+_MemReadVar=%Var[AddrBindPoint],WCHAR[128],BindPoint;
+_MemReadVar=%Var[Addr_BindPoint_MapID],DWORD,BindPoint_MapID;
+_MemReadVar=%Var[Addr_BindPoint_PosX],FLOAT,BindPoint_PosX;
+_MemReadVar=%Var[Addr_BindPoint_PosY],FLOAT,BindPoint_PosY;
+_MemReadVar=%Var[Addr_BindPoint_PosZ],FLOAT,BindPoint_PosZ;
+#Return
+#ENDIF
+
+_MemPattern=FFFFFFFF......................................................................000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000................................................................00........00....................................00........00000000..............................................................................00........000000000000000000000000........000000000000000000000000........000000000000000000000000FFFFFFFFFFFFFFFF,0x1D0,False,True;
+#IF=%Var[PatternFound],=0;
+_Calc[PatternRet_1]=0x120E98C+0x1D0;
+_SetVar=PatternFound,1;
+#ENDIF
+
+#IF=%Var[PatternFound],>0;
+_SetVar=AddrBindPoint,%Var[PatternRet_1];
+_Calc[Addr_BindPoint_MapID]=%Var[AddrBindPoint]-0x10;
+_Calc[Addr_BindPoint_PosX]=%Var[AddrBindPoint]-0xC;
+_Calc[Addr_BindPoint_PosY]=%Var[AddrBindPoint]-0x8;
+_Calc[Addr_BindPoint_PosZ]=%Var[AddrBindPoint]-0x4;
+_MemReadVar=%Var[AddrBindPoint],WCHAR[128],BindPoint;
+_MemReadVar=%Var[Addr_BindPoint_MapID],DWORD,BindPoint_MapID;
+_MemReadVar=%Var[Addr_BindPoint_PosX],FLOAT,BindPoint_PosX;
+_MemReadVar=%Var[Addr_BindPoint_PosY],FLOAT,BindPoint_PosY;
+_MemReadVar=%Var[Addr_BindPoint_PosZ],FLOAT,BindPoint_PosZ;
+#ELSE
+_SetVar=BindPoint,NotFound;
+#ENDIF
+
+end_GetBindPoint;
+
+
+
+start_Dialog_Select_LowestButton;
+//Always selects lowest button on dialog
+
+_IFFrameVisibleByName=dlg_dialog;
+#ELSE
+#Return
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_XPos],2.545898438,FLOAT; // Resets Dialog window
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Frame_YPos],3.321690083,FLOAT; // Resets Dialog window
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Dialog_Scroll],1,FLOAT; // Scrolls down
+_MemPtrReadVar=%AddrFrameName[dlg_dialog],%Var[Offset_Dialog_Page],DWORD,TempText;
+_SetVar=temp,0;
+_SetVar=tempY,373;
+
+#DO=10000;
+Mouse=133,%Var[tempY];
+Delay=25;
+_Calc[tempY]=%Var[tempY]-15;
+#IF=%Var[tempY],<107;
+_SetVar=temp,1;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[dlg_dialog],%Var[Offset_Dialog_Page],DWORD,=%Var[TempText];
+#ELSE
+_SetVar=temp,1;
+#ENDIF
+_IFFrameVisibleByName=dlg_dialog;
+#ELSE
+_SetVar=temp,1;
+#ENDIF
+#UNTIL=%Var[temp],=1;
+
+end_Dialog_Select_LowestButton;
+
+start_Set_SellList;
+
+_IFRegExp=%Var12,[0-9]+;
+_SetArray2=99,%Var9,%Var12;
+#ELSE
+_SetArray2=99,%Var9;
+#ENDIF
+
+end_Set_SellList;
+
+
+start_Set_DisenchantList;
+
+_IFRegExp=%Var13,[0-9]+;
+_SetArray2=99,%Var10,%Var13;
+#ELSE
+_SetArray2=99,%Var10;
+#ENDIF
+
+end_Set_DisenchantList;
+
+
+start_Set_DestroyList;
+
+_IFRegExp=%Var14,[0-9]+;
+_SetArray2=99,%Var11,%Var14;
+#ELSE
+_SetArray2=99,%Var11;
+#ENDIF
+
+end_Set_DestroyList;
+
+
+start_InventoryCheck;
+
+_SetVar=SoldAttempt,0;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],8;
+
+#IF=%Var[Sell],=1;
+#SetWindow
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahPrevious;
+#EXECUTE=Reset;
+_SetVar=SoldAttempt,1;
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#EXECUTE=SellToMerchant;
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahNew;
+_Calc[KinahGained]=%Var[KinahNew]-%Var[KinahPrevious];
+_SetVar=MSG,has sold items to the NPC and gained %Var[KinahGained] Kinah;
+#EXECUTE=Log;
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#EXECUTE=Return;
+#ENDIF
+
+
+#IF=%Var[Sell],=2;
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=L; // Elyos
+GetCooldown=243,RecallCooldown;
+#IF=%Var[RecallCooldown],=0;
+_SetVar=SoldAttempt,1;
+#SetWindow
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahPrevious;
+#EXECUTE=ReturnToSanctum;
+#IF=%Var[Return],=1;
+#EXECUTE=SellToMerchant_Sanctum;
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahNew;
+_Calc[KinahGained]=%Var[KinahNew]-%Var[KinahPrevious];
+_SetVar=MSG,has sold items to the NPC and gained %Var[KinahGained] Kinah;
+#EXECUTE=Log;
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#EXECUTE=Return;
+#ENDIF
+
+#IF=%Var[Sell],=2;
+_IFMemPtrRead=%PlayerBase,%OffsetRace,CHAR[1],=D; // Asmo
+GetCooldown=243,RecallCooldown;
+#IF=%Var[RecallCooldown],=0;
+_SetVar=SoldAttempt,1;
+#SetWindow
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahPrevious;
+#EXECUTE=ReturnToPande;
+#IF=%Var[Return],=1;
+#EXECUTE=SellToMerchant_Pande;
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,DWORD,KinahNew;
+_Calc[KinahGained]=%Var[KinahNew]-%Var[KinahPrevious];
+_SetVar=MSG,has sold items to the NPC and gained %Var[KinahGained] Kinah;
+#EXECUTE=Log;
+#EXECUTE=IsCloseToBindpoint;
+#IF=%Var[BindPoint_IsClose],=1;
+#EXECUTE=Return;
+#ENDIF
+
+
+#IF=%Var[SoldAttempt],=1;
+#IF=%InventoryRemainingSlots,<3; // If still has just 2 or less free slots
+_Calc[FailedSellAttempts]=%Var[FailedSellAttempts]+1;
+#IF=%Var[FailedSellAttempts],>1;
+_SetVar=Sell,0; // Disables attempt to sell
+#ENDIF
+
+end_InventoryCheck;
+
+
+start_SetupSellList;
+
+#IF=%Var9,=1; // White
+_HTTPGetVar=http://pastebin.com/raw/FQWpYaz6,,9;
+#Return
+#ENDIF
+#IF=%Var9,=2; // White + Green
+_HTTPGetVar=http://pastebin.com/raw/MLpwjqta,,9;
+#Return
+#ENDIF
+#IF=%Var9,=3; // White + Green + Blue
+_HTTPGetVar=http://pastebin.com/raw/ZFDAjuhJ,,9;
+#Return
+#ENDIF
+#IF=%Var9,=4; // Custom list (white + green + flux + books + manastone)
+_HTTPGetVar=http://pastebin.com/raw/c6rptU2R,,9;
+#Return
+#ENDIF
+#IF=%Var9,=5; // Custom list (white + green + blue + gold below 65 + flux + books + manastone + stigma)
+_HTTPGetVar=http://pastebin.com/raw/et0etHu0,,9;
+#Return
+#ENDIF
+
+end_SetupSellList;
+
+
+start_SetupDisenchantList;
+
+#IF=%Var10,=1; // White
+_HTTPGetVar=http://pastebin.com/raw/DRCk2Vpj,,10;
+#Return
+#ENDIF
+#IF=%Var10,=2; //Green
+_HTTPGetVar=http://pastebin.com/raw/uWLzaDpP,,10;
+#Return
+#ENDIF
+#IF=%Var10,=3; // Blue
+_HTTPGetVar=http://pastebin.com/raw/Kt5wCuNy,,10;
+#Return
+#ENDIF
+#IF=%Var10,=4; // Custom list (Blue)
+_HTTPGetVar=http://pastebin.com/raw/Kt5wCuNy,,10;
+#Return
+#ENDIF
+
+end_SetupDisenchantList;
+
+
+start_SetupDestroyList;
+
+#IF=%Var11,=1; // White
+_HTTPGetVar=http://pastebin.com/raw/FQWpYaz6,,11;
+#Return
+#ENDIF
+#IF=%Var11,=2; // White + Green
+_HTTPGetVar=http://pastebin.com/raw/MLpwjqta,,11;
+#Return
+#ENDIF
+#IF=%Var11,=3; // White + Green + Blue
+_HTTPGetVar=http://pastebin.com/raw/ZFDAjuhJ,,11;
+#Return
+#ENDIF
+#IF=%Var11,=4; // Custom list (White, Green Equipment + Worthless Manastones + Worthless Flux + Worthless Skill Books + Enchantment Stones till 54)
+_HTTPGetVar=http://pastebin.com/raw/gqTiCy7h,,11;
+#Return
+#ENDIF
+
+end_SetupDestroyList;
+
+
+
+start_SellToMerchant;
+
+#SetWindow
+
+#SELLMARK
+
+end_SellToMerchant;
+
+
+start_DestroyItem;
+//Requires real mouse
+#IF=%Var[Offset_Inv_Cube],=0;
+#Return
+#ENDIF
+
+#EXECUTE=RealMouseQueue;
+#SetWindow
+#EXECUTE=CloseWindows;
+InventoryRefresh=False;
+Delay=750;
+FrameActionByName=inventory_dialog,STATE,SHOW;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.033447266,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],DWORD,Item_Handle_Default;
+#SetAsActive
+_SetVar=tActive,1;
+Delay=750;
+
+_SetVar=OffsetCube,%Var[Offset_Inv_Cube];
+_SetVar=OffsetSlot,0;
+_SetVar=Counter,0;
+_SetVar1=1;
+#DO=60000;
+#2DO=60000;
+_SetVar=tDestroyCurrent,0;
+#IF=%Var[Destroy],=2;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+#ELSE
+#IF=%Var[Destroy],=1;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+#IF=%Var[tDestroyCurrent],=1;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,>0;
+_SetVar=Counter,999;
+#IF=%Var1,>1;
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,SearchedItemID;
+#EXECUTE=CheckInvSlot;
+MouseDrag=%Var[Item_Coord_X],%Var[Item_Coord_Y],Left,565,51;
+Delay=100;
+#ENDIF
+_Calc[Counter]=%Var[Counter]+1;
+_Calc[OffsetSlot]=%Var[Counter]*8;
+_Calc1=%Var1+1;
+#2UNTIL=%Var[Counter],>26;
+
+#IF=%Var[Counter],>998;
+_SetVar1=999;
+#ENDIF
+
+_SetVar=Counter,0;
+_SetVar=OffsetSlot,0;
+_Calc[OffsetCube]=%Var[OffsetCube]+8;
+#UNTIL=%Var1,>%InventoryMaxSlots;
+#IF=%Var1,>998;
+#ELSE
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,0;
+#Return
+#ENDIF
+
+
+_SetVar=OffsetCube,%Var[Offset_Inv_Cube];
+_SetVar=OffsetSlot,0;
+_SetVar=Counter,0;
+_SetVar1=1;
+
+#DO=60000;
+#2DO=60000;
+_SetVar=tDestroyCurrent,0;
+#IF=%Var[Destroy],=1; // Whitelist (destroy if on list)
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemID],DWORD,%ARRAY2;
+#ELSE
+#IF=%Var[Destroy],=2; // Blacklist (destroy if not list)
+_SetVar=tDestroyCurrent,1;
+#ENDIF
+#IF=%Var[tDestroyCurrent],=1;
+#EXECUTE=Destroy;
+#ENDIF
+_Calc[Counter]=%Var[Counter]+1;
+_Calc[OffsetSlot]=%Var[Counter]*8;
+_Calc1=%Var1+1;
+#2UNTIL=%Var[Counter],>26;
+
+_SetVar=Counter,0;
+_SetVar=OffsetSlot,0;
+_Calc[OffsetCube]=%Var[OffsetCube]+8;
+#UNTIL=%Var1,>%InventoryMaxSlots;
+
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle_Default],DWORD;
+
+#EXECUTE=CloseWindows;
+InventoryRefresh=True;
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,0;
+
+end_DestroyItem;
+
+
+start_Destroy;
+
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[OffsetCube]/%Var[Offset_Inv_Item]/%Var[OffsetSlot]/%Var[Offset_Inv_ItemHandle],DWORD,Item_Handle;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle],DWORD;
+#DO=1500;
+Delay=50;
+MouseDrag=565,51,Left,529,51;
+Delay=100;
+_UNTILMemPtrRead=%AddrFrameID[%ConfirmFrameID],0x28,BYTE,=175;
+_Calc[ConfirmFrameIDv2]=%ConfirmFrameID+20;
+_IFFrameVisible=%Var[ConfirmFrameIDv2]; // confirm text needed
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],DWORD,=%Var[Item_Handle];
+FrameAction=%Var[ConfirmFrameIDv2],XPOS,0;
+FrameAction=%Var[ConfirmFrameIDv2],YPOS,0;
+Delay=60;
+SendKey=abcdefghi;
+#2DO=5000;
+Delay=25;
+_2UNTILMemPtrRead=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],WCHAR[16],=abcdefghi;
+_IFMemPtrRead=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],WCHAR[16],=abcdefghi;
+MemPtrWrite=%AddrFrameID[%Var[ConfirmFrameIDv2]],%Var[Offset_Confirm_ConfirmText],Confirm,WCHAR[16];
+Delay=50;
+Mouse=161,96;
+Delay=150;
+#ENDIF
+_IFFrameVisible=%ConfirmFrameID; // No confirm text needed
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],DWORD,=%Var[Item_Handle];
+FrameAction=%ConfirmFrameID,XPOS,0;
+FrameAction=%ConfirmFrameID,YPOS,0;
+Delay=60;
+Mouse=168,62;
+Delay=33;
+Mouse=168,73;
+Delay=20;
+#ELSE
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Confirm_ItemHandle],0,DWORD;
+#EXECUTE=CloseWindows;
+Delay=750;
+FrameActionByName=inventory_dialog,STATE,SHOW;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.033447266,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+#ENDIF
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Inv_Cube]/%Var[Offset_Inv_Item]/0x0/%Var[Offset_Inv_ItemHandle],%Var[Item_Handle_Default],DWORD;
+
+end_Destroy;
+
+
+
+start_CheckInvSlot;
+
+_SetVar=Item_Coord_X,0;
+_SetVar=Item_Coord_Y,0;
+
+_IFInventoryContains=%Var[SearchedItemID];
+#ELSE
+#Return
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.032836914,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+
+_Calc[CubeAmount]=%InventoryMaxSlots/27;
+_RegExp=%Var[CubeAmount],^([0-9]*?)(?:\.[0-9]*?$|$),CubeAmount;
+_Calc[RemainingSlots]=%Var[CubeAmount]*27;
+_Calc[RemainingSlots]=%InventoryMaxSlots-%Var[RemainingSlots];
+
+_SetVar=DynamicCubeOffsetBase,%Var[Offset_Inv_Cube];
+_SetVar=tResult,0;
+_SetVar=tSlot,0;
+_SetVar=CubeCount,0;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+
+#DO=90000;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[DynamicCubeOffset]/%Var[Offset_Inv_Item]/%Var[DynamicSlotOffset]/%Var[Offset_Inv_ItemID],DWORD,=%Var[SearchedItemID];
+_Calc[tResult]=%Var[tResult]+1;
+#IF=%Var[tResult],>%Var[SecondResult];
+#EXECUTE=InvSlotToCoord;
+#Return
+#ENDIF
+_Calc[tSlot]=%Var[tSlot]+1;
+_Calc[DynamicSlotOffset]=%Var[tSlot]*0x8;
+#IF=%Var[tSlot],=27;
+_SetVar=tSlot,0;
+_Calc[CubeCount]=%Var[CubeCount]+1;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+#ENDIF
+#UNTIL=%Var[CubeCount],=%Var[CubeAmount];
+#UNTIL=%Var[tSlot],=%Var[RemainingSlots];
+
+end_CheckInvSlot;
+
+
+start_InvSlotToCoord;
+
+_SetVar=FirstSlot_X,563;
+_SetVar=FirstSlot_Y,48;
+_SetVar=Icon_Width,27;
+_SetVar=Icon_Height,27;
+_SetVar=Cube_Height,21;
+
+_Calc[tRow]=%Var[tSlot]/9;
+_RegExp=%Var[tRow],^([0-9]*?)(?:\.[0-9]*?$|$),tRow;
+_Calc[rSlots]=%Var[tRow]*9;
+_Calc[cSlot]=%Var[tSlot]-%Var[rSlots];
+
+_Calc[Cube_Distance]=%Var[CubeCount]*%Var[Cube_Height];
+_Calc[Row_Distance]=%Var[CubeCount]*3;
+_Calc[Row_Distance]=%Var[Row_Distance]+%Var[tRow];
+_Calc[Row_Distance]=%Var[Row_Distance]*%Var[Icon_Height];
+_Calc[Item_Coord_Y]=%Var[Cube_Distance]+%Var[Row_Distance];
+_Calc[Item_Coord_Y]=%Var[FirstSlot_Y]+%Var[Item_Coord_Y];
+
+_Calc[Slot_Distance]=%Var[cSlot]*%Var[Icon_Width];
+_Calc[Item_Coord_X]=%Var[FirstSlot_X]+%Var[Slot_Distance];
+
+end_InvSlotToCoord;
+
+
+
+start_RealMouseQueue;
+
+IniRead=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,InUse;
+#IF=%Var[InUse],=1;
+#DO=180000;
+Delay=%RNG{200|9000};
+IniRead=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,InUse;
+#UNTIL=%Var[InUse],=0;
+#ENDIF
+IniWrite=%VANILLATOOL\Logs\RealMouseQueue.ini,Main,InUse,1;
+
+end_RealMouseQueue;
+
+
+
+start_Return;
+
+Gravity=False;
+
+#RETURNMARK
+
+#EXECUTE=CheckDead;
+
+end_Return;
+
+
+start_MorphSetup;
+
+Delay=1000;
+UseID=40009,21;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=2000;
+Print=Select your desired morph design and hit "Del";
+TrayInfo=Select your desired morph design and hit "Del";
+WaitForKey=2E,1;
+_IFKey=2E,1;
+_MemPtrReadVar=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],DWORD,RecipeID;
+#ENDIF
+
+#EXECUTE=CloseWindows;
+
+end_MorphSetup;
+
+
+
+start_Morph;
+
+#IF=%Var[Morph],=0;
+#Return
+#ENDIF
+
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+#EXECUTE=SheatheWeapon;
+#SetWindow
+UseID=40009,21;
+Delay=1000;
+_IFFrameVisibleByName=tool_making_dialog;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=1250;
+Mouse=125,94; // First recipe
+Delay=1000;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],%Var[RecipeID],DWORD;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_Amount],20,BYTE;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_CraftAll],7,BYTE;
+Delay=200;
+Mouse=273,352; // Craft All
+Delay=200;
+Mouse=273,352; // Craft All
+Delay=2000;
+#EXECUTE=WaitForCraft;
+Delay=1000;
+#ENDIF
+
+#DO=5000;
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,<4000;
+_IFInventoryContains=160001274,1;
+GetCooldown=160001274,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160001274; // Jelly ID
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,<4000;
+_IFInventoryContains=160002274,1;
+GetCooldown=160002274,Jelly_CD;
+#IF=%Var[Jelly_CD],=0;
+UseID=160002274; // Jelly ID
+#ENDIF
+_UNTILMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+
+_IFMemPtrRead=%PlayerBase,%OffsetData/%Var[Offset_Base_DP],DWORD,>199;
+#EXECUTE=SheatheWeapon;
+#SetWindow
+UseID=40009,21;
+Delay=1000;
+_IFFrameVisibleByName=tool_making_dialog;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+Delay=1250;
+Mouse=125,94; // First recipe
+Delay=1000;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_ID],%Var[RecipeID],DWORD;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_Amount],20,BYTE;
+MemPtrWrite=%AddrFrameName[tool_making_dialog],%Var[Offset_Morph_CraftAll],7,BYTE;
+Delay=200;
+Mouse=273,352; // Craft All
+Delay=200;
+Mouse=273,352; // Craft All
+Delay=2000;
+#EXECUTE=WaitForCraft;
+Delay=1000;
+#ENDIF
+
+#EXECUTE=CloseWindows;
+
+end_Morph;
+
+
+start_WaitForCraft;
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],10,FLOAT; // 10x Animationspeed
+#ENDIF
+
+#DO=1000;
+Delay=50;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=6;
+_IFMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=6;
+#DO=300000;
+Delay=1000;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=2750;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=250;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+Delay=250;
+_UNTILMemPtrRead=%PlayerBase,%OffsetActionID,DWORD,=0;
+
+#IF=%Var[Animation],=1;
+MemPtrWrite=%PlayerBase,%OffsetData/%Var[Offset_Base_Animation],1,FLOAT; // Normal Animationspeed
+#ENDIF
+
+end_WaitForCraft;
+
+
+start_SheatheWeapon;
+
+_SetVar=temp_shard,0;
+#DO=4000;
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x38,BYTE,=33; // combat mode without shard
+UseID=50000;
+Delay=1500;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x38,BYTE,=161; // combat mode with shard
+UseID=50000;
+Delay=1500;
+#ENDIF
+Delay=1500;
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x38,BYTE,=129;
+_SetVar=temp_shard,1;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetData/0x38,BYTE,=1;
+_SetVar=temp_shard,1;
+#ENDIF
+#UNTIL=%Var[temp_shard],=1;
+
+end_SheatheWeapon;
+
+
+
+start_StartGlide;
+
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,1;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,2;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,3;
+
+_IFMemPtrRead=%PlayerBase,%OffsetGravity,BYTE,=5;
+#ELSE
+_Calc3=%Var3+7;
+#ENDIF
+
+#DO=60000;
+#EXECUTE=WaitForFlightCD;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,48,BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,48,FLOAT;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+Delay=175;
+SendAction=1,2;
+UseSpeed=1;
+#2DO=500;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+#2UNTIL=1,=2;
+Delay=65;
+#2DO=2500;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+SendAction=3,16;
+Delay=100;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,%Var[FPSCap],BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,%Var[FPSCap],FLOAT;
+_2UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+_UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+UseSpeed=170;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+MoveTo=%Var1,%Var2,%Var3,False,False;
+_UNTILMemRead=%AddrFlightStatus,BYTE,>0;
+UseSpeed=1;
+
+end_StartGlide;
+
+
+start_WaitForFlightCD;
+
+#DO=10000;
+Delay=250;
+_UNTILMemRead=%AddrFlightCooldown,WORD,=0;
+
+end_WaitForFlightCD;
+
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_Log;
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_RegExp=%Var[PlayerName],^([a-zA-Z0-9]*),PlayerName;
+#ELSE
+_SetVar=PlayerName,[Unknown];
+#ENDIF
+
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--%Var[ScriptTitle].txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] %Var[MSG]/n,+;
+
+MemWrite=%AddrFreeMem5,%Var[DiscordURL],WCHAR[1];
+_IFMemRead=%AddrFreeMem5,BYTE,=104;
+_HTTPPost=https://subvanillatool.com/discord.php,url=%Var[DiscordURL]&message=__**[%Var[ScriptTitle]] [%AionTitle::%Var[PlayerName]]**__ [%THour:%TMin:%TSec] %Var[MSG];
+#ENDIF
+
+end_Log;
+
+
+
+start_WhisperPlayer;
+
+#IF=%Var[tName],%ARRAY3; // if current whispered name is in ignorelist
+#ELSE
+_SetVar30=%Var30,%Var[tName]; // Comment this line out to disable blacklisting
+_SetArray3=%Var30;
+Command=%Var[WhisperAnswer%RNG{1|5}]; // Sends preset message
+Delay=125;
+#ENDIF
+
+Command=/Say; //resets chat channel
+MemPtrWrite=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_Check],0,BYTE;
+MemPtrWrite=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_LastName],0,BYTE;
+
+end_WhisperPlayer;
+
+
+start_EntityFilter;
+
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[NotifyWhenPlayerClose],>0;
+_SetArray2=999,%Var18;
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetName,WCHAR[16],!%ARRAY2,%Distance,FLOAT,<40,PlayerClose_Addr;
+#IF=%Var[NotifyWhenPlayerClose],>0;
+#IF=%Var[PlayerClose_Addr_Elements],>0; // player within 40m
+_SetArray1=dark_binding_stone_01a,Binding_stone_01a,yun_binding_stone_01,Binding_stone_user_01a;
+GetEntity=%OffsetRace,CHAR[32],%ARRAY1,Obelisk_Addr;
+#IF=%Var[Obelisk_Addr_Elements],=0; // no obelisk within 100m
+#IF=%Timer=105,60000;
+#IF=%Var[NotifyWhenPlayerClose],>0;
+_SetVar=MSG,%Var[tName] is close;
+#EXECUTE=Log;
+CreateTimer=105;
+#IF=%Var[NotifyWhenPlayerClose],=2;
+#SetAsActive
+#Alarm
+#ENDIF
+
+_SetVar=Temp,0;
+#IF=%Var[NotifyWhenPlayerTargets],>0;
+_SetVar=Temp,1;
+#ENDIF
+#IF=%Var[WhisperWhenPlayerTargets],=1;
+_SetVar=Temp,1;
+#ENDIF
+
+#IF=%Var[Temp],=1;
+_MemPtrReadVar=%PlayerBase,%OffsetData/%Var[Offset_Base_EntityID],DWORD,Player_EntityID;
+_SetArray2=999,%Var18;
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetName,WCHAR[16],!%ARRAY2,%OffsetData/%Var[Offset_Base_TargetNPCID],DWORD,=%Var[Player_EntityID],%Distance,FLOAT,<35,PlayerTargets_Addr;
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PlayerTargets_Addr_Elements],>0; // Player who targets us within 35m
+MemPtrWrite=%Var[PlayerTargets_Addr_1],%OffsetData/%Var[Offset_Base_TargetNPCID],0,DWORD; // To ignore entity till it targets again
+#IF=%Var[NotifyWhenPlayerTargets],>0;
+#IF=%Timer=106,60000;
+_SetVar=MSG,%Var[tName] has bot as target;
+#EXECUTE=Log;
+#IF=%Var[NotifyWhenPlayerTargets],=2;
+#SetAsActive
+#Alarm
+CreateTimer=106;
+#ENDIF
+#IF=%Var[PlayerTargets_Addr_Elements],>0; // Player who targets us within 35m
+#IF=%Var[WhisperWhenPlayerTargets],=1;
+_MemPtrReadVar=%Var[PlayerTargets_Addr_1],%OffsetName,WCHAR[64],tName;
+_IFMemPtrRead=%Var[PlayerTargets_Addr_1],%OffsetType,CHAR[32],=User;
+Delay=%RNG{3000|6000};
+#EXECUTE=WhisperPlayer;
+#ENDIF
+
+end_EntityFilter;
+
+
+
+start_EntityCheckup;
+//Checkups for a found entity
+
+_IFMemPtrRead=%PlayerBase,%OffsetName,WCHAR[32],=%Var[PlayerName];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+#IF=%Var[PosX_Decimal],=0;
+#Return
+#ENDIF
+
+#IF=%Var[MapID],=4294967295; // Loading screen
+#Return
+#ENDIF
+#IF=%Var[Name],=;
+#Return
+#ENDIF
+
+#IF=%Var[Type],=User;
+#ELSE
+#Return
+#ENDIF
+#IF=%Var[NPCID],%Var[DetectFrom]-%Var[DetectTill];
+#ELSE
+#Return
+#ENDIF
+
+#IF=%Var[Name],=%Var[PlayerName];
+#Return
+#ELSE
+//Print=<%Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[XPOS] %Var[YPOS] 0.0 0];
+#ENDIF
+
+
+_SetVar=GM_Found,0;
+_SetArray2=220010000,220010001,220010002,220010003,220010004,220010005,220010006,220010007,220010008,220010009,220010010,220010011,220010012,220010013,220010014,220010015,220010016,220010017,220010018,220010019,220010020,220010021,220010022,220010023,220010024,220010025,210010000,210010001,210010002,210010003,210010004,210010005,210010006,210010007,210010008,210010009,210010010,210010011,210010012,210010013,210010014,210010015,210010016,210010017,210010018,210010019,210010020,210010021,210010022,210010023,210010024,210010025; // Ishalgen, Poeta
+#IF=%Var[MapID],%ARRAY2;
+#ELSE
+#IF=%Var[Level],1-8;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,1;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_SetArray2=999,%Var[GMList];
+#IF=%Var[Name],%ARRAY2;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,2;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_SetArray2=999,%Var17;
+#IF=%Var[Name],%ARRAY2;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,8;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+#IF=%Var[HideLevel],=192; // Hide level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,4;
+#EXECUTE=GMReport;
+#ENDIF
+
+//#IF=%Var[GM_Found],=0;
+//#IF=%Var[NPCID],%Var[DetectFrom]-%Var[DetectTill];
+//_IFMemPtrRead=%Var[EntityAddr_%Var[i]],%OffsetData/0x24,BYTE,=22; // ??
+//_SetVar=GM_Found,1;
+//_SetVar=GM_Method,5;
+//#EXECUTE=GMReport;
+//#ENDIF
+
+#IF=%Var[GM_Found],=0;
+#IF=%Var[EyeLevel],=192; // Eye level
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,6;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=0;
+_IFRegExp=%Var[Name],^llGMll|^IIGMII;
+_SetVar=GM_Found,1;
+_SetVar=GM_Method,7;
+#EXECUTE=GMReport;
+#ENDIF
+
+#IF=%Var[GM_Found],=1;
+_RegExp=%Var[PosX_Decimal],^([0-9]+),PosX_NoDecimal; // Remove Comma
+_RegExp=%Var[PosY_Decimal],^([0-9]+),PosY_NoDecimal; // Remove Comma
+Print=<GM: %Var[Name]> detected at [pos:Location/:%Var[MapID] %Var[PosX_NoDecimal] %Var[PosY_NoDecimal] 0.0 0];
+Command=/logout;
+Print=Logging off in 3..;
+Delay=1000;
+Print=Logging off in 2..;
+Delay=1000;
+Print=Logging off in 1..;
+Delay=1000;
+#QuitAtRound=-1,True;
+#UseNoLoop
+#EndScript
+#ENDIF
+
+end_EntityCheckup;
+
+
+
+start_GMScan;
+//Checks for GM nearby
+
+//_SetArray2=100000,100001,100002,100003; // Asmo + Elyos
+GetEntity=%OffsetType,CHAR[32],=User,%OffsetLevel,BYTE,>0,%Distance,FLOAT,<80,EntityAddr;
+#IF=%Var[EntityAddr_Elements],>0;
+_SetVar=i,1;
+#DO=3000;
+
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetName,WCHAR[64],Name;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetType,CHAR[32],Type;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetLevel,BYTE,Level;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosX,FLOAT,PosX_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosY,FLOAT,PosY_Decimal;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetPosZ,FLOAT,PosZ_Decimal;
+_MemReadVar=%AddrMap,DWORD,MapID;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetNPCID,DWORD,NPCID;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetHideLevel,BYTE,HideLevel;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetEyeLevel,BYTE,EyeLevel;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],0x0,BYTE[1024],Dump;
+_MemPtrReadVar=%Var[EntityAddr_%Var[i]],%OffsetData/0x0,BYTE[2048],DataDump;
+#EXECUTE=EntityCheckup;
+
+MemPtrWrite=%Var[EntityAddr_%Var[i]],%OffsetLevel,0,BYTE; // To ignore entity till it got reloaded
+
+_Calc[i]=%Var[i]+1;
+#UNTIL=%Var[i],>%Var[EntityAddr_Elements];
+#ENDIF
+
+end_GMScan;
+
+
+
+start_GMReport;
+
+_HTTPPost=https://subvanillatool.com/POST/%Var[Token]/post.php,text=<b><font color="#ff0000">[Combat Routine %Var[ScriptVersion]_%ClientID] [Method %Var[GM_Method]]</font></b> [%Var[Name]] (%Var[Level]) detected at Map: %Var[MapID] | X: %Var[PosX_Decimal] | Y: %Var[PosY_Decimal] | Z: %Var[PosZ_Decimal];
+_SetVar=MSG,GM DETECTED -- Method: %Var[GM_Method] | [%Var[Name]] (%Var[Level]) detected at Map: %Var[MapID] | X: %Var[PosX_Decimal] | Y: %Var[PosY_Decimal] | Z: %Var[PosZ_Decimal];
+#EXECUTE=Log;
+
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__%DAY-%MONTH-%YEAR.txt,%Var[Dump],r;
+%ResetLogFile
+LogWrite=%VANILLATOOL\Logs\GM Detector\%Var[Name]__Data__%DAY-%MONTH-%YEAR.txt,%Var[DataDump],r;
+
+end_GMReport;
+
+
+
+start_OnScriptExit;
+
+MemPtrWrite=%PlayerBase,%OffsetActionID,0,DWORD;
+Console=\g_maxfps 120;
+
+end_OnScriptExit;
+
+
+start_GetPotionID;
+_SetVar=PotionID,-1;
+_IFInventoryContains=162000093;//MP Only (440)
+_ACPotion=162000093,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000057;//MP Only (500)
+_ACPotion=162000057,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000153;//MP Only (500)
+_ACPotion=162000153,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000094;//MP Only (720)
+_ACPotion=162000094,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000058;//MP Only (820)
+_ACPotion=162000058,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000095;//MP Only (940)
+_ACPotion=162000095,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000059;//MP Only (1070)
+_ACPotion=162000059,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000017;//MP Only (540)
+_ACPotion=162000017,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000096;//MP Only (1090)
+_ACPotion=162000096,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000007;//MP Only (590)
+_ACPotion=162000007,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000097;//MP Only (1180)
+_ACPotion=162000097,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000060;//MP Only (1240)
+_ACPotion=162000060,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000061;//MP Only (1340)
+_ACPotion=162000061,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000098;//MP Only (1340)
+_ACPotion=162000098,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000129;//MP Only (1630)
+_ACPotion=162000129,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000018;//MP Only (900)
+_ACPotion=162000018,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002006;//MP Only (900)
+_ACPotion=162002006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000008;//MP Only (980)
+_ACPotion=162000008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002004;//MP Only (980)
+_ACPotion=162002004,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000019;//MP Only (1170)
+_ACPotion=162000019,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000009;//MP Only (1280)
+_ACPotion=162000009,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002021;//MP Only (1280)
+_ACPotion=162002021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000020;//MP Only (1360)
+_ACPotion=162000020,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001008;//MP Only (1360)
+_ACPotion=162001008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000021;//MP Only (1470)
+_ACPotion=162000021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000010;//MP Only (1480)
+_ACPotion=162000010,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001006;//MP Only (1480)
+_ACPotion=162001006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000011;//MP Only (1600)
+_ACPotion=162000011,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000078;//MP Only (1680)
+_ACPotion=162000078,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000123;//MP Only (1800)
+_ACPotion=162000123,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000076;//MP Only (1830)
+_ACPotion=162000076,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000120;//MP Only (1960)
+_ACPotion=162000120,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+_IFInventoryContains=162000087;//HP Only (270)
+_ACPotion=162000087,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000052;//HP Only (310)
+_ACPotion=162000052,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000152;//HP Only (310)
+_ACPotion=162000152,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000088;//HP Only (490)
+_ACPotion=162000088,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000053;//HP Only (560)
+_ACPotion=162000053,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000012;//HP Only (340)
+_ACPotion=162000012,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000089;//HP Only (720)
+_ACPotion=162000089,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000002;//HP Only (370)
+_ACPotion=162000002,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000054;//HP Only (810)
+_ACPotion=162000054,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000090;//HP Only (930)
+_ACPotion=162000090,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000091;//HP Only (1130)
+_ACPotion=162000091,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000055;//HP Only (1060)
+_ACPotion=162000055,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000056;//HP Only (1280)
+_ACPotion=162000056,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000128;//HP Only (2060)
+_ACPotion=162000128,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000013;//HP Only (610)
+_ACPotion=162000013,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002005;//HP Only (610)
+_ACPotion=162002005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000003;//HP Only (670)
+_ACPotion=162000003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002003;//HP Only (670)
+_ACPotion=162002003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000092;//HP Only (1550)
+_ACPotion=162000092,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000014;//HP Only (890)
+_ACPotion=162000014,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000004;//HP Only (970)
+_ACPotion=162000004,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002020;//HP Only (970)
+_ACPotion=162002020,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000015;//HP Only (1160)
+_ACPotion=162000015,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001007;//HP Only (1160)
+_ACPotion=162001007,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000005;//HP Only (1270)
+_ACPotion=162000005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001005;//HP Only (1270)
+_ACPotion=162001005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000016;//HP Only (1410)
+_ACPotion=162000016,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000006;//HP Only (1540)
+_ACPotion=162000006,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000077;//HP Only (1940)
+_ACPotion=162000077,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000075;//HP Only (2120)
+_ACPotion=162000075,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000122;//HP Only (2270)
+_ACPotion=162000122,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000119;//HP Only (2480)
+_ACPotion=162000119,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+_IFInventoryContains=162000046;//HP+MP (340 / 540)
+_ACPotion=162000046,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000041;//HP+MP (370 / 590)
+_ACPotion=162000041,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000047;//HP+MP (610 / 900)
+_ACPotion=162000047,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000042;//HP+MP (670 / 980)
+_ACPotion=162000042,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000048;//HP+MP (890 / 1170)
+_ACPotion=162000048,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000043;//HP+MP (970 / 1280)
+_ACPotion=162000043,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000049;//HP+MP (1160 / 1360)
+_ACPotion=162000049,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000044;//HP+MP (1270 / 1480)
+_ACPotion=162000044,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000050;//HP+MP (1410 / 1470)
+_ACPotion=162000050,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000045;//HP+MP (1540 / 1600)
+_ACPotion=162000045,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000080;//HP+MP (1940 / 1680)
+_ACPotion=162000080,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000081;//HP+MP (2120 / 1830)
+_ACPotion=162000081,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=164000135;//HP+MP (2120 / 1830)
+_ACPotion=164000135,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000124;//HP+MP (2270 / 1800)
+_ACPotion=162000124,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000121;//HP+MP (2480 / 1960)
+_ACPotion=162000121,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+end_GetPotionID;
+
+
+
+start_CheckWhisper;
+
+#IF=%Var[WhisperEnabled],=1;
+_IFMemPtrRead=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_Check],BYTE,>0;
+SendKey=0x54; <-- Presses "T" in order to reply to whispers
+Delay=7;
+_IFMemPtrRead=%AddrChat,%OffsetChatOpen,BYTE,=7; // IF chat bar opened
+_IFMemPtrRead=%AddrChat,%Var[Offset_Whisper_Channel],DWORD,=1059102881; // If in whisper channel
+#EXECUTE=AnswerWhisper;
+#ENDIF
+
+end_CheckWhisper;
+
+
+start_AnswerWhisper;
+
+_MemPtrReadVar=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_LastName],WCHAR[32],LastWhisperedName;
+_GetChatLog=[0-9]{4}\.[0-9]{2}\.[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}\ : \[charname:%Var[LastWhisperedName][^A-Za-z][0-9\. ]+\] whispers: (.*)[\r\n],WhisperMessage;
+#ClearChatLog
+_SetVar=tWhisperAnswer,%Var[WhisperAnswer%RNG{1|12}];
+
+_SetArray3=%Var30;
+#IF=%Var[LastWhisperedName],%ARRAY3; // if current whispered name is in ignorelist
+_SetVar=MSG,%Var[LastWhisperedName] has whispered: %Var[WhisperMessage];
+#EXECUTE=Log;
+#ENDIF
+
+#IF=%Var[LastWhisperedName],%ARRAY3; // if current whispered name is in ignorelist
+#ELSE
+#IF=%Var[AutoReplyToWhisper],=1;
+_SetVar30=%Var30,%Var[LastWhisperedName]; // Comment this line out to disable blacklisting
+_SetArray3=%Var30;
+Command=/w %Var[LastWhisperedName] %Var[tWhisperAnswer]; // Sends preset message
+Delay=125;
+_SetVar=MSG,%Var[LastWhisperedName] has whispered: %Var[WhisperMessage]/nAnswered with: %Var[tWhisperAnswer];
+#EXECUTE=Log;
+#ELSE
+_SetVar=MSG,%Var[LastWhisperedName] has whispered: %Var[WhisperMessage];
+#EXECUTE=Log;
+#ENDIF
+
+Command=/Say; //resets chat channel
+MemPtrWrite=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_Check],0,BYTE;
+MemPtrWrite=%AddrFrameName[chat_input_dialog],%Var[Offset_Whisper_LastName],0,BYTE;
+
+end_AnswerWhisper;
+
+
+
+start_DisablePetCamera;
+
+_MemPattern=74006F0079007000650074005F00630061006D005F006E006F007500730065000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,268,False,0x00001000/0x1FFFFFFFF; // Pet Camera Pattern
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],1,DWORD;
+#ENDIF
+
+end_DisablePetCamera;
+
+
+start_DisableClickToMove;
+
+_MemPattern=700072006500760065006E0074005F006D006F007500730065005F006D006F007600650000000000000000000000000000000000000000000000000000000000000000000000000000000000,268,False,0x00001000/0x1FFFFFFFF; // Click to Move Pattern
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],1,DWORD;
+#ENDIF
+
+end_DisableClickToMove;
+
+
+start_DisableAutoApproach;
+
+_MemPattern=6D0061006E00750061006C005F00610074007400610063006B0000000000000000000000,268,False,0x00001000/0x1FFFFFFFF; // Click to Move Pattern
+#IF=%Var[PatternFound],>0;
+MemWrite=%Var[PatternRet_1],1,DWORD;
+#ENDIF
+
+end_DisableAutoApproach;
+
+
+
+start_HidePlayers;
+
+MemWrite=%AddrHidePlayer,%Var[HidePlayers],DWORD;
+
+end_HidePlayers;
+
+
+start_SetResolution;
+
+#SmoothBackground
+Delay=1;
+Console=\r_Width 800;
+Console=\r_Height 600;
+Delay=5;
+
+MouseHoverClick=2,-2,Left,2,-2;
+
+end_SetResolution;
+
+
+start_CheckInstaScript;
+
+_SetVar=AskState,0;
+
+#IF=%FirstTime,;
+#IF=%IsInstaScript,=0; // If script got loaded manually
+Ask=Declare settings manually?/n/n[No] or [Timeout] loads InstaScript settings;
+_SetVar=AskState,1;
+WaitForResponse=Make sure F8 is bound to "Select Nearest Target" to get a soul heal after death/nMake sure "C" is bound to "Attack/Chat" ingame/nMake sure "Tab" is bound to "Select Nearest Enemy" ingame;
+#SetVar=Animation,Want to use Animation modifications during Combat / Morphing?/n/nType 1 for yes or 0 for no;
+#SetVar=AntiStuck,Enable Anti-Stuck detection at the beginning of each round?/n/nType 1 for yes or 0 for no;
+#SetVar=DiscordURL,Enter your Discord Webhook URL for Discord messages/notherwise enter 0/n/n( more information at https://vanillatool.com/discord );
+#SetVar=ChangeChannel,Change channel at the end of every round?/n/n1 = Yes/n0 = No;
+#SetVar=Timeout,Want to stop grinding after a certain amount of minutes?/n/nEnter the amount of minutes or 0 if you don't want any time limit;
+#SetVar=DisableLooting,Want to stop looting if inventory is full?/n/n1 = Yes/n0 = No;
+#SetVar=PauseAfterDeath,How many minutes you want to wait after death to enemy race?;
+#SetVar=StopAfterDeath,Want to stop botting if died to mobs 3 times within 20 minutes?/n/n0 = No/n1 = Yes;
+#SetVar=StatusInvisible,Sets Status to Invisible on friendlist/n/n1 = Yes/n0 = No;
+#SetVar=GMDetection,Enable GM Detection?/n/n1 = Yes/n0 = No;
+#ENDIF
+
+#IF=%Var[AskState],=1;
+#SetVar=Sell,Enable selling when inventory is full?/n/nType 0 for no/nType 1 for selling at merchant (requires recorded sell path);
+#IF=%Var[Sell],>0;
+#SetVar9=Enter the ItemIDs the bot is allowed to sell/nExample: 182010036,182010037,182010038/n/n/nYou can also enter 1 to sell all White rarity Equipment items/n/nEnter 2 to sell all White + Green rarity Equipment items/n/nEnter 3 to sell all White + Green + Blue rarity Equipment items/n/nEnter 4 for my recommended custom list;
+#EXECUTE=SetupSellList;
+#ENDIF
+
+#IF=%Var[AskState],=1;
+#SetVar=Disenchant,Enable disenchanting at the beginning of every round?/n/n0 = No/n1 = Yes;
+#IF=%Var[Disenchant],>0;
+#SetVar10=Enter the ItemIDs the bot is allowed to disenchant/nExample: 182010036,182010037,182010038/n/n/nYou can also enter 1 to sell all White rarity Equipment items/n/nEnter 2 to sell all White + Green rarity Equipment items/n/nEnter 3 to sell all White + Green + Blue rarity Equipment items/n/nEnter 4 for my recommended custom list;
+#EXECUTE=SetupDisenchantList;
+#ENDIF
+
+#IF=%Var[AskState],=1;
+#SetVar=Destroy,Enable destruction of items when inventory is full?/n/n0 = No/n1 = Yes;
+#IF=%Var[Destroy],>0;
+#SetVar11=Enter the ItemIDs the bot is allowed to destroy/nExample: 182010036,182010037,182010038/n/n/nYou can also enter 1 to sell all White rarity Equipment items/n/nEnter 2 to sell all White + Green rarity Equipment items/n/nEnter 3 to sell all White + Green + Blue rarity Equipment items/n/nEnter 4 for my recommended custom list;
+#EXECUTE=SetupDestroyList;
+#ENDIF
+
+#IF=%Var[AskState],=1;
+#SetVar=Morph,Want to morph when ever DP is full?/n/n0 = No/n1 = Yes;
+#IF=%Var[Morph],=1;
+#SetVar=RecipeID,Which Recipe ID you want to morph?/n/nYou find them at/nhttps://aioncodex.com/usc/recipe/;
+#EXECUTE=MorphSetup;
+#ENDIF
+
+end_CheckInstaScript;
+
+
+
+start_GetOffsets;
+
+#DO=5000;
+Delay=250;
+#UNTIL=%Timer=997,5000;
+
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[4\.8\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[4\.8\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[4\.8\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[4\.8\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[4\.8\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[4\.8\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_Amount,(?m)\[4\.8\]\n.*?^Morph_Amount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[4\.8\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.8\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.8\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.8\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Page,(?m)\[4\.8\]\n.*?^Dialog_Page=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_Scroll,(?m)\[4\.8\]\n.*?^Dialog_Scroll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[4\.8\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[4\.8\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[4\.8\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[4\.8\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ItemHandle,(?m)\[4\.8\]\n.*?^Confirm_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_LastName,(?m)\[4\.8\]\n.*?^Whisper_LastName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Check,(?m)\[4\.8\]\n.*?^Whisper_Check=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Whisper_Channel,(?m)\[4\.8\]\n.*?^Whisper_Channel=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_TargetNPCID,(?m)\[4\.8\]\n.*?^Base_TargetNPCID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_EntityID,(?m)\[4\.8\]\n.*?^Base_EntityID=(.*?)$;
+CreateTimer=997;
+
+end_GetOffsets;
+
+
+
+start_InstaScriptLogin;
+
+CreateTimer=997;
+_SetVar=ScriptTitle,Combat; // Scriptname used for Logs or Script Editor title
+#EXECUTE=GetOffsets;
+
+#IF=%FirstTime,;
+_SetVar=WrongPIN,0;
+MemPtrWrite=%AddrFPS,%OffsetFPS1,%Var[FPSCap],BYTE;
+MemPtrWrite=%AddrFPS,%OffsetFPS2,%Var[FPSCap],FLOAT;
+MemWrite=%AddrMouseX,0x00000000000000000000000000000000,BYTE[16]; // initialize mouse usage
+#ENDIF
+
+_IFMemRead=%AddrMap,DWORD,<999999999;
+_IFMemRead=%AddrMap,DWORD,>0; // if already logged in
+#SetWindow
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%Var[PlayerName] - InstaScript;
+#Return
+#ENDIF
+
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrCharacterScene,DWORD,=8;
+
+_IFMemRead=%AddrCharacterScene,DWORD,=8; // Accept EULA screen
+#SetWindow
+#DO=600000;
+Delay=1500;
+_UNTILMemRead=%AddrMap,DWORD,=4294967295;
+#DO=15000;
+Delay=500;
+_UNTILMemRead=0x500,BYTE,=1;
+_UNTILMemRead=0x504,BYTE,=1;
+SetScriptTitle=%AionTitle;
+Delay=2500;
+SendKey=0x0D; // Accept
+Delay=9000;
+#ENDIF
+
+_IFMemRead=%AddrCharacterScene,DWORD,=8; // Accept EULA screen
+#Crash
+#ENDIF
+
+_IFMemRead=%AddrCharacterScene,DWORD,=9; // Select Server screen
+Mouse=457,115; // Sort by Character
+Delay=750;
+Mouse=457,115; // Sort by Character
+Delay=750;
+Mouse=397,130; // First Server
+Delay=750;
+SendKey=0x0D; // Accept
+Delay=12000;
+#ENDIF
+
+#EXECUTE=EmptyServerCheckup;
+Mouse=50,503; // First Char
+Delay=500;
+Mouse=297,571; // Start
+Delay=500;
+Mouse=297,571; // Start
+Delay=2000;
+
+_IFFrameVisibleByName=second_password_dialog; PIN window
+#ELSE
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--Combat_Log.txt,%HOUR:%MIN:%SEC -- %AionTitle Had the PIN bug/n,+;
+#ENDIF
+
+MemWrite=%AddrFreeMem10,1,BYTE;
+#DO=600000;
+
+_IFFrameVisibleByName=second_password_dialog; PIN window
+Mouse=496,335;
+Delay=50;
+#EXECUTE=WrongPIN;
+FrameActionByName=second_password_dialog,XPOS,0;
+FrameActionByName=second_password_dialog,YPOS,0;
+#EnterPIN=%Var[UserPIN];
+Delay=1000;
+SendKey=0x0D;
+#ELSE
+MemWrite=%AddrFreeMem10,0,BYTE;
+#ENDIF
+
+Delay=750;
+_UNTILMemRead=%AddrFreeMem10,BYTE,=0;
+
+Delay=14000;
+#DO=1500;
+SendKey=0x1B;
+Delay=25;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+
+_IFMemRead=%AddrMap,DWORD,>999999999; // not successfully logged in
+#EXECUTE=End;
+#ENDIF
+
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+SetScriptTitle=%Var[PlayerName] - InstaScript;
+
+end_InstaScriptLogin;
+
+
+start_EmptyServerCheckup;
+
+#DO=150000;
+_IFMemRead=%AddrCharacterScene,DWORD,=13; // Create Char screen
+Delay=1000;
+Mouse=434,573; // Main Screen
+Delay=1000;
+Mouse=164,571; // Server Selection
+Delay=9000;
+Mouse=397,145; // Lowest Server
+Delay=1000;
+SendKey=0x0D; // Accept
+Delay=5500;
+#ENDIF
+_UNTILMemRead=%AddrCharacterScene,DWORD,=11; // Char selection screen
+
+end_EmptyServerCheckup;
+
+
+start_WrongPIN;
+
+_IFFrameVisible=%ConfirmFrameID;
+_Calc[WrongPIN]=%Var[WrongPIN]+1;
+Mouse=480,347; //
+Delay=50;
+Mouse=497,345; // Prompt wrong PIN
+Delay=1000;
+#ENDIF
+
+#IF=%Var[WrongPIN],>1;
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--Combat_Log.txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] entered the PIN {%Var[UserPIN]} incorrectly 2 times. logging off now/n,+;
+#QuitAtRound=-1,True;
+#ENDIF
+
+end_WrongPIN;
+
+
+start_End;
+
+#IF=%Var[QuitClient],=1;
+#QuitAtRound=-1,True;
+#ELSE
+#EndScript
+#ENDIF
+
+end_End;
+
+
+start_AccountSettings; // Customize PIN and character amount for each account here
+
+_SetVar=IgnoreThis,0;
+
+#IF=%AionTitle,=Account1; // IF window title = Account1 then
+_SetVar=UserPIN,024689; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account2; // IF window title = Account2 then
+_SetVar=UserPIN,111111; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+#IF=%AionTitle,=Account3; // IF window title = Account3 then
+_SetVar=UserPIN,1234567; // Your PIN
+_Calc[IgnoreThis]=%Var[IgnoreThis]+1;
+#ENDIF
+
+
+
+#IF=%Var[IgnoreThis],=0; // IF neither of them is found use default values from top of script
+_SetVar=UserPIN,%Var[UserPIN];
+#ENDIF
+
+end_AccountSettings;

@@ -1,0 +1,2097 @@
+#IF=%FirstTime,;
+RequireVersion=10.22;
+#UseGravity
+#UseLoop
+UseSpeed=1;
+#SetVar4=Want to use NoAnimation while grinding?/n/nType 1 for yes or 0 for no;
+#SetVar5=Want to fight from mid air?/n/nType 1 for yes or 0 for no;
+_SetVar=RunScroll,1; // Use Greater Running Scroll? - 0 = No | 1 = Yes
+_SetVar=AtkSpeedScroll,0; // Use Greater Courage Scroll? - 0 = No | 1 = Yes
+_SetVar=CritStrikeScroll,0; // Use Major Crit Strike Scroll? - 0 = No | 1 = Yes
+_SetVar=CastSpeedScroll,0; // Use Greater Awakening Scroll? - 0 = No | 1 = Yes
+_SetVar=CritSpellScroll,0; // Use Major Crit Spell Running Scroll? - 0 = No | 1 = Yes
+_SetVar=RallySerumAndFocusAgent,1; // Use Rally Serum and Focus Agent? - 0 = No | 1 = Yes
+_SetVar=GravitySpeed,400; // Wait 400ms after each teleport step, if you experience rollbacks increase it
+_SetVar=CastTolerance,1; // Allows finishing the cast if just ~1 second cast time remaining if the mob is already below you - 0 = No | 1 = Yes
+Command=;
+#ENDIF
+
+#IF=%FirstTime,;
+#IF=%Var5,=1;
+_SetVar=MainVTPID,%VTPID;
+MemWrite=%AddrFreeMem0,1,BYTE;
+#ThreadEXECUTE=MidAirMovement_Thread,True,False,ThreadPID; // frequently checks for nearby GMs and Whispers
+#EXECUTE=CombatSort_ForGravity;
+#DO=90000;
+Delay=1000;
+_UNTILMemRead=%AddrFreeMem0,BYTE,=0;
+TrayInfo=Press "Delete" to fight your target;
+#ENDIF
+
+#IF=%FirstTime,;
+#IF=%Var5,=0;
+#EXECUTE=CombatSort;
+TrayInfo=Press "Delete" to fight your target;
+#ENDIF
+
+
+WaitForKey=2E,1; // Press/Hold Delete
+#IF=%Var5,=1;
+_MemPtrReadVar=%TargetBase,%OffsetPosX,FLOAT,Target_X;
+_MemPtrReadVar=%TargetBase,%OffsetPosY,FLOAT,Target_Y;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,Player_Z;
+FlySmooth=%Var[Target_X],%Var[Target_Y],%Var[Player_Z];
+MemWrite=%AddrFreeMem1,1,BYTE;
+_AutoCombat=;
+MemWrite=%AddrFreeMem1,0,BYTE;
+#ELSE
+_AutoCombat=;
+#ENDIF
+
+
+
+
+start_MidAirMovement_Thread;
+
+UseSpeed=1;
+MemWrite=%AddrFreeMem0,0,BYTE;
+
+#DO=9999999999;
+_IFMemRead=%AddrFreeMem1,BYTE,=1;
+#EXECUTE=Init;
+#EXECUTE=CheckPosition;
+#ELSE
+Delay=1000;
+#ENDIF
+#UNTIL=1,=2;
+
+end_MidAirMovement_Thread;
+
+
+
+start_Init;
+_IFBuffAlive=9960;
+_Calc[cGravitySpeed]=%Var[GravitySpeed]*0.77;
+#ELSE
+_SetVar=cGravitySpeed,%Var[GravitySpeed];
+#ENDIF
+_IFMemPtrRead=%TargetBase,%OffsetData,UINT64,=%Var[TargetCache];
+#Return
+#ELSE
+_IFMemPtrRead=%TargetBase,%OffsetData,UINT64,>0;
+_MemPtrReadVar=%TargetBase,%OffsetData,UINT64,TargetCache;
+_MemPtrReadVar=%TargetBase,%OffsetPosX,FLOAT,Target_X;
+_MemPtrReadVar=%TargetBase,%OffsetPosY,FLOAT,Target_Y;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,Player_Z;
+_SetVar=Step,0;
+_Calc[Step_0_0_X]=%Var[Target_X]+4;
+_Calc[Step_0_0_Y]=%Var[Target_Y]-0;
+_Calc[Step_0_1_X]=%Var[Target_X]-0;
+_Calc[Step_0_1_Y]=%Var[Target_Y]-0;
+_Calc[Step_0_2_X]=%Var[Target_X]-4;
+_Calc[Step_0_2_Y]=%Var[Target_Y]-0;
+_Calc[Step_0_3_X]=%Var[Target_X]-8;
+_Calc[Step_0_3_Y]=%Var[Target_Y]-0;
+_Calc[Step_1_0_X]=%Var[Target_X]-4;
+_Calc[Step_1_0_Y]=%Var[Target_Y]-0;
+_Calc[Step_1_1_X]=%Var[Target_X]-0;
+_Calc[Step_1_1_Y]=%Var[Target_Y]-0;
+_Calc[Step_1_2_X]=%Var[Target_X]+4;
+_Calc[Step_1_2_Y]=%Var[Target_Y]-0;
+_Calc[Step_1_3_X]=%Var[Target_X]+8;
+_Calc[Step_1_3_Y]=%Var[Target_Y]-0;
+MoveTo=%Var[Step_1_2_X],%Var[Step_1_2_Y],%Var[Player_Z],True,False;
+Delay=%Var[cGravitySpeed];
+MoveTo=%Var[Step_1_3_X],%Var[Step_1_3_Y],%Var[Player_Z],True,False;
+Delay=%Var[cGravitySpeed];
+#ENDIF
+end_Init;
+
+
+
+start_CheckPosition;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,Player_X;
+_Calc[Player_X_min]=%Var[Player_X]-0.65;
+_Calc[Player_X_max]=%Var[Player_X]+0.65;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,Player_Y;
+_Calc[Player_Y_min]=%Var[Player_Y]-0.65;
+_Calc[Player_Y_max]=%Var[Player_Y]+0.65;
+_IFMemPtrRead=%TargetBase,%OffsetPosX,FLOAT,%Var[Player_X_min]-%Var[Player_X_max];
+_IFMemPtrRead=%TargetBase,%OffsetPosY,FLOAT,%Var[Player_Y_min]-%Var[Player_Y_max];
+#EXECUTE=CheckStance;
+#EXECUTE=SetPosition;
+#ENDIF
+end_CheckPosition;
+
+
+start_CheckStance;
+#IF=%Var[CastTolerance],=0;
+#Return
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%OffsetActionID2,DWORD,>0; // is using skill
+_IFMemPtrRead=%TargetBase,%OffsetAFK,FLOAT,<1; // mob is standing below us for less than 1 second
+_MemPtrReadVar=%TargetBase,%OffsetAFK,FLOAT,Target_AFK;
+_Calc[CanCastFor]=1.15-%Var[Target_AFK];
+_IFMemPtrRead=%PlayerBase,%OffsetAnimationTimeRemain,FLOAT,<%Var[CanCastFor];
+#DO=1150;
+_UNTILMemPtrRead=%PlayerBase,%OffsetAnimationTimeRemain,FLOAT,<0.20;
+MemPtrWrite=%PlayerBase,%OffsetAnimationTimeRemain,0,FLOAT;
+//MemPtrWrite=%PlayerBase,%OffsetActionID,0x00000000000000000000000000000000,BYTE[16];
+#ENDIF
+end_CheckStance;
+
+
+start_SetPosition;
+MoveTo=%Var[Step_%Var[Step]_0_X],%Var[Step_%Var[Step]_0_Y],%Var[Player_Z],True,False;
+Delay=%Var[cGravitySpeed];
+MoveTo=%Var[Step_%Var[Step]_1_X],%Var[Step_%Var[Step]_1_Y],%Var[Player_Z],True,False;
+Delay=%Var[cGravitySpeed];
+MoveTo=%Var[Step_%Var[Step]_2_X],%Var[Step_%Var[Step]_2_Y],%Var[Player_Z],True,False;
+Delay=%Var[cGravitySpeed];
+MoveTo=%Var[Step_%Var[Step]_3_X],%Var[Step_%Var[Step]_3_Y],%Var[Player_Z],True,False;
+#IF=%Var[Step],=0;
+_SetVar=Step,1;
+#ELSE
+_SetVar=Step,0;
+#ENDIF
+end_SetPosition;
+
+
+
+start_GetPotionID;
+_SetVar=PotionID,-1;
+_IFInventoryContains=162000093;//MP Only (440)
+_ACPotion=162000093,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000057;//MP Only (500)
+_ACPotion=162000057,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000153;//MP Only (500)
+_ACPotion=162000153,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000094;//MP Only (720)
+_ACPotion=162000094,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000058;//MP Only (820)
+_ACPotion=162000058,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000095;//MP Only (940)
+_ACPotion=162000095,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000059;//MP Only (1070)
+_ACPotion=162000059,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000017;//MP Only (540)
+_ACPotion=162000017,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000096;//MP Only (1090)
+_ACPotion=162000096,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000007;//MP Only (590)
+_ACPotion=162000007,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000097;//MP Only (1180)
+_ACPotion=162000097,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000060;//MP Only (1240)
+_ACPotion=162000060,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000061;//MP Only (1340)
+_ACPotion=162000061,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000098;//MP Only (1340)
+_ACPotion=162000098,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000129;//MP Only (1630)
+_ACPotion=162000129,MP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000018;//MP Only (900)
+_ACPotion=162000018,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002006;//MP Only (900)
+_ACPotion=162002006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000008;//MP Only (980)
+_ACPotion=162000008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002004;//MP Only (980)
+_ACPotion=162002004,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000019;//MP Only (1170)
+_ACPotion=162000019,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000009;//MP Only (1280)
+_ACPotion=162000009,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002021;//MP Only (1280)
+_ACPotion=162002021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000020;//MP Only (1360)
+_ACPotion=162000020,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001008;//MP Only (1360)
+_ACPotion=162001008,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000021;//MP Only (1470)
+_ACPotion=162000021,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000010;//MP Only (1480)
+_ACPotion=162000010,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001006;//MP Only (1480)
+_ACPotion=162001006,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000011;//MP Only (1600)
+_ACPotion=162000011,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000078;//MP Only (1680)
+_ACPotion=162000078,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000123;//MP Only (1800)
+_ACPotion=162000123,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000076;//MP Only (1830)
+_ACPotion=162000076,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000120;//MP Only (1960)
+_ACPotion=162000120,MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+_IFInventoryContains=162000087;//HP Only (270)
+_ACPotion=162000087,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000052;//HP Only (310)
+_ACPotion=162000052,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000152;//HP Only (310)
+_ACPotion=162000152,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000088;//HP Only (490)
+_ACPotion=162000088,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000053;//HP Only (560)
+_ACPotion=162000053,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000012;//HP Only (340)
+_ACPotion=162000012,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000089;//HP Only (720)
+_ACPotion=162000089,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000002;//HP Only (370)
+_ACPotion=162000002,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000054;//HP Only (810)
+_ACPotion=162000054,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000090;//HP Only (930)
+_ACPotion=162000090,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000091;//HP Only (1130)
+_ACPotion=162000091,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000055;//HP Only (1060)
+_ACPotion=162000055,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000056;//HP Only (1280)
+_ACPotion=162000056,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000128;//HP Only (2060)
+_ACPotion=162000128,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000013;//HP Only (610)
+_ACPotion=162000013,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002005;//HP Only (610)
+_ACPotion=162002005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000003;//HP Only (670)
+_ACPotion=162000003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002003;//HP Only (670)
+_ACPotion=162002003,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000092;//HP Only (1550)
+_ACPotion=162000092,HP,%Var[PotionHP],%Var[PotionMP],60250;
+#ENDIF
+_IFInventoryContains=162000014;//HP Only (890)
+_ACPotion=162000014,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000004;//HP Only (970)
+_ACPotion=162000004,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162002020;//HP Only (970)
+_ACPotion=162002020,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000015;//HP Only (1160)
+_ACPotion=162000015,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001007;//HP Only (1160)
+_ACPotion=162001007,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000005;//HP Only (1270)
+_ACPotion=162000005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162001005;//HP Only (1270)
+_ACPotion=162001005,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000016;//HP Only (1410)
+_ACPotion=162000016,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000006;//HP Only (1540)
+_ACPotion=162000006,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000077;//HP Only (1940)
+_ACPotion=162000077,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000075;//HP Only (2120)
+_ACPotion=162000075,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000122;//HP Only (2270)
+_ACPotion=162000122,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000119;//HP Only (2480)
+_ACPotion=162000119,HP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+
+_IFInventoryContains=162000046;//HP+MP (340 / 540)
+_ACPotion=162000046,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000041;//HP+MP (370 / 590)
+_ACPotion=162000041,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000047;//HP+MP (610 / 900)
+_ACPotion=162000047,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000042;//HP+MP (670 / 980)
+_ACPotion=162000042,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000048;//HP+MP (890 / 1170)
+_ACPotion=162000048,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000043;//HP+MP (970 / 1280)
+_ACPotion=162000043,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000049;//HP+MP (1160 / 1360)
+_ACPotion=162000049,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000044;//HP+MP (1270 / 1480)
+_ACPotion=162000044,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000050;//HP+MP (1410 / 1470)
+_ACPotion=162000050,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000045;//HP+MP (1540 / 1600)
+_ACPotion=162000045,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000080;//HP+MP (1940 / 1680)
+_ACPotion=162000080,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000081;//HP+MP (2120 / 1830)
+_ACPotion=162000081,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=164000135;//HP+MP (2120 / 1830)
+_ACPotion=164000135,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000124;//HP+MP (2270 / 1800)
+_ACPotion=162000124,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+_IFInventoryContains=162000121;//HP+MP (2480 / 1960)
+_ACPotion=162000121,HP/MP,%Var[PotionHP],%Var[PotionMP],30250;
+#ENDIF
+end_GetPotionID;
+
+start_CombatSort;
+
+//;;;;;;;;BASIC SETTINGS;;;;;;;;;;;
+
+#IF=%Var[Animation],=1;
+_ACUseAnimation=True;
+#ENDIF
+
+#IF=%Var[Morph],=1;
+_ACAllowDPSkills=False;
+#ENDIF
+
+_SetVar=PotionHP,70; // Use Potion if HP below 70%
+_SetVar=PotionMP,66; // Use Potion if MP below 66%
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 35%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACTimeoutNoDamage=7000; // combat times out if the mob hasn't taken any damage within the first 7000 milliseconds
+_ACTimeout=300; // Combat times out if the fight takes longer than 300 seconds
+_ACMob_Looting=True; // Enables Looting
+_ACAllowAllMobs=False; // Keeps fighting if enemy has another entity as target
+_ACAllowEnemyRace=False; // Allows combat against enemy race
+_ACEnableAutoAttack=False; // Enables AutoAttacks while fighting
+_ACResetPosition=True; // Reset the player position after a fight to where he was before the fight started
+_ACExperimentalCooldown=True; // Leave that on True
+_ACMob_IgnoreLowLevel=True;
+
+_SetVar1=200000000/99999;
+#IF=%Var[RunScroll],=1;
+_SetVar1=%Var1,164000076/9960; // Greater Running Scroll
+#ENDIF
+#IF=%Var[AtkSpeedScroll],=1;
+_SetVar1=%Var1,164000073/9959; // Greater Courage Scroll
+#ENDIF
+#IF=%Var[CastSpeedScroll],=1;
+_SetVar1=%Var1,164000134/9965; // Greater Awakening Scroll
+#ENDIF
+#IF=%Var[CritStrikeScroll],=1;
+_SetVar1=%Var1,164000255/10766; // Fine Crit Strike Scroll
+#ENDIF
+#IF=%Var[CritSpellScroll],=1;
+_SetVar1=%Var1,164000256/10767; // Fine Crit Spell Scroll
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=1; //Rally Serum and Focus Agent
+_SetVar1=%Var1,160003552/10044,160003558/10051; // Lesser
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=2;
+_SetVar1=%Var1,160003553/10044,160003559/10051; // Normal
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=3;
+_SetVar1=%Var1,160003554/10044,160003560/10051; // Greater
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=4;
+_SetVar1=%Var1,160003555/10044,160003561/10051; // Major
+#ENDIF
+#IF=%Var[RallySerumAndFocusAgent],=5;
+_SetVar1=%Var1,160003556/10044,160003562/10051; // Fine
+#ENDIF
+
+_ACItems=%Var1;
+
+//;;;;;;;END BASIC SETTINGS;;;;;;;;
+
+
+#EXECUTE=GetPotionID;
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Settings Warrior;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=3;
+
+_ACSkills=2865;
+//;;;;;;;End Settings Warrior;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Settings Gladiator;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=11;
+_ACInitialRange=5;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+_ACChainBlacklist=2445,384,309,261; // Crashing Blow (Airbind cancel)
+
+_ACRelyOnLevel=780,>33; //780 Absorbing Fury
+_ACRelyOnLevel=648,>53; //648 Second Wind
+
+_ACRelyOnDistance=780,<7; //780 Absorbing Fury
+_ACRelyOnDistance=705,<7; //INVALID Seismic Wave
+_ACRelyOnDistance=618,>3; //618 Ankle Snare
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=571,<75; //571 Dauntless Spirit
+_ACRelyOnPlayerHP=706,<60; //706 Wall of Steel
+_ACRelyOnPlayerHP=648,<60; //648 Second Wind
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=553,>75; //553 Aerial Lockdown
+_ACRelyOnTargetHP=598,>90; //598 Berserking
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDP=583,4000;   //583 Blessing of Nezekan
+_ACRelyOnDP=599,2000; //599 Daevic Fury
+_ACRelyOnRace=530,Asmo; //530 Explosion of Rage
+_ACRelyOnDP=530,2000; //530 Explosion of Rage
+
+
+_ACSkills=618,757,507,2902,780,705,554,647,544,682,553,530,617,681,538,517,669,2876;
+//618 = Ankle Snare (Long range)
+//757 = Whirling Strike (Long range)
+//507 = Lockdown
+//2902 = Body Smash
+//780 = Absorbing Fury (AoE, Selfheal)
+//705 = Earthquake Wave (AoE)
+//554 = Ferocious Chop (AoE)
+//647 = Piercing Rupture (AoE)
+//544 = Exhausting Wave (AoE)
+//682 = Whirling Advance (AoE)
+//553 = Aerial Lockdown
+//530 = Explosion of Rage (DP 2000, Asmo)
+//617 = Tendon Slice
+//681 = Sharp Strike
+//538 = Crushing Blow
+//517 = Mocking Blast
+//669 = Severe Weaking Blow
+//2876 = Ferocious Strike
+
+
+_ACBuffs=314,321,2932,706,648,571,620,598,599,583,719;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//2932 = Unwavering Devotion
+//706 = Wall of Steel
+//648 = Second Wind
+//571 = Dauntless Spirit
+//620 = Armor of Attrition
+//598 = Berserking
+//599 = Daevic Fury (DP 2000)
+//583 = Blessing of Nezekan (DP 4000)
+//719 = Cleave (Long range)
+//;;;;;;;End Settings Gladiator;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Settings Templar Greatsword;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=4;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+_ACRelyOnDistance=2973,<7; //2973 Punishing Wave
+_ACRelyOnDistance=3123,>4; //3123 = Doom Lure (Long range)
+_ACRelyOnDistance=2967,>4; //2967 = Illusion Chains (Long range, AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=3161,<10; //3161 Hand of Healing
+_ACRelyOnPlayerHP=2931,<60; //2931 Prayer of Victory
+_ACRelyOnPlayerHP=3160,<60; //3160 Prayer of Resilience
+_ACRelyOnPlayerHP=2938,<60; //2938 Aether Armor
+_ACRelyOnPlayerHP=2966,<80; //2966 Holy Shield
+_ACRelyOnPlayerHP=3127,<60; //3127 Iron Skin
+_ACRelyOnPlayerHP=3129,<70; //3129 Empyrean Armor
+_ACRelyOnPlayerHP=2922,<30; //2922 Empyrean Providence
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=3035,>80; //3035 Divine Fury
+_ACRelyOnTargetHP=2933,>80; //2933 Divine Fury
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnRace=544,Elyos; //544 Holy Punishment
+
+_ACRelyOnDP=3161,2000; //3161 Hand of Healing
+_ACRelyOnDP=3030,2000; //3030 Divine Chastisement
+
+
+_ACSkills=3126,2944,3123,2967,3030,2960,3154,2973,3181,4606,544,2876,656;
+//3126 = Sword Storm (Long range, AoE)
+//2944 = Divine Justice (Long range)
+//3123 = Doom Lure (Long range)
+//2967 = Illusion Chains (Long range, AoE)
+//3030 = Divine Chastisement (DP 2000, Elyos)
+//2960 = Inquisitor Blow
+//3154 = Punishing Thrust
+//2973 = Punishing Wave (AoE)
+//3181 = Punishment
+//4606 = Dazing Severe Blow
+//544 = Holy Punishment (Elyos)
+//2876 = Ferocious Strike
+//656 = Siegebreaker
+
+_ACBuffs=314,321,3129,2931,3160,3161,2932,3127,2966,3035,2933,2922,2938;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3129 = Empyrean Armor
+//2931 = Prayer of Victory
+//3160 = Prayer of Resilience
+//3161 = Hand of Healing (DP 2000)
+//2932 = Unwavering Devotion
+//3127 = Iron Skin
+//2966 = Holy Shield
+//3035 = Divine Fury
+//2933 = Empyrean Fury
+//2922 = Empyrean Providence
+//2938 = Aether Armor
+//;;;;;;;End Settings Templar Greatsword;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Settings Scout;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACIgnoreAtDistance=11;
+_ACInitialRange=2;
+
+_ACRelyOnAggro=3195,True;
+_ACRelyOnDistance=3195,<4;
+
+_ACBuffs=3235,3195;
+_ACSkills=3197,3183;
+//;;;;;;;End Settings Scout;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Settings Assassin;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=3;
+_ACTimeoutNoDamage=9000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=20; // Starts sitting when MP drop below 20%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACChainBlacklist=854,826,825; // Crashing Wind Strike
+
+_ACRelyOnRace=3499,Elyos; //3499 Vaizel's Dirk
+_ACRelyOnRace=3495,Asmo; //3495 Triniel's Dirk
+_ACRelyOnRace=2516,Elyos; //2516 Divine Strike
+_ACRelyOnRace=2517,Asmo; //2517 Strike of Darkness
+_ACRelyOnRace=946,Elyos; //946 Divine Rune
+_ACRelyOnRace=3370,Elyos; //3370 Slayer Form
+_ACRelyOnRace=3371,Asmo; //3371 Slayer Form
+
+_ACRelyOnDistance=3195,<4; //3195 Focused Evasion
+_ACRelyOnDistance=3328,<4; //3328 Aethertwisting
+_ACRelyOnDistance=3466,>5; //3466 Dash Attack
+_ACRelyOnDistance=2938,>5; //2938 Dash and Slash
+_ACRelyOnDistance=3338,<7; //3338 Blinding Burst
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=2938,=100; //2938 Dash and Slash
+_ACRelyOnTargetHP=3466,=100; //3466 Dash Attack
+_ACRelyOnTargetHP=3468,>20; //3468 Killer's Eye
+_ACRelyOnTargetHP=3235,>30; //3235 Devotion
+_ACRelyOnTargetHP=3469,>35; //3469 Deadly Focus
+_ACRelyOnTargetHP=3355,=100; //3355 Flurry
+_ACRelyOnTargetHP=3326,=100; //3326 Apply Lethal Venom
+_ACRelyOnTargetHP=2516,>20; //2516 Divine Strike
+_ACRelyOnTargetHP=2517,>20; //2517 Strike of Darkness
+_ACRelyOnTargetHP=3195,>15; //3195 Focused Evasion
+_ACRelyOnTargetHP=3414,>20; //3414 Binding Rune
+_ACRelyOnTargetHP=3384,>15; //3384 Pain Rune
+_ACRelyOnTargetHP=3369,>25; //3369 Ripclaw Strike
+
+_ACRelyOnPlayerHP=3354,<60; //3354 Blood Rune
+_ACRelyOnPlayerHP=2516,<40; //2516 Divine Strike
+_ACRelyOnPlayerHP=2517,<40; //2517 Strike of Darkness
+_ACRelyOnPlayerHP=3338,<25; //3338 Blinding Burst
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+_ACRelyOnAggro=3195,True; //3195 Focused Evasion
+_ACRelyOnAggro=3328,True; //3328 Aethertwisting
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=Rune_1,8303; // Rune lv1 Effect
+_SetVar=Rune_2,8304; // Rune lv2 Effect
+_SetVar=Rune_3,8305; // Rune lv3 Effect
+_SetVar=Rune_4,8306; // Rune lv4 Effect
+_SetVar=Rune_5,8307; // Rune lv5 Effect
+_SetVar=DeadlyPoison,8483; // Apply Deadly Poison Effect (Stun)
+_SetVar=WhirlwindSlash,8223; // Whirlwind Slash (Stun+Back)
+_SetVar=Counterslash_1,555; // Counterslash 1 Effect (Stun)
+_SetVar=Counterslash_2,556; // Counterslash 2 Effect (Stun)
+_SetVar=Counterslash_3,557; // Counterslash 3 Effect (Stun)
+_SetVar=Counterslash_4,558; // Counterslash 4 Effect (Stun)
+_SetVar=Counterslash_5,581; // Counterslash 5 Effect (Stun)
+_SetVar=Counterslash_6,2891; // Counterslash 6 Effect (Stun)
+_SetVar=Ambush_1,803; //Ambush 1 Effect (Stun)
+_SetVar=Ambush_2,804; //Ambush 2 Effect (Stun)
+_SetVar=Ambush_3,870; //Ambush 3 Effect (Stun)
+_SetVar=Ambush_4,928; //Ambush 4 Effect (Stun)
+_SetVar=Ambush_5,938; //Ambush 5 Effect (Stun)
+_SetVar=Ambush_6,3364; //Ambush 6 Effect (Stun)
+_SetVar=Ambush_7,3213; //Ambush 7 Effect (Stun)
+_SetVar=ApplyPoison_1,8252; //Apply Poison 1 Effect (Poison)
+_SetVar=ApplyPoison_2,8322; //Apply Poison 2 Effect (Poison)
+_SetVar=ApplyPoison_3,8323; //Apply Poison 3 Effect (Poison)
+_SetVar=ApplyPoison_4,8383; //Apply Poison 4 Effect (Poison)
+_SetVar=ApplyPoison_5,8404; //Apply Poison 5 Effect (Poison)
+_SetVar=ApplyPoison_6,8777; //Apply Poison 6 Effect (Poison)
+////////////////////////////////////////////////////////////
+
+//If the debuff has a "!" infront the debuff needs to be alive in order for the skill to be used
+//Without the "!" skill is used as long as the target has not this certain debuff
+_ACRelyOnTargetDebuff=946,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //946 = Divine Rune (Runes, Elyos)
+_ACRelyOnTargetDebuff=3414,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]/%Var[DeadlyPoison]/%Var[Ambush_1]/%Var[Ambush_2]/%Var[Ambush_3]/%Var[Ambush_4]/%Var[Ambush_5]/%Var[Ambush_6]/%Var[Ambush_7]/%Var[WhirlwindSlash]/%Var[Counterslash_6]/%Var[Counterslash_5]/%Var[Counterslash_4]/%Var[Counterslash_3]/%Var[Counterslash_2]/%Var[Counterslash_1]; //3414 Binding Rune
+_ACRelyOnTargetDebuff=3384,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]/%Var[DeadlyPoison]/%Var[Ambush_1]/%Var[Ambush_2]/%Var[Ambush_3]/%Var[Ambush_4]/%Var[Ambush_5]/%Var[Ambush_6]/%Var[Ambush_7]/%Var[WhirlwindSlash]/%Var[Counterslash_6]/%Var[Counterslash_5]/%Var[Counterslash_4]/%Var[Counterslash_3]/%Var[Counterslash_2]/%Var[Counterslash_1]; //3384 Pain Rune
+_ACRelyOnTargetDebuff=3311,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //3311 Signed Silence
+_ACRelyOnTargetDebuff=3354,!%Var[Rune_3]/!%Var[Rune_4]/!%Var[Rune_5]; //3354 Blood Rune
+_ACRelyOnTargetDebuff=3369,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3369 Ripclaw Strike
+_ACRelyOnTargetDebuff=3395,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3395 Rune Carve
+_ACRelyOnTargetDebuff=3426,%Var[Rune_3]/%Var[Rune_4]/%Var[Rune_5]; //3426 Fang Strike
+_ACRelyOnTargetDebuff=3518,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]; //3518 Weakening Blow
+_ACRelyOnTargetDebuff=3208,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]; //3208 Surprise Attack
+_ACRelyOnTargetDebuff=3261,!%Var[Ambush_1]/!%Var[Ambush_2]/!%Var[Ambush_3]/!%Var[Ambush_4]/!%Var[Ambush_5]/!%Var[Ambush_6]/!%Var[Ambush_7]/!%Var[WhirlwindSlash]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]; //3261 Venomous Strike
+_ACRelyOnTargetDebuff=3477,!%Var[DeadlyPoison]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_4]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]/!%Var[Counterslash_6]/!%Var[Counterslash_5]/!%Var[Counterslash_4]/!%Var[Counterslash_3]/!%Var[Counterslash_2]/!%Var[Counterslash_1]; //3477 Assassinationn
+_ACRelyOnTargetDebuff=3248,!%Var[DeadlyPoison]/!%Var[ApplyPoison_2]/!%Var[ApplyPoison_3]/!%Var[ApplyPoison_4]/!%Var[ApplyPoison_5]/!%Var[ApplyPoison_6]/!%Var[ApplyPoison_1]/!%Var[Counterslash_6]/!%Var[Counterslash_5]/!%Var[Counterslash_4]/!%Var[Counterslash_3]/!%Var[Counterslash_2]/!%Var[Counterslash_1]; //3248 Quickening Doom
+
+_ACRelyOnDP=2516,2000; //2516 Divine Strike
+_ACRelyOnDP=2517,2000; //2517 Strike of Darkness
+_ACRelyOnDP=3499,2000; //3499 Vaizel's Dirk
+_ACRelyOnDP=3495,2000; //3495 Triniel's Dirk
+
+_ACRelyOnItem=3326,169300010; //3326 Apply Lethal Venom
+_ACRelyOnItem=3481,169300010; //3481 Apply Deadly Poison
+
+_ACRelyOnBuff=3481,3481; // //3481 Apply Deadly Poison
+
+
+_ACSkills=3364,3466,2938,3416,3426,3369,3395,2931,3194;
+//3364 = Ambush (Long range)
+//3466 = Dash Attack (Long range)
+//2938 = Dash and Slash (Long range)
+//2516 = Divine Strike (DP 2000, Elyos)
+//2517 = Strike of Darkness (DP 2000, Asmo)
+//3416 = Massacre (Long Range)
+//3426 = Fang Strike (Apply Rune)
+//3369 = Ripclaw Strike (Apply Rune)
+//3395 = Rune Carve (Apply Rune)
+//2931 = Rune Knife (Apply Rune)
+//3194 = Swift Edge
+
+_ACBuffs=314,321,3208,3518,3261,3499,3495,3477,3248,3414,3354,3384,3311,3481,3326,3320,3370,3371,3355,3480,4614,3469,3468,3235,3328,3195,3338;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3208 = Surprise Attack (Back attack)
+//3518 = Weakening Blow (Back attack)
+//3261 = Venomous Strike (Back attack)
+//3499 = Vaizel's Dirk (Back attack, DP 4000, Elyos)
+//3495 = Triniel's Dirk (Back attack, DP 4000, Asmo)
+//3477 = Assassination (Stun attack)
+//3248 = Quickening Doom (Stun attack)
+//946 = Divine Rune (Runes, Elyos)
+//3414 = Binding Rune (Runes, Airbound)
+//3354 = Blood Rune (Runes, heal)
+//3384 = Pain Rune (Runes, Stuns)
+//3311 = Signed Silence (Runes)
+//3481 = Apply Deadly Poison
+//3326 = Apply Lethal Venom
+//3320 = Deadly Abandon
+//3370 = Slayer Form (Elyos)
+//3371 = Slayer Form (Asmo)
+//3355 = Flurry
+//3480 = Oath of Accuracy
+//4614 = Sensory Boost
+//3469 = Deadly Focus
+//3468 = Killer's Eye
+//3235 = Devotion
+//3328 = Aethertwisting
+//3195 = Focused Evasion
+//3338 = Blinding Burst
+//;;;;;;;End Settings Assassin;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Settings Ranger;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=50; // Starts sitting when HP drop below 50%
+
+_ACRelyOnDistance=819,>5; //819 = Lethal Arrow (Cast)
+_ACRelyOnDistance=913,<4; //913 = Nimble Fingers (Speed up traps)
+_ACRelyOnDistance=1147,<4; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnDistance=1154,<4; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnDistance=1059,<4; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnDistance=1058,<4; //1058 = Propelling Trap (Asmo, Instant)
+_ACRelyOnDistance=1009,<4; //1009 = Natures Resolve (Dodge Spell)
+_ACRelyOnDistance=3195,<4; //3195 = Focused Evasion (Dodge Spell)
+_ACRelyOnDistance=839,<4; //839 = Spread Shot (AoE)
+_ACRelyOnDistance=2902,<4; //2902 = Arrow Storm (AoE)
+_ACRelyOnDistance=1134,<4; //1134 = Arrow Deluge (AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=819,=100; //819 = Lethal Arrow (Cast)
+_ACRelyOnTargetHP=913,>70; //913 = Nimble Fingers (Speed up traps)
+_ACRelyOnTargetHP=1147,>70; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnTargetHP=1154,>70; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnTargetHP=1059,>70; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnTargetHP=1058,>70; //1058 = Propelling Trap (Asmo, Instant)
+
+_ACRelyOnAggro=819,False;
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=StunningShot_1,678; // Stunning Shot 1 Effect (Stun)
+_SetVar=StunningShot_2,679; // Stunning Shot 2 Effect (Stun)
+_SetVar=StunningShot_3,680; // Stunning Shot 3 Effect (Stun)
+_SetVar=StunningShot_4,736; // Stunning Shot 4 Effect (Stun)
+_SetVar=StunningShot_5,795; // Stunning Shot 5 Effect (Stun)
+////////////////////////////////////////////////////////////
+
+_ACRelyOnBuff=1147,3355;  //1147 = Sandstorm Trap (Elyos) relies on Nimble Fingers
+_ACRelyOnBuff=1154,3355;  //1147 = Sandstorm Trap (Asmo) relies on Nimble Fingers
+_ACRelyOnBuff=1059,!3355;  //1059 = Propelling Trap (Elyos) relies on not having Nimble Fingers
+_ACRelyOnBuff=1058,!3355;  //1058 = Propelling Trap (Asmo) relies on not having Nimble Fingers
+_ACRelyOnBuff=813,813; //813 = Focused Shots
+_ACRelyOnBuff=889,889; //889 = Bestial Fury
+
+_ACRelyOnLevel=889,>44; //889 = Bestial Fury
+_ACRelyOnLevel=796,<45; //796 = Strong Shots
+
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=813,>50; //813 = Focused Shots
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACIsActive=1126,True; //1126 = Sharpen Arrows (Active)
+
+_ACRelyOnDP=872,2000; //872 = Mau Form (DP 2000)
+
+_ACRelyOnRace=1026,Asmo; //1026 = Shackle Arrow (Asmo)
+_ACRelyOnRace=647,Elyos; //647 = Holy Arrow (Elyos)
+_ACRelyOnRace=648,Asmo; //648 = Deadly Arrow (Asmo)
+_ACRelyOnRace=1147,Elyos; //1147 = Sandstorm Trap (Elyos)
+_ACRelyOnRace=1154,Asmo; //1154 = Sandstorm Trap (Asmo)
+_ACRelyOnRace=1059,Elyos; //1059 = Propelling Trap (Elyos, Instant)
+_ACRelyOnRace=1058,Asmo; //1058 = Propelling Trap (Asmo, Instant)
+
+_ACRelyOnItem=1147,169300009; // Sandstorm Trap (Elyos) relies on Tripeed Fruit
+_ACRelyOnItem=1154,169300009; // Sandstorm Trap (Asmo) relies on Tripeed Fruit
+_ACRelyOnItem=1059,169300009; // Propelling Trap (Elyos) relies on Tripeed Fruit
+_ACRelyOnItem=1058,169300009; // Propelling Trap (Asmo) relies on Tripeed Fruit
+
+_ACSkills=819,795,848,1117,1026,812,961,647,648,880,839,2902,1134,1052,825,871,1119,1074,1005,1021;
+//819 = Lethal Arrow (Cast)
+//795 = Stunning Show
+//848 = Dizzying Arrow
+//1117 = Explosive Arrow
+//1026 = Shackle Arrow (Asmo)
+//812 = Agonizing Arrow
+//961 = Entangling Shot
+//647 = Holy Arrow (Elyos)
+//648 = Deadly Arrow (Asmo)
+//880 = Dilation Arrow
+//839 = Spread Shot (AoE)
+//2902 = Arrow Storm (AoE)
+//1134 = Arrow Deluge (AoE)
+//1052 = Gale Arrow
+//825 = Heart Shot
+//871 = Lightning Arrow
+//1119 = Unerring Arrow
+//1074 = Silence Arrow
+//1005 = Swift Show
+//1021 = Deadshot
+
+_ACBuffs=314,321,913,1147,1154,1059,1058,1126,847,1057,867,796,813,889,872,1009,3195,3235;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//913 = Nimble Fingers (Speed up traps)
+//1147 = Sandstorm Trap (Elyos)
+//1154 = Sandstorm Trap (Asmo)
+//1059 = Propelling Trap (Elyos, Instant)
+//1058 = Propelling Trap (Asmo, Instant)
+//1126 = Sharpen Arrows (Active)
+//847 = Breath of Nature
+//1057 = Bow of Blessing
+//867 = Speed of Wind
+//796 = Strong Shots
+//813 = Focused Shots
+//889 = Bestial Fury
+//872 = Mau Form (DP 2000)
+//1009 = Natures Resolve (Dodge Spell)
+//3195 = Focused Evasion (Dodge Spell)
+//3235 = Devotion
+//;;;;;;;End Settings Ranger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Settings Mage;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACManaPercentage=80;
+
+_ACIgnoreAtDistance=25;
+_ACInitialRange=23;
+
+_ACRelyOnBuff=1155,1155;//1155 = Stone Skin
+
+_ACRelyOnTargetDebuff=1447,1358; // Erosion
+
+_ACBuffs=1155,1447;
+//1155 = Stone Skin
+//1447 = Erosion
+
+_ACSkills=1363,1282,1328;
+//1363 = Ice Chain
+//1282 = Flame Bolt
+//1328 = Root
+//;;;;;;;End Settings Mage;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Settings Sorcerer;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=17;
+_ACTimeoutNoDamage=12000;
+
+_ACChainBlacklist=2836,1523,1483; // Blocks Magic Fist (Airbind cancel)
+
+_ACRelyOnTargetHP=1509,=100; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnTargetHP=1430,=100; //1430 = Delayed Blast (Delayed)
+_ACRelyOnTargetHP=1432,=100; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnTargetHP=1431,=100; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnTargetHP=1525,>50; //1525 = Flame Spray (Nuke)
+_ACRelyOnTargetHP=1258,>50; //1258 = Balaur Seeker (Nuke)
+_ACRelyOnTargetHP=1326,>50; //1326 = Glacial Shard (Nuke)
+_ACRelyOnTargetHP=1493,>50; //1493 = Storm Strike (Nuke)
+_ACRelyOnTargetHP=1307,>50; //1307 = Wintry Armor
+_ACRelyOnTargetHP=1350,>50; //1350 = Boon of Quickness (Castspeed, Asmo)
+_ACRelyOnTargetHP=1417,<100; //1417 = Curse of Roots (Sleep)
+_ACRelyOnTargetHP=1339,<100; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnTargetHP=1343,<100; //1343 = Somnolence (Sleep, Charge)
+
+_ACRelyOnDistance=1225,<3; //1225 = Freezing Wind (Close range)
+_ACRelyOnDistance=1307,<3; //1307 = Wintry Armor
+_ACRelyOnDistance=1549,<3; //1549 = Illusion (Dodge)
+_ACRelyOnDistance=1549,<3; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnDistance=1328,>3; //1328 = Root
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnAggro=1509,False; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnAggro=1430,False; //1430 = Delayed Blast (Delayed)
+_ACRelyOnAggro=1432,False; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnAggro=1431,False; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+_ACRelyOnAggro=1447,True; //1447 = Erosion (DoT)
+_ACRelyOnAggro=1519,True; //1519 = Flame Cage (DoT)
+_ACRelyOnAggro=1307,True; //1307 = Wintry Armor
+_ACRelyOnAggro=1549,True; //1549 = Illusion (Dodge)
+_ACRelyOnAggro=1555,True; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnAggro=1328,True; //1328 = Root
+_ACRelyOnAggro=1417,True; //1417 = Curse of Roots (Sleep)
+_ACRelyOnAggro=1339,True; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnAggro=1343,True; //1343 = Somnolence (Sleep, Charge)
+
+
+_ACRelyOnRace=1509,Elyos; //1509 = Big Magma Eruption (Delayed, Elyos)
+_ACRelyOnRace=1432,Elyos; //1432 = Vulcanic Heat (Delayed, Elyos)
+_ACRelyOnRace=1431,Asmo; //1431 = Vulcanic Heat (Delayed, Asmo)
+_ACRelyOnRace=1473,Elyos; //1473 = Summon Whirlwind (Elyos)
+_ACRelyOnRace=1465,Asmo; //1465 = Summon Whirlwind (Asmo)
+_ACRelyOnRace=1315,Elyos; //1315 = Ice Sheet (Elyos)
+_ACRelyOnRace=1323,Asmo; //1323 = Ice Sheet (Asmo)
+_ACRelyOnRace=1350,Asmo; //1350 = Boon of Quickness (Castspeed, Asmo)
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=Erosion_1,1447; // Erosion 1 Effect (DoT)
+_SetVar=FlameCage_1,1465; // Flame Cage 1 Effect (DoT)
+_SetVar=FlameCage_2,1466; // Flame Cage 2 Effect (DoT)
+_SetVar=FlameCage_3,1467; // Flame Cage 3 Effect (DoT)
+_SetVar=FlameCage_4,1527; // Flame Cage 4 Effect (DoT)
+_SetVar=FlameCage_5,1519; // Flame Cage 5 Effect (DoT)
+_SetVar=Sleep_2,1496; // Sleep 2 Effect (Sleep)
+_SetVar=Sleep_3,1511; // Sleep 3 Effect (Sleep)
+_SetVar=CurseOfRoots_1,1454; // Curse of Roots 1 Effect (Sleep)
+_SetVar=CurseOfRoots_2,1417; // Curse of Roots 2 Effect (Sleep)
+_SetVar=SleepStorm_1,1443; // Sleeping Storm 1 Effect (Sleep)
+_SetVar=SleepStorm_2,1339; // Sleeping Storm 2 Effect (Sleep)
+_SetVar=Somnolence_1,2715; // Sleeping Storm 1 Charge 1 Effect (Sleep)
+_SetVar=Somnolence_2,2716; // Sleeping Storm 1 Charge 2 Effect (Sleep)
+//////////////////////////////////////////////////////////
+
+//Only uses sleep if no dots and no sleep is on target
+_ACRelyOnTargetDebuff=1417,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1417 = Curse of Roots (Sleep)
+_ACRelyOnTargetDebuff=1339,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1339 = Sleeping Storm (Sleep)
+_ACRelyOnTargetDebuff=1343,%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]/%Var[Erosion_1]/%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]; //1343 = Somnolence (Sleep, Charge)
+
+//Only use dots when no sleep is on target and dot is not already on it
+_ACRelyOnTargetDebuff=1447,%Var[Erosion_1]/%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]; // Only cast Erosion if it's missing
+_ACRelyOnTargetDebuff=1519,%Var[FlameCage_1]/%Var[FlameCage_2]/%Var[FlameCage_3]/%Var[FlameCage_4]/%Var[FlameCage_5]/%Var[Somnolence_1]/%Var[Somnolence_2]/%Var[SleepStorm_1]/%Var[SleepStorm_2]/%Var[Sleep_1]/%Var[Sleep_2]/%Var[Sleep_3]/%Var[CurseOfRoots_1]/%Var[CurseOfRoots_2]; // Only cast Flame Cage if it's missing
+
+_ACRelyOnPlayerHP=1401,<80; //1401 = Stamina absorption (HP recover)
+_ACRelyOnPlayerHP=1431,<20; //1431 = Exchange Vitality (Switch HP / MP)
+_ACRelyOnPlayerHP=1446,<40; //1446 = Boon of Iron-Clad (Shield)
+_ACRelyOnPlayerHP=1384,<30; //1384 = Thick Shield  (Shield)
+_ACRelyOnPlayerHP=1555,<40; //1555 = Illusion Storm (Stun AoE)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=1431,>40; //1431 = Exchange Vitality (Switch HP / MP)
+_ACRelyOnPlayerMP=1203,<60; //1203 = Gain Mana (Mana recover)
+_ACRelyOnPlayerMP=1257,<55; //1257 = Refracting Shard (Mana recover)
+_ACRelyOnPlayerMP=1393,<60; //1393 = Soul absorption (Mana recover)
+_ACRelyOnPlayerMP=1270,>55; //1270 = Vaizel's Wisdom (Castspeed, low CD)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnBuff=1166,1166; //1166 = Stone Skin only use if its not up
+_ACRelyOnBuff=4613,4613; //4613 = Robe of Flame only use if its not up
+
+_ACIsAimable=1432,2; //1432 = Vulcanic Heat (Delayed, Aimable, Elyos)
+_ACIsAimable=1431,2; //1431 = Vulcanic Heat (Delayed, Aimable, Asmo)
+_ACIsAimable=1548,2; //1548 = Flame Meteor (Aimable)
+_ACIsAimable=1315,2; //1315 = Ice Sheet (Aimable, Elyos)
+_ACIsAimable=1323,2; //1323 = Ice Sheet (Aimable, Asmo)
+
+
+_ACSkills=1509,1430,1432,1431,1525,4604,1375,1183,1539,1473,1465,1258,1191,1326,1493,1281,1548,4660,1383,1315,1323,1269,4602,1356,1395,1294,1225;
+//1509 = Big Magma Eruption (Delayed, Elyos)
+//1430 = Delayed Blast (Delayed)
+//1432 = Vulcanic Heat (Delayed, Aimable, Elyos)
+//1431 = Vulcanic Heat (Delayed, Aimable, Asmo)
+//1525 = Flame Spray (Nuke)
+//4604 = Arcane Thunderbolt (Stun)
+//1375 = Ice Chain
+//1183 = Frost (Elyos)
+//1539 = Flame Fusion
+//1473 = Summon Whirlwind (Elyos)
+//1465 = Summon Whirlwind (Asmo)
+//1258 = Balaur Seeker (Nuke)
+//1191 = Aether's Hold (Airbind)
+//1326 = Glacial Shard (Nuke)
+//1493 = Storm Strike (Nuke)
+//1281 = Flame Harpoon
+//1548 = Flame Meteor (Aimable)
+//4660 = Soul Freeze
+//1383 = Ice Harpoon
+//1315 = Ice Sheet (Aimable, Elyos)
+//1323 = Ice Sheet (Aimable, Asmo)
+//1269 = Wind Spear
+//4602 = Wind Cut Down
+//1356 = Summon Rock
+//1395 = Meteorite
+//1294 = Flame Bolt
+//1225 = Freezing Wind (Close range)
+
+
+_ACBuffs=314,321,1328,1203,1257,1393,1401,1431,1166,4613,1446,1384,1402,1307,1432,1350,1549,1445,1270,1417,1339,1343,1447,1519,1555;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//1328 = Root
+//1203 = Gain Mana (Mana recover)
+//1257 = Refracting Shard (Mana recover)
+//1393 = Soul absorption (Mana recover)
+//1401 = Stamina absorption (HP recover)
+//1431 = Exchange Vitality (Switch HP / MP)
+//1166 = Stone Skin
+//4613 = Robe of Flame
+//1446 = Boon of Iron-Clad (Shield)
+//1384 = Thick Shield  (Shield)
+//1402 = Elemental Ward (Def buff)
+//1307 = Wintry Armor
+//1432 = Magic Assist (Small Castspeed and buff)
+//1350 = Boon of Quickness (Castspeed, Asmo)
+//1549 = Illusion (Dodge)
+//1445 = Supplication of Focus
+//1270 = Vaizel's Wisdom (Castspeed, low CD)
+//(Disabled) 1555 = Zikel's Wisdom (M. Boost, low CD)
+//1417 = Curse of Roots (Sleep)
+//1339 = Sleeping Storm (Sleep)
+//1343 = Somnolence (Sleep, Charge)
+//1447 = Erosion (DoT)
+//1519 = Flame Cage (DoT)
+//1555 = Illusion Storm (Stun AoE)
+//;;;;;;;End Settings Sorcerer;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Settings Spiritmaster;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACTimeoutNoDamage=12000;
+
+_ACRelyOnRace=3807,Elyos; //3807 = Summon Cyclone Servant (Elyos)
+_ACRelyOnRace=3808,Asmo; //3808 = Summon Cyclone Servant (Asmo)
+_ACRelyOnRace=3682,Elyos; //3682 = Summon Water Spirit (Elyos)
+_ACRelyOnRace=3683,Asmo; //3683 = Summon Water Spirit (Asmo)
+_ACRelyOnRace=3704,Elyos; //3704 = Summon Wind Spirit (Elyos)
+_ACRelyOnRace=3705,Asmo; //3705 = Summon Wind Spirit (Asmo)
+_ACRelyOnRace=3728,Elyos; //3728 = Summon Fire Spirit (Elyos)
+_ACRelyOnRace=3729,Asmo; //3729 = Summon Fire Spirit (Asmo)
+_ACRelyOnRace=3662,Elyos; //3662 = Summon Earth Spirit (Elyos)
+_ACRelyOnRace=3663,Asmo; //3663 = Summon Earth Spirit (Asmo)
+_ACRelyOnRace=3591,Elyos; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnRace=3592,Asmo; //3592 = Curse of Water (Fear, Asmo)
+
+_ACRelyOnPet=3779,False; //3779 = Summon Alacrity (Fast Summon) if it's not out
+_ACRelyOnPet=3682,False; //3682 = Summon Water Spirit (Elyos) if it's not out
+_ACRelyOnPet=3683,False; //3683 = Summon Water Spirit (Asmo) if it's not out
+_ACRelyOnPet=3704,False; //3704 = Summon Wind Spirit (Elyos) if it's not out
+_ACRelyOnPet=3705,False; //3705 = Summon Wind Spirit (Asmo) if it's not out
+_ACRelyOnPet=3728,False; //3728 = Summon Fire Spirit (Elyos) if it's not out
+_ACRelyOnPet=3729,False; //3729 = Summon Fire Spirit (Asmo) if it's not out
+_ACRelyOnPet=3662,False; //3662 = Summon Earth Spirit (Elyos) if it's not out
+_ACRelyOnPet=3663,False; //3663 = Summon Earth Spirit (Asmo) if it's not out
+_ACRelyOnPet=3835,True; //3835 = Spirit Detonation Claw (Pet) if pet is out
+_ACRelyOnPet=3643,True; //3643 = Spirit Erosion (Pet) if pet is out
+_ACRelyOnPet=3548,True; //3548 = Spirit Ruinous Offensive (Pet) if pet is out
+_ACRelyOnPet=3852,True; //3852 = Spirit Wrath Position (Pet) if pet is out
+_ACRelyOnPet=3796,True; //3796 = Spirit Armor (Pet) if pet is out
+_ACRelyOnPet=3866,True; //3866 = Spirit Armor of Light (DP 2000, Pet, Elyos) if pet is out
+_ACRelyOnPet=3739,True; //3739 = Enmity Swap (Pet) if pet is out
+_ACRelyOnPet=3639,True; //3639 = Replenish Element (Pet heal, cost own HP) if pet is out
+_ACRelyOnPet=3590,True; //3590 = Healing Spirit (Pet heal) if pet is out
+_ACRelyOnPet=3738,True; //3738 = Spirit Absorption (Mana Recover for Pet HP) if pet is out
+_ACRelyOnPet=3839,True; //3839 = Spirit Preserve (Shield, Pet) if pet is out
+_ACRelyOnPet=3837,True; //3837 = Spirit Disturbance (Pet) if pet is out
+
+
+// Debuff ID notes ///////////////////////////////////////
+_SetVar=SympatheticMind_1,8723; // Sympathetic Mind 1 Effect
+_SetVar=StoneSkin_1,1155; // Stone Skin 1 Effect
+_SetVar=StoneSkin_2,1378; // Stone Skin 2 Effect
+_SetVar=StoneSkin_3,1379; // Stone Skin 3 Effect
+_SetVar=StoneSkin_4,1380; // Stone Skin 4 Effect
+_SetVar=StoneSkin_5,1166; // Stone Skin 5 Effect
+_SetVar=StoneSkin_6,1166; // Stone Skin 6 Effect
+_SetVar=Erosion_1,1447; // Erosion 1 Effect
+_SetVar=Erosion_2,1359; // Erosion 2 Effect
+_SetVar=Erosion_3,1360; // Erosion 3 Effect
+_SetVar=Erosion_4,1361; // Erosion 4 Effect
+_SetVar=Erosion_5,1459; // Erosion 5 Effect
+_SetVar=Erosion_6,1459; // Erosion 6 Effect
+_SetVar=Sandblaster_1,1772; // Sandblaster 1 Effect
+_SetVar=Sandblaster_2,1773; // Sandblaster 2 Effect
+_SetVar=Sandblaster_3,1795; // Sandblaster 3 Effect
+_SetVar=Sandblaster_4,1795; // Sandblaster 4 Effect
+_SetVar=CurseOfFire_1,3591; // Curse of Fire 1 Effect
+_SetVar=CurseOfFire_2,3591; // Curse of Fire 2 Effect
+_SetVar=CurseOfWater_1,3592; // Curse of Water 1 Effect
+_SetVar=CurseOfWater_2,3592; // Curse of Water 2 Effect
+_SetVar=Fear_1,3775; // Fear 1 Effect
+_SetVar=Fear_2,1637; // Fear 2 Effect
+_SetVar=Fear_3,1708; // Fear 3 Effect
+_SetVar=FearShriek_1,3589; // Fear Shriek 1 Effect
+//////////////////////////////////////////////////////////
+
+_ACRelyOnBuff=1166,%Var[StoneSkin_6]; //1166 = Stone Skin only rebuff if buff not alive
+
+_ACRelyOnTargetDebuff=1459,%Var[Erosion_6]; //1459 = Erosion only reuse if debuff not alive
+_ACRelyOnTargetDebuff=1795,%Var[Sandblaster_4]; //1795 = Sandblaster (AoE) only reuse if debuff not alive
+_ACRelyOnTargetDebuff=3591,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3591 = Curse of Fire (Fear, Elyos) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3592,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3592 = Curse of Water (Fear, Asmo) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3775,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3775 = Fear (Fear) only use if not feared or sleep
+_ACRelyOnTargetDebuff=3589,%Var[CurseOfFire_1]/%Var[CurseOfFire_2]/%Var[CurseOfWater_1]/%Var[CurseOfWater_2]/%Var[Fear_1]/%Var[Fear_2]/%Var[Fear_3]/%Var[FearShriek_1]/%Var[HandOfTorpor_1]/%Var[HandOfTorpor_2]; //3589 = Fear Shriek (Fear, AoE) only use if not feared or sleep
+
+_ACRelyOnLevel=1363,<13; //1363 = Ice Chain
+_ACRelyOnLevel=1282,<22; //1282 = Flame Bolt
+_ACRelyOnLevel=3613,>12; //3613 = Chain of Earth
+_ACRelyOnLevel=3682,<1; //3682 = Summon Water Spirit (Elyos)
+_ACRelyOnLevel=3683,<1; //3683 = Summon Water Spirit (Asmo)
+_ACRelyOnLevel=3704,<1; //3704 = Summon Wind Spirit (Elyos)
+_ACRelyOnLevel=3705,<1; //3705 = Summon Wind Spirit (Asmo)
+_ACRelyOnLevel=3728,<16; //3728 = Summon Fire Spirit (Elyos)
+_ACRelyOnLevel=3729,<16; //3729 = Summon Fire Spirit (Asmo)
+_ACRelyOnLevel=3662,>15; //3662 = Summon Earth Spirit (Elyos)
+_ACRelyOnLevel=3663,>15; //3663 = Summon Earth Spirit (Asmo)
+
+_ACRelyOnPlayerHP=3639,>50; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnPlayerHP=4665,<80; //4665 = Backdraft (HP/MP recover)
+_ACRelyOnPlayerHP=3739,<60; //3739 = Enmity Swap (Pet)
+_ACRelyOnPlayerHP=3839,<50; //3839 = Spirit Preserve (Shield, Pet)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+_ACRelyOnPlayerMP=4665,<80; //4665 = Backdraft (HP/MP recover)
+_ACRelyOnPlayerMP=3738,<65; //3738 = Spirit Absorption (Mana Recover for Pet HP)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnPetHP=3639,<40; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnPetHP=3738,>30; //3738 = Spirit Absorption (Mana Recover for Pet HP)
+_ACRelyOnPetHP=3590,<20; //3590 = Healing Spirit (Pet heal)
+
+_ACRelyOnDP=3866,2000; //3866 = Spirit Armor of Light (DP 2000, Pet, Elyos)
+
+_ACRelyOnDistance=1328,>4; //1328 = Root
+_ACRelyOnDistance=3591,<4; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnDistance=3592,<4; //3592 = Curse of Water (Fear, Asmo)
+_ACRelyOnDistance=3775,<4; //3775 = Fear (Fear)
+_ACRelyOnDistance=3589,<4; //3589 = Fear Shriek (Fear, AoE)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnAggro=3739,True; //3739 = Enmity Swap (Pet)
+_ACRelyOnAggro=3639,False; //3639 = Replenish Element (Pet heal, cost own HP)
+_ACRelyOnAggro=3591,True; //3591 = Curse of Fire (Fear, Elyos)
+_ACRelyOnAggro=3592,True; //3592 = Curse of Water (Fear, Asmo)
+_ACRelyOnAggro=3775,True; //3775 = Fear (Fear)
+_ACRelyOnAggro=3589,True; //3589 = Fear Shriek (Fear, AoE)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACCustomCooldown=3796,180000; //3796 = Spirit Armor (Pet)
+_ACCooldownDetection=3796,False; //3796 = Spirit Armor (Pet)
+
+_ACSkills=1363,3561,3613,3847,3807,3808,3835,3643,3548,3852,3601,3588,1282;
+//1363 = Ice Chain
+//3561 = Infernal Pain
+//3613 = Chain of Earth
+//3847 = Cyclone Wrath
+//3807 = Summon Cyclone Servant (Elyos)
+//3808 = Summon Cyclone Servant (Asmo)
+//3835 = Spirit Detonation Claw (Pet)
+//3643 = Spirit Erosion (Pet)
+//3548 = Spirit Ruinous Offensive (Pet)
+//3852 = Spirit Wrath Position (Pet)
+//3601 = Vacuum Choke
+//3588 = Weaken Spirit
+//1282 = Flame Bolt
+
+
+_ACBuffs=314,321,3779,3682,3683,3704,3705,3728,3729,3662,3663,1166,3796,3866,3739,3639,3590,3738,3839,3837,4665,3730,3547,3780,3574,1459,1328,3591,3592,3775,3589;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//3779 = Summon Alacrity (Fast Summon)
+//3682 = Summon Water Spirit (Elyos)
+//3683 = Summon Water Spirit (Asmo)
+//3704 = Summon Wind Spirit (Elyos)
+//3705 = Summon Wind Spirit (Asmo)
+//3728 = Summon Fire Spirit (Elyos)
+//3729 = Summon Fire Spirit (Asmo)
+//3662 = Summon Earth Spirit (Elyos)
+//3663 = Summon Earth Spirit (Asmo)
+//1166 = Stone Skin
+//3796 = Spirit Armor (Pet)
+//3866 = Spirit Armor of Light (DP 2000, Pet)
+//3739 = Enmity Swap (Pet)
+//3639 = Replenish Element (Pet heal, cost own HP)
+//3590 = Healing Spirit (Pet heal)
+//3738 = Spirit Absorption (Mana Recover for Pet HP)
+//3839 = Spirit Preserve (Shield, Pet)
+//3837 = Spirit Disturbance (Pet)
+//4665 = Backdraft (HP/MP recover)
+//3730 = Contract of Resistance (Dodge)
+//3547 = Infernal Blight (Debuff)
+//3780 = Root of Enervation (Debuff)
+//3574 = Shackle of Vulnerability (Debuff)
+//1459 = Erosion
+//1795 = Sandblaster (AoE) (Removed)
+//1328 = Root
+//3591 = Curse of Fire (Fear, Elyos)
+//3592 = Curse of Water (Fear, Asmo)
+//3775 = Fear (Fear)
+//3589 = Fear Shriek (Fear, AoE)
+//;;;;;;;End Settings Spiritmaster;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Settings Priest;;;;;;;;;
+_ACEnableAutoAttack=True; // Enables AutoAttacks while fighting
+
+_ACHealPercentage=66;
+
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+
+_ACRelyOnBuff=1684,1684; //1684 = Blessing of Rock
+
+_ACRelyOnPlayerHP=1839,<75; //1839 = Healing Light
+
+_ACBuffs=1839,1684;
+//1839 = Healing Light
+//1684 = Blessing of Rock
+
+_ACSkills=4013,2966;
+//4013 = Smite
+//2966 = Hallowed Strike
+//;;;;;;;End Settings Priest;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Settings Cleric;;;;;;;;;
+_ACAllowAllMobs=True;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=15;
+_ACRegenerateEnabled=True;
+_ACRegMPPercentage=30;
+_ACRegHPPercentage=65;
+
+_ACChainBlacklist=2573,1021; // Blocks Impervious Veil
+
+_ACIsActive=3902,True; //3902 = Sacrificial Power (Active)
+
+_ACRelyOnBuff=1684,1684; //1684 = Blessing of Rock
+_ACRelyOnBuff=3950,3950; //3950 = Light of Rejuvenation (HoT)
+
+_ACRelyOnDistance=4127,>3; //4127 = Root
+_ACRelyOnDistance=4135,<4; //4135 = Blinding Light
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+_ACRelyOnDistance=4011,<4; //4011 = Traumatic Blow
+_ACRelyOnDistance=2966,<4; //2966 = Hallowed Strike
+
+_ACRelyOnAggro=4127,True; //4127 = Root
+_ACRelyOnAggro=4135,True; //4135 = Blinding Light
+
+_ACRelyOnPlayerHP=3904,>90; //3904 = Reverse Condition (HP/MP Switch)
+_ACRelyOnPlayerHP=3950,<95; //3950 = Light of Rejuvenation (HoT)
+_ACRelyOnPlayerHP=4219,<80; //4219 = Light of Recovery (Small Heal)
+_ACRelyOnPlayerHP=3990,<75; //3990 = Summon Healing Servant (Elyos)
+_ACRelyOnPlayerHP=3991,<75; //3991 = Summon Healing Servant (Asmo)
+_ACRelyOnPlayerHP=1839,<70; //1839 = Healing Light (Small Heal)
+_ACRelyOnPlayerHP=3959,<70; //3959 = Flash of Recovery (Instant Heal)
+_ACRelyOnPlayerHP=3997,<65; //3997 = Ripple of Purification (Large Heal)
+_ACRelyOnPlayerHP=3931,<65; //3931 = Saving Grace (Instant Heal)
+_ACRelyOnPlayerHP=4003,<50; //4003 = Splendor of Rebirth (Large Heal, HoT)
+_ACRelyOnPlayerHP=4212,<50; //4212 = Radiant Cure (Large Heal)
+_ACRelyOnPlayerHP=4181,<50; //4181 = Splendor of Recovery (Large Heal)
+_ACRelyOnPlayerHP=3974,<40; //3974 = Vitality's Gift (Large Heal, Charge)
+_ACRelyOnPlayerHP=3917,<60; //3917 = Blessed Shield (Shield, Healboost)
+
+_ACRelyOnPlayerMP=3904,<25; //3904 = Reverse Condition (HP/MP Switch)
+_ACRelyOnPlayerMP=4194,<60; //4194 = Life Curtain (MP recover, Heal, Shield)
+_ACRelyOnPlayerMP=3877,<70; //3877 = Penance (MP recover)
+_ACRelyOnPlayerMP=1166,<40; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnPlayerMP=1171,<40; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+_ACRelyOnPlayerMP=321,<70; //321 = Mana Treatment
+
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnLevel=4219,>30; //4219 = Light of Recovery (Small Heal)
+_ACRelyOnLevel=1839,<31; //1839 = Healing Light (Small Heal)
+
+_ACRelyOnDP=1166,2000; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnDP=1171,2000; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+
+_ACRelyOnRace=4125,Elyos; //4125 = Summon Holy Servant (Elyos)
+_ACRelyOnRace=4126,Asmo; //4126 = Summon Holy Servant (Asmo)
+_ACRelyOnRace=4162,Elyos; //4162 = Summon Noble Energy (Elyos)
+_ACRelyOnRace=4163,Asmo; //4163 = Summon Noble Energy (Asmo)
+_ACRelyOnRace=3990,Elyos; //3990 = Summon Healing Servant (Elyos)
+_ACRelyOnRace=3991,Asmo; //3991 = Summon Healing Servant (Asmo)
+_ACRelyOnRace=1166,Elyos; //1166 = Salvation (MP recover, DP 2000, Elyos)
+_ACRelyOnRace=1171,Asmo; //1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+_ACRelyOnRace=4072,Elyos; //4072 = Slashing Wind (Elyos)
+
+_ACSkills=4166,4169,4053,4072,4151,4143,4011,2966,4013;
+//4166 = Call Lightning (Nuke)
+//4169 = Storm of Aion
+//4053 = Punishing Earth
+//4072 = Slashing Wind (Elyos)
+//4151 = Land's Bargain
+//4143 = Retribution Lightning
+//4011 = Traumatic Blow
+//2966 = Hallowed Strike
+//4013 = Smite
+
+
+_ACBuffs=321,3902,1684,3895,3904,4194,3877,3888,4125,4126,4162,4163,3990,3991,4133,4094,4187,4127,4135,3917,3959,3931,4003,3997,4212,4181,3974,4219,1839,3950;
+//321 = Mana Treatment
+//3902 = Sacrificial Power (Active)
+//1684 = Blessing of Rock
+//3895 = Amplification
+//3904 = Reverse Condition (HP/MP Switch)
+//4194 = Life Curtain (MP recover, Heal, Shield)
+//3877 = Penance (MP recover)
+//1166 = Salvation (MP recover, DP 2000, Elyos)
+//1171 = Pandaemonium's Protection (MP recover, DP 2000, Asmo)
+//4125 = Summon Holy Servant (Elyos)
+//4126 = Summon Holy Servant (Asmo)
+//4162 = Summon Noble Energy (Elyos)
+//4163 = Summon Noble Energy (Asmo)
+//3990 = Summon Healing Servant (Elyos)
+//3991 = Summon Healing Servant (Asmo)
+//4133 = Chastise (DoT)
+//4094 = Earth's Wrath (DoT)
+//4187 = Enfeebling Burst (DoT)
+//4127 = Root
+//4135 = Blinding Light
+//3917 = Blessed Shield (Shield, Healboost)
+//3959 = Flash of Recovery (Instant Heal)
+//3931 = Saving Grace (Instant Heal)
+//3888 = Sage's Wisdom (Castspeed)
+//4003 = Splendor of Rebirth (Large Heal, HoT)
+//3997 = Ripple of Purification (Large Heal)
+//4212 = Radiant Cure (Large Heal)
+//4181 = Splendor of Recovery (Large Heal)
+//3974 = Vitality's Gift (Large Heal, Charge)
+//4219 = Light of Recovery (Small Heal)
+//1839 = Healing Light (Small Heal)
+//3950 = Light of Rejuvenation (HoT)
+
+
+_ACRegenerate=3950,4003,3997,4212,4181,3974,4219,1839;
+//3950 = Light of Rejuvenation (HoT)
+//4003 = Splendor of Rebirth (Large Heal, HoT)
+//3997 = Ripple of Purification (Large Heal)
+//4212 = Radiant Cure (Large Heal)
+//4181 = Splendor of Recovery (Large Heal)
+//3974 = Vitality's Gift (Large Heal, Charge)
+//4219 = Light of Recovery (Small Heal)
+//1839 = Healing Light (Small Heal)
+//;;;;;;;End Settings Cleric;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Settings Chanter;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=True;
+_ACIgnoreAtDistance=15;
+_ACInitialRange=3;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 30%
+_ACRegHPPercentage=65; // Starts sitting when HP drop below 65%
+
+// Buff ID Notes ///////////////////////////////
+_SetVar=InvincibilityMantra_1,8588; //1234 = Invincibility Mantra 1 Effect
+_SetVar=InvincibilityMantra_2,8595; //4642 = Invincibility Mantra 2 Effect
+_SetVar=HitMantra_1,8281; //1998 = Hit Mantra 1 Effect
+_SetVar=HitMantra_2,8397; //4645 = Hit Mantra 2 Effect
+_SetVar=ClementMindMantra_1,8241; //1204 = Clement Mind Mantra 1 Effect
+_SetVar=ClementMindMantra_2,8277; //1205 = Clement Mind Mantra 2 Effect
+_SetVar=ClementMindMantra_3,8398; //1269 = Clement Mind Mantra 3 Effect
+_SetVar=ClementMindMantra_4,8779; //INVALID = Clement Mind Mantra 4 Effect
+_SetVar=IntensityMantra_1,8497; //1322 = Intensity Mantra 1 Effect
+_SetVar=IntensityMantra_2,8534; //1349 = Intensity Mantra 2 Effect
+_SetVar=IntensityMantra_3,8596; //INVALID = Intensity Mantra 3 Effect
+_SetVar=RevivalMantra_1,8490; //1316 = Revival Mantra 1 Effect
+_SetVar=RevivalMantra_2,8491; //1317 = Revival Mantra 2 Effect
+_SetVar=RevivalMantra_3,8517; //1332 = Revival Mantra 3 Effect
+_SetVar=RevivalMantra_4,8742; //1753 = Revival Mantra 4 Effect
+_SetVar=ShieldMantra_1,8484; //1309 = Shield Mantra 1 Effect
+_SetVar=ShieldMantra_2,8485; //1310 = Shield Mantra 2 Effect
+_SetVar=ShieldMantra_3,8486; //1311 = Shield Mantra 3 Effect
+_SetVar=ShieldMantra_4,8532; //1347 = Shield Mantra 4 Effect
+_SetVar=ShieldMantra_5,8780; //1666 = Shield Mantra 5 Effect
+_SetVar=VictoryMantra_1,8234; //1207 = Victory Mantra 1 Effect
+_SetVar=VictoryMantra_2,8243; //1208 = Victory Mantra 2 Effect
+_SetVar=VictoryMantra_3,8280; //1209 = Victory Mantra 3 Effect
+_SetVar=VictoryMantra_4,8396; //1259 = Victory Mantra 4 Effect
+_SetVar=VictoryMantra_5,8743; //INVALID = Victory Mantra 5 Effect
+_SetVar=BlessingOfHealth_1,951; //951 = Blessing of Health 1 Effect
+_SetVar=BlessingOfRock_1,1684; //1684 = Blessing of Rock 1 Effect
+_SetVar=BlessingOfStone_1,1230; //1230 = Blessing of Stone 1 Effect
+_SetVar=BlessingOfStone_2,2159; //2159 = Blessing of Stone 2 Effect
+_SetVar=BlessingOfStone_3,2165; //2165 = Blessing of Stone 3 Effect
+_SetVar=BlessingOfStone_4,1756; //1756 = Blessing of Stone 4 Effect
+_SetVar=RageSpell_1,1315; //1315 = Rage Spell 1 Effect
+_SetVar=PromiseOfWind_1,969; //969 = Promise of Wind 1 Effect
+_SetVar=PromiseOfWind_2,970; //970 = Promise of Wind 2 Effect
+_SetVar=PromiseOfWind_3,971; //971 = Promise of Wind 3 Effect
+_SetVar=PromiseOfWind_4,989; //989 = Promise of Wind 4 Effect
+_SetVar=PromiseOfAether_1,1318; //1318 = Promise of Aether 1 Effect
+_SetVar=PromiseOfAether_2,1319; //1319 = Promise of Aether 2 Effect
+_SetVar=PromiseOfAether_3,1342; //1342 = Promise of Aether 3 Effect
+_SetVar=PromiseOfAether_4,2183; //2183 = Promise of Aether 4 Effect
+_SetVar=PromiseOfAether_5,2944; //2944 = Promise of Aether 5 Effect
+_SetVar=WordOfProtection_1,1755; //1755 = Word of Protection 1 Effect
+_SetVar=WordOfInspiration_1,1579; //1579 = Word of Inspiration 1 Effect
+_SetVar=Lucidity_1,1556; //1556 = Lucidity 1 Effect
+_SetVar=WordOfRevival_1,1306; //1306 = Word of Revival 1 Effect
+_SetVar=WordOfRevival_2,1307; //1307 = Word of Revival 2 Effect
+_SetVar=WordOfRevival_3,1308; //1308 = Word of Revival 3 Effect
+_SetVar=WordOfRevival_4,1339; //1339 = Word of Revival 4 Effect
+_SetVar=WordOfRevival_5,1745; //1745 = Word of Revival 5 Effect
+////////////////////////////////////////////////
+
+_ACRelyOnBuff=1666,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]/%Var[HitMantra_1]/%Var[HitMantra_2]/%Var[IntensityMantra_1]/%Var[IntensityMantra_2]/%Var[IntensityMantra_3]/%Var[ShieldMantra_1]/%Var[ShieldMantra_2]/%Var[ShieldMantra_3]/%Var[ShieldMantra_4]/%Var[ShieldMantra_5]; //1666 = Shield Mantra (Def, >12)
+_ACRelyOnBuff=1753,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]/%Var[HitMantra_1]/%Var[HitMantra_2]/%Var[ClementMindMantra_1]/%Var[ClementMindMantra_2]/%Var[ClementMindMantra_3]/%Var[ClementMindMantra_4]/%Var[RevivalMantra_1]/%Var[RevivalMantra_2]/%Var[RevivalMantra_3]/%Var[RevivalMantra_4]; //1753 = Revival Mantra (HP Recover, >21)
+_ACRelyOnBuff=4645,%Var[HitMantra_1]/%Var[HitMantra_2]; //4645 = Hit Mantra (Crit, >53, Stigma)
+_ACRelyOnBuff=4642,%Var[InvincibilityMantra_1]/%Var[InvincibilityMantra_2]; //4642 = Invincibility Mantra (>49, Stigma)
+_ACRelyOnBuff=1684,%Var[BlessingOfRock_1]/%Var[BlessingOfStone_1]/%Var[BlessingOfStone_2]/%Var[BlessingOfStone_3]/%Var[BlessingOfStone_4];//1684 = Blessing of Rock
+_ACRelyOnBuff=1756,%Var[BlessingOfStone_1]/%Var[BlessingOfStone_2]/%Var[BlessingOfStone_3]/%Var[BlessingOfStone_4]; //1756 = Blessing of Stone
+_ACRelyOnBuff=1315,%Var[RageSpell_1]; //1315 = Rage Spell
+_ACRelyOnBuff=2944,%Var[PromiseOfAether_1]/%Var[PromiseOfAether_2]/%Var[PromiseOfAether_3]/%Var[PromiseOfAether_4]/%Var[PromiseOfAether_5]; //2944 = Promise of Aether
+_ACRelyOnBuff=1556,%Var[Lucidity_1]; //1556 = Lucidity (Atk buff)
+_ACRelyOnBuff=1579,%Var[Lucidity_1]/%Var[WordOfInspiration_1]; //1579 = Word of Inspiration (Atk buff, <60)
+_ACRelyOnBuff=1755,%Var[WordOfProtection_1]; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnBuff=1745,%Var[WordOfRevival_1]/%Var[WordOfRevival_2]/%Var[WordOfRevival_3]/%Var[WordOfRevival_4]/%Var[WordOfRevival_5]; //1745 = Word of Revival (HoT)
+
+_ACRelyOnLevel=1666,<31; //1666 = Shield Mantra replaced by Intensity Mantra
+_ACRelyOnLevel=1753,<24; //1753 = Revival Mantra replaced by Clement Mind Mantra
+_ACRelyOnLevel=4013,<42; //4013 = Smite replaced by other ranged skills
+
+_ACRelyOnRace=1600,Elyos; //1600 = Inescapable Judgement (Long range, Elyos)
+
+_ACRelyOnDP=1328,2000; //1328 = Word of Wind (DP 2000)
+_ACRelyOnDP=1638,2000; //1638 = Marchutan's Protection (DP 2000, Asmo)
+
+_ACRelyOnPlayerHP=1698,<65; //1698 = Protective Ward (Shield)
+_ACRelyOnPlayerHP=1745,<98; //1745 = Word of Revival (HoT)
+_ACRelyOnPlayerHP=1326,<30; //1326 = Word of Quickness (Castspeed)
+_ACRelyOnPlayerHP=1862,<80; //1862 = Recovery Spell (Heal)
+_ACRelyOnPlayerHP=1857,<65; //1857 = Healing Burst (Heal)
+_ACRelyOnPlayerHP=2960,<40; //2960 = Word of Life (Heal)
+_ACRelyOnPlayerHP=4638,<65; //4638 = Healing Conduit (Heal)
+_ACRelyOnPlayerHP=1839,<65; //1839 = Healing Light (Heal)
+
+_ACRelyOnPlayerMP=1606,<70; //1606 = Stamina Restoration (Heal, MP recover)
+_ACRelyOnPlayerMP=1755,>80; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnPlayerMP=1755,>45; //1579 = Word of Inspiration (Atk buff, <60)
+_ACRelyOnPlayerMP=321,<70; //321 = Mana Treatment
+
+_ACRelyOnAggro=1834,True; //1834 = Elemental Screen (Def buff)
+_ACRelyOnAggro=1755,True; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnAggro=1698,True; //1698 = Protective Ward (Shield)
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDistance=1834,<4; //1834 = Elemental Screen (Def buff)
+_ACRelyOnDistance=1755,<4; //1755 = Word of Protection (Def buff, only on high mana)
+_ACRelyOnDistance=1698,<4; //1698 = Protective Ward (Shield)
+_ACRelyOnDistance=1656,<4; //1656 = Blessing of Wind
+_ACRelyOnDistance=4013,>7; //4013 = Smite
+
+_ACSkills=1868,1647,4629,1837,1789,2966;
+//1868 = Disorienting Blow
+//1647 = Annihilation
+//4629 = Leaping Flash (Charge)
+//1837 = Numbing Blow
+//1789 = Meteor Strike
+//2966 = Hallowed Strike
+
+_ACBuffs=321,1666,1753,4645,4642,1756,1684,1315,2944,1328,1638,1556,1755,1579,1834,1637,1656,1225,1759,1874,1600,1726,4013,1698,1745,1326,1862,1606,1857,2960,4638,1839;
+//321 = Mana Treatment
+//1666 = Shield Mantra (Def, >12, Priority 7)
+//1753 = Revival Mantra (HP Recover, >21, Priority 6)
+//4645 = Hit Mantra (Crit, >53, Stigma, Priority 2)
+//4642 = Invincibility Mantra (>49, Stigma, Priority 1)
+//1756 = Blessing of Stone
+//1684 = Blessing of Rock
+//1315 = Rage Spell
+//2944 = Promise of Aether
+//1328 = Word of Wind (DP 2000)
+//1638 = Marchutan's Protection (DP 2000)
+//1556 = Lucidity (Atk buff)
+//1755 = Word of Protection (Def buff, only on high mana)
+//1579 = Word of Inspiration (Atk buff, <60)
+//1834 = Elemental Screen (Def buff)
+//1637 = Unstoppable
+//1656 = Blessing of Wind
+//1225 = Focused Parry
+//1759 = Perfect Parry
+//1874 = Mountain Crash (Long range)
+//1600 = Inescapable Judgement (Long range, Elyos)
+//1726 = Thunderbolt Strike (Long range)
+//4013 = Smite (Long range)
+//1698 = Protective Ward (Shield)
+//1745 = Word of Revival (HoT)
+//1326 = Word of Quickness (Castspeed)
+//1862 = Recovery Spell (Heal)
+//1606 = Stamina Restoration (Heal, MP recover)
+//1857 = Healing Burst (Heal)
+//2960 = Word of Life (Heal)
+//4638 = Healing Conduit (Heal)
+//1839 = Healing Light (Heal)
+
+
+_ACRegenerate=1745,1862,1857,1606,1839;
+//1745 = Word of Revival (HoT)
+//1862 = Recovery Spell (Heal)
+//1857 = Healing Burst (Heal)
+//1606 = Stamina Restoration (Heal, MP recover)
+//1839 = Healing Light (Heal)
+//;;;;;;;End Settings Chanter;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=12;
+//;;;;;;;;;Settings Technist;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+
+_ACSkills=2219,1942,1957;
+//2219 = Sighting Shot
+//1942 = Disrupter shot
+//1957 = Pistol Shot
+
+_ACBuffs=2168;
+//2168 = Bullet Resistance
+//;;;;;;;End Settings Technist;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=14;
+//;;;;;;;;;Settings Gunslinger;;;;;;;;;
+// Requires 2 Pistols and Cannon
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+
+_SetVar=Atkspeed_Pistol,2250;
+_SetVar=Atkspeed_Cannon,2800;
+
+_ACWeaponSwitching=True;
+_ACRelyOnWeapon=2179,%Var[Atkspeed_Pistol]; //2179 = Crosstrigger (Mana recover, Pistol)
+_ACRelyOnWeapon=2054,%Var[Atkspeed_Pistol]; //2054 = Autoload (Reload, Pistol)
+_ACRelyOnWeapon=2053,%Var[Atkspeed_Pistol]; //2053 = Reload (Reload, Pistol)
+_ACRelyOnWeapon=1969,%Var[Atkspeed_Pistol]; //1969 = Gunshot (Pistol)
+_ACRelyOnWeapon=1981,%Var[Atkspeed_Pistol]; //1981 = Hemorrhage Shot (Pistol)
+_ACRelyOnWeapon=1953,%Var[Atkspeed_Pistol]; //1953 = Hot Shot (Pistol)
+_ACRelyOnWeapon=2166,%Var[Atkspeed_Pistol]; //2166 = Green Grenade (root, Pistol)
+_ACRelyOnWeapon=2068,%Var[Atkspeed_Pistol]; //2068 = Dazzling Fire (stun, Pistol)
+_ACRelyOnWeapon=2263,%Var[Atkspeed_Pistol]; //2263 = Quieting Gale (Any weapon)
+_ACRelyOnWeapon=2123,%Var[Atkspeed_Pistol]; //2123 = Steady Fire (Pistol)
+_ACRelyOnWeapon=1983,%Var[Atkspeed_Pistol]; //1983 = Spinning Fire (Pistol)
+_ACRelyOnWeapon=2003,%Var[Atkspeed_Pistol]; //2003 = Wing Clip (Pistol)
+_ACRelyOnWeapon=2231,%Var[Atkspeed_Pistol]; //2231 = Precision Shot (Pistol)
+_ACRelyOnWeapon=2052,%Var[Atkspeed_Pistol]; //2052 = Pressurized Chamber (Pistol)
+_ACRelyOnWeapon=2045,%Var[Atkspeed_Pistol]; //2045 = Aion's Favor (Pistol)
+_ACRelyOnWeapon=2349,%Var[Atkspeed_Pistol]; //2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+_ACRelyOnWeapon=2367,%Var[Atkspeed_Pistol]; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnWeapon=3468,%Var[Atkspeed_Cannon]; //3468 = Frozen Blitz (root, Cannon)
+_ACRelyOnWeapon=1954,%Var[Atkspeed_Cannon]; //1954 = Freeze Cannon (sleep, Cannon)
+_ACRelyOnWeapon=2114,%Var[Atkspeed_Cannon]; //2114 = Paralysis Cannon (airbind, Cannon)
+_ACRelyOnWeapon=2207,%Var[Atkspeed_Cannon]; //2207 = Aetheric Bombardment (Cannon)
+_ACRelyOnWeapon=2090,%Var[Atkspeed_Cannon]; //2090 = Fiery Blast (Cannon)
+_ACRelyOnWeapon=2346,%Var[Atkspeed_Cannon]; //2346 = Incendiary Shell (Cannon)
+_ACRelyOnWeapon=2201,%Var[Atkspeed_Cannon]; //2201 = Shellshock (Cannon)
+_ACRelyOnWeapon=1975,%Var[Atkspeed_Cannon]; //1975 = Juggernaut Cannon (Cannon)
+_ACRelyOnWeapon=2253,%Var[Atkspeed_Cannon]; //2253 = Shock and Awe (Cannon)
+_ACRelyOnWeapon=2218,%Var[Atkspeed_Cannon]; //2218 = Harassing Fire (Cannon)
+_ACRelyOnWeapon=2108,%Var[Atkspeed_Cannon]; //2108 = Snow Shell (Cannon)
+_ACRelyOnWeapon=2004,%Var[Atkspeed_Cannon]; //2004 = Aerial Fury (Cannon)
+_ACRelyOnWeapon=2014,%Var[Atkspeed_Cannon]; //2014 = Watery Grave (DP 2000, Cannon)
+
+// Debuff ID notes ///////////////////////////////////////////
+_SetVar=FrozenBlitz_1,3463; //3463 = Frozen Blitz 1 Effect
+_SetVar=FrozenBlitz_2,3464; //3464 = Frozen Blitz 2 Effect
+_SetVar=FrozenBlitz_3,3465; //3465 = Frozen Blitz 3 Effect
+_SetVar=FrozenBlitz_4,3466; //3466 = Frozen Blitz 4 Effect
+_SetVar=FrozenBlitz_5,3467; //3467 = Frozen Blitz 5 Effect
+_SetVar=FrozenBlitz_6,3468; //3468 = Frozen Blitz 6 Effect
+_SetVar=FreezeCannon_1,3442; //1954 = Freeze Cannon 1 Effect
+_SetVar=ParalysisCannon,8224; //2114 = Paralysis Cannon 5 Effect
+_SetVar=GreenGrenade_1,3391; //3391 = Green Grenade 1 Effect
+_SetVar=GreenGrenade_2,3568; //3568 = Green Grenade 2 Effect
+_SetVar=GreenGrenade_3,3569; //3569 = Green Grenade 3 Effect
+_SetVar=GreenGrenade_4,3570; //3570 = Green Grenade 4 Effect
+_SetVar=GreenGrenade_5,2166; //2166 = Green Grenade 5 Effect
+_SetVar=DazzlingFire_1,3327; //3327 = Dazzling Fire 1 Effect
+_SetVar=DazzlingFire_2,3328; //3328 = Dazzling Fire 2 Effect
+_SetVar=DazzlingFire_3,3329; //3329 = Dazzling Fire 3 Effect
+_SetVar=DazzlingFire_4,2068; //2068 = Dazzling Fire 4 Effect
+///////////////////////////////////////////////////////////////
+
+//Only use CC skills if not already in CC
+_ACRelyOnTargetDebuff=3468,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //3468 = Frozen Blitz (root, Cannon)
+_ACRelyOnTargetDebuff=1954,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //1954 = Freeze Cannon (sleep, Cannon)
+_ACRelyOnTargetDebuff=2114,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2114 = Paralysis Cannon (airbind, Cannon)
+_ACRelyOnTargetDebuff=2166,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2166 = Green Grenade (root, Pistol)
+_ACRelyOnTargetDebuff=2068,%Var[DazzlingFire_1]/%Var[DazzlingFire_2]/%Var[DazzlingFire_3]/%Var[DazzlingFire_4]/%Var[GreenGrenade_1]/%Var[GreenGrenade_2]/%Var[GreenGrenade_3]/%Var[GreenGrenade_4]/%Var[GreenGrenade_5]/%Var[ParalysisCannon]/%Var[FreezeCannon_1]/%Var[FrozenBlitz_1]/%Var[FrozenBlitz_2]/%Var[FrozenBlitz_3]/%Var[FrozenBlitz_4]/%Var[FrozenBlitz_5]/%Var[FrozenBlitz_6]; //2068 = Dazzling Fire (stun, Pistol)
+
+_ACIsActive=2115,True; //2115 = Stable Stance (Active, Any Weapon)
+
+_ACRelyOnAggro=3847,True; //3847 = Manifest Wall (Shield, Any Weapon)
+_ACRelyOnAggro=1923,True; //1923 = Bulletproof (Dodge, Any Weapon)
+_ACRelyOnAggro=314,False; //314 = Herb Treatment
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDistance=3847,<4; //3847 = Manifest Wall (Shield, Any Weapon)
+_ACRelyOnDistance=1923,<4; //1923 = Bulletproof (Dodge, Any Weapon)
+_ACRelyOnDistance=314,>3; //314 = Herb Treatment
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnDP=2014,2000; //2014 = Watery Grave (DP 2000, Cannon)
+_ACRelyOnDP=2007,2000; //2007 = Spend Success (DP 2000, Any Weapon)
+
+_ACRelyOnPlayerMP=2179,<70; //2179 = Crosstrigger (Mana recover, Pistol)
+_ACRelyOnPlayerMP=1969,>70; //1969 = Gunshot (Pistol)
+_ACRelyOnPlayerMP=2349,<60; //2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+_ACRelyOnPlayerMP=2367,<70; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=2367,<70; //2367 = Power Grab (HP/MP Recover, Pistol)
+_ACRelyOnPlayerHP=314,<70; //314 = Herb Treatment
+_ACRelyOnPlayerHP=321,>70; //321 = Mana Treatment
+
+
+_ACSkills=2207,2090,2346,2201,1975,2253,2218,2108,2004,2014,2179,1969,2054,2179,1969,2053,2179,1969,1981,1953,2263,2123,1983,2003,2231;
+//2207 = Aetheric Bombardment (Cannon)
+//2090 = Fiery Blast (Cannon)
+//2346 = Incendiary Shell (Cannon)
+//2201 = Shellshock (Cannon)
+//1975 = Juggernaut Cannon (Cannon)
+//2253 = Shock and Awe (Cannon)
+//2218 = Harassing Fire (Cannon)
+//2108 = Snow Shell (Cannon)
+//2004 = Aerial Fury (Cannon)
+//2014 = Watery Grave (DP 2000, Cannon)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//2054 = Autoload (Reload, Pistol)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//2053 = Reload (Reload, Pistol)
+//2179 = Crosstrigger (Mana recover, Pistol)
+//1969 = Gunshot (Pistol)
+//1981 = Hemorrhage Shot (Pistol)
+//1953 = Hot Shot (Pistol)
+//2263 = Quieting Gale (Any weapon)
+//2123 = Steady Fire (Pistol)
+//1983 = Spinning Fire (Pistol)
+//2003 = Wing Clip (Pistol)
+//2231 = Precision Shot (Pistol)
+
+
+_ACBuffs=314,321,2115,2040,2045,2046,2273,2007,3847,1923,2052,2349,2367,3468,1954,2114,2166,2068;
+//314 = Herb Treatment
+//321 = Mana Treatment
+//2115 = Stable Stance (Active, Any Weapon)
+//2040 = Nature's Favor (Any Weapon)
+//2045 = Aion's Favor (Pistol)
+//2046 = Stopping Power (Any Weapon)
+//2273 = Sighting (Any Weapon)
+//2007 = Spend Success (DP 2000, Any Weapon)
+//3847 = Manifest Wall (Shield, Any Weapon)
+//1923 = Bulletproof (Dodge, Any Weapon)
+//2052 = Pressurized Chamber (Pistol)
+//2349 = Anti-Enemy Fire (Mana Recover, Pistol)
+//2367 = Power Grab (HP/MP Recover, Pistol)
+//3468 = Frozen Blitz (root, Cannon)
+//1954 = Freeze Cannon (sleep, Cannon)
+//2114 = Paralysis Cannon (airbind, Cannon)
+//2166 = Green Grenade (root, Pistol)
+//2068 = Dazzling Fire (stun, Pistol)
+//;;;;;;;End Settings Gunslinger;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=15;
+//;;;;;;;;;Settings Muse;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=12000;
+
+_ACRelyOnPlayerHP=4339,<70; //4339 = Soothing Melody
+
+_ACSkills=4300,4222,4409;
+//4300 = Fiery Descant
+//4222 = Song of Ice
+//4409 = Pulse
+
+_ACBuffs=4339;
+//4339 = Soothing Melody
+//;;;;;;;End Settings Muse;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=16;
+//;;;;;;;;;Settings Songweaver;;;;;;;;;
+_ACAllowAllMobs=False;
+_ACEnableAutoAttack=False;
+_ACIgnoreAtDistance=26;
+_ACInitialRange=19;
+_ACTimeoutNoDamage=7000;
+_ACRegenerateEnabled=True;
+_ACRegMPPercentage=30;
+_ACRegHPPercentage=65;
+
+_ACRelyOnTargetDebuff=4402,3043/4521/3160; //4402 = Captivate (root)
+_ACRelyOnTargetDebuff=4521,4402/4521/3160/3126/3125/3124/4299/3093/3092/3091/3090/4529/3135/3134/3133/3132/3131; //4521 = Freestyle (sleep)
+_ACRelyOnTargetDebuff=3160,4402/4521/3160; //3160 = Staggered Rest (Paralysis)
+_ACRelyOnTargetDebuff=4299,4521; //4299 = Fluttered Note (DoT)
+_ACRelyOnTargetDebuff=4529,4521; //4529 = Paean of Pain (DoT)
+
+_ACRelyOnBuff=4449,4449; //4449 = Etude
+_ACRelyOnBuff=4442,4442; //4442 = Protective Ode (Shield)
+_ACRelyOnBuff=4502,4502; //4502 = Mvt. Autumn
+
+_ACIsActive=4590,True; //4590 = Impassion (Active)
+
+_ACRelyOnDistance=4400,<4; //4400 = Mvt. Winter (Shield)
+_ACRelyOnDistance=4402,>3; //4402 = Captivate (root)
+_ACRelyOnDistance=321,>3; //321 = Mana Treatment
+
+_ACRelyOnPlayerHP=4400,<60; //4400 = Mvt. Winter (Shield)
+_ACRelyOnPlayerHP=4537,<80; //4537 = Hymn of Rejuvenation (HoT)
+_ACRelyOnPlayerHP=4518,<65; //4518 = Soothing Hymn (Charge, Heal)
+_ACRelyOnPlayerHP=4351,<70; //4351 = Soothing Melody (Heal)
+
+_ACRelyOnPlayerMP=4383,<70; //4383 = Resonating Melody (Mana recover)
+_ACRelyOnPlayerMP=321,<50; //321 = Mana Treatment
+
+_ACRelyOnTargetHP=4529,>25; //4529 = Paean of Pain (DoT)
+
+_ACRelyOnAggro=321,False; //321 = Mana Treatment
+
+_ACRelyOnDP=4468,2000; //4468 = Minstel's Flair (DP 2000)
+
+
+_ACSkills=3126,4550,4405,4523,3035,4489,3161,4428,4333,4561,4468,4272,4420;
+//3126 = Syncopated Echo (Delayed)
+//4550 = Stinging Note
+//4405 = Adagio (Slow)
+//4523 = Sonic Gust
+//3035 = Song of Ice
+//4489 = Treble Cleave
+//3161 = Fiery Requiem (Charge)
+//4428 = Harpist's Pod (Charge)
+//4333 = Fiery Descant (Charge)
+//4561 = Dragon Song (Charge)
+//4468 = Minstel's Flair (DP 2000)
+//4272 = Bright Strike
+//4420 = Pulse
+
+
+_ACBuffs=321,4449,4442,4502,4590,4400,4401,4537,4518,4351,4383,4299,4529,4402,4521,3160;
+//321 = Mana Treatment
+//4449 = Etude
+//4442 = Protective Ode (Shield)
+//4502 = Mvt. Autumn
+//4590 = Impassion (Active)
+//4400 = Mvt. Winter (Shield)
+//4401 = Song of Celerity
+//4537 = Hymn of Rejuvenation (HoT)
+//4518 = Soothing Hymn (Charge, Heal)
+//4351 = Soothing Melody (Heal)
+//4383 = Resonating Melody (Mana recover)
+//4299 = Fluttered Note (DoT)
+//4529 = Paean of Pain (DoT)
+//4402 = Captivate (root)
+//4521 = Freestyle (sleep)
+//3160 = Staggered Rest (Paralysis)
+
+_ACRegenerate=4537,4518,4351;
+//4537 = Hymn of Rejuvenation (HoT)
+//4518 = Soothing Hymn (Charge, Heal)
+//4351 = Soothing Melody (Heal)
+//;;;;;;;End Settings ,er;;;;;;;
+#ENDIF
+
+
+//Global Rule | Only use when item is available
+_ACRelyOnItem=314,169300007; // 314 Herb Treatment VI
+_ACRelyOnItem=321,169300007; // 321 Mana Treatment VI
+_ACRelyOnItem=314,169300006; // 314 Herb Treatment V
+_ACRelyOnItem=321,169300006; // 321 Mana Treatment V
+_ACRelyOnItem=1825,169300005; // 1825 Herb Treatment IV
+_ACRelyOnItem=1826,169300005; // 1826 Mana Treatment IV
+_ACRelyOnItem=1805,169300004; // 1805 Herb Treatment III
+_ACRelyOnItem=1824,169300004; // 1824 Mana Treatment III
+_ACRelyOnItem=1804,169300003; // 1804 Herb Treatment II
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment II
+_ACRelyOnItem=1804,169300003; // 1803 Herb Treatment I
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment I
+
+end_CombatSort;
+
+
+
+
+
+
+start_CombatSort_ForGravity;
+
+//;;;;;;;;BASIC SETTINGS;;;;;;;;;;;
+
+#IF=%Var4,=1;
+_ACUseAnimation=True;
+#ENDIF
+
+_SetVar=PotionHP,75; // Use Potion if HP below 75%
+_SetVar=PotionMP,66; // Use Potion if MP below 66%
+_ACRegenerateEnabled=False; // Enables sitting
+_ACRegMPPercentage=30; // Starts sitting when MP drop below 35%
+_ACRegHPPercentage=35; // Starts sitting when HP drop below 35%
+_ACTimeoutNoDamage=12000; // combat times out if the mob hasn't taken any damage within the first 12000 milliseconds
+_ACTimeout=900; // Combat times out if the fight takes longer than 900 seconds
+_ACMob_Looting=False; // Enables Looting
+_ACAllowAllMobs=True; // Keeps fighting if enemy has another entity as target
+_ACEnableAutoAttack=False; // Enables AutoAttacks while fighting
+_ACResetPosition=False; // Reset the player position after a fight to where he was before the fight started
+_ACExperimentalCooldown=True; // Leave that on True
+_ACMidAirDistance=3; // Distance it moves with each step
+_ACMidAirTiming=950; // moves after at least 950 milliseconds
+_ACIncreasedAttackrange=1; // 1 Increased attackrange by 1 meter, both skills and auto attack work at max distance | 2 increases by 2 meters, only skills works at max distance
+
+#EXECUTE=GetPotionID;
+
+//;;;;;;;END BASIC SETTINGS;;;;;;;;
+
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=0;
+//;;;;;;;;;Settings Warrior Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Warrior Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=1;
+//;;;;;;;;;Settings Gladiator Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Gladiator Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=2;
+//;;;;;;;;;Settings Templar Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Templar Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=3;
+//;;;;;;;;;Settings Scout Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Scout Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=4;
+//;;;;;;;;;Settings Assassin Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Assassin Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=5;
+//;;;;;;;;;Settings Ranger Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Ranger Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=6;
+//;;;;;;;;;Settings Mage Gravity;;;;;;;;;
+_ACManaPercentage=80;
+
+_ACIgnoreAtDistance=25;
+_ACInitialRange=23;
+
+_ACRelyOnBuff=1377,1377;
+
+_ACCustomCooldown=1358,10000; // Erosion
+
+_ACManaRecover=1370;
+_ACBuffs=1377;
+_ACSkills=1362,1358,1373,1351;
+//;;;;;;;End Settings Mage Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=7;
+//;;;;;;;;;Settings Sorcerer Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Sorcerer Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=8;
+//;;;;;;;;;Settings Spiritmaster Gravity;;;;;;;;;
+_ACAllowAllMobs=True;
+_ACEnableAutoAttack=False;
+_ACManaPercentage=80;
+_ACIgnoreAtDistance=23;
+_ACInitialRange=25;
+_ACTimeoutNoDamage=12000;
+
+_ACManaPercentage=80;
+_ACHealPercentage=60;
+
+_ACRegenerateEnabled=False; // Enables sitting
+
+// Dots
+_ACRelyOnTargetDebuff=1358,1358; // Only cast erosion if it's missing
+
+// Only attack when player's health is (below) the indicated level
+_ACRelyOnPlayerHP=1756,<85; // 1756 Absorb Vitality
+
+// Rebuffs
+_ACRelyOnBuff=1377,1377; // Only use Stoneskin if its not up
+
+_ACRelyOnRace=1649,Elyos; // Summon Earth Spirit
+_ACRelyOnRace=1615,Asmo; // Summon Earth Spirit
+_ACRelyOnRace=1751,Elyos; // Summon Fire Energy
+_ACRelyOnRace=1748,Asmo; // Summon Fire Energy
+
+_ACManaRecover=1370;
+// 1370 Absorb energy
+
+_ACBuffs=1377;
+// 1649 | 1615 Summon Earth Spirit (If not already summoned)
+// 1377 Stoneskin
+// 1683 Enmity Swap
+// 1677 Replenish Element
+
+_ACSkills=1358,1751,1748,1631,2295,1756;
+// 1358 Erosion (If not already applied)
+// 1751 | 1748 Summon Fire Energy
+// 1631 Chain of Earth (has chain)
+// 2295 Vacuum Choke
+// 1756 Absorb Vitality
+
+//;;;;;;;End Settings Spiritmaster Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=9;
+//;;;;;;;;;Settings Priest Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Priest Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=10;
+//;;;;;;;;;Settings Cleric Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Cleric Gravity;;;;;;;
+#ENDIF
+
+
+_IFMemPtrRead=%PlayerBase,%OffsetClassID,BYTE,=11;
+//;;;;;;;;;Settings Chanter Gravity;;;;;;;;;
+
+//;;;;;;;End Settings Chanter Gravity;;;;;;;
+#ENDIF
+
+//Global Rule | Only use when item is available
+_ACRelyOnItem=1827,169300006; // 1805 Herb Treatment IV
+_ACRelyOnItem=1828,169300006; // 1824 Mana Treatment IV
+_ACRelyOnItem=1825,169300005; // 1805 Herb Treatment III
+_ACRelyOnItem=1826,169300005; // 1824 Mana Treatment III
+_ACRelyOnItem=1805,169300004; // 1805 Herb Treatment II
+_ACRelyOnItem=1824,169300004; // 1824 Mana Treatment II
+_ACRelyOnItem=1804,169300003; // 1805 Herb Treatment I
+_ACRelyOnItem=1823,169300003; // 1824 Mana Treatment I
+
+end_CombatSort_ForGravity;

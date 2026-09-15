@@ -1,0 +1,1102 @@
+############# BROKER BOT ###############
+# This script keeps trying to buy your desired item from   #
+# Broker for the price you did setup                                 #
+# Make sure UI Size is at 1.00, Client is english              #
+# Auto-Arrange Windows is turned off                             #
+# HUD is at bottom, eventually reset window positions   #
+#######################################
+
+
+#IF=%FirstTime,;
+#SmoothBackground
+RequireVersion=9.49;
+_SetVar=ScriptTitle,Broker Bot;
+Console=\g_maxfps 30;
+UseSpeed=1;
+Command=;
+#SetWindow
+#EXECUTE=GetOffsets;
+#EXECUTE=Setup;
+#EXECUTE=Init;
+#ENDIF
+
+#EXECUTE=Main;
+
+
+
+
+start_Main;
+
+#EXECUTE=Reset_Broker;
+
+_SetVar=MSG,Broker Bot started searching for %Var[ItemName_1] at a maximum price of %Var[UnitPrice_1].. (%Var[ItemsDefined] Items in total);
+#EXECUTE=Log;
+
+_SetVar=Index,0;
+#DO=999999999;
+
+_Calc[Index]=%Var[Index]+1;
+#IF=%Var[Index],>%Var[ItemsDefined];
+_SetVar=Index,1;
+#ENDIF
+
+_IFMemPtrRead=%AddrFrameName[radar_dialog],%Var[Offset_Vendor_Notice],BYTE,=7; // Can collect Kinah
+#EXECUTE=CollectKinah;
+#ENDIF
+
+_SetVar=Kinah,%Var[UnitPrice_%Var[Index]];
+#EXECUTE=SetKinah; // Limit kinah we can spend for unit price
+
+_Calc[BuyAttempts]=%Var[BuyAttempts]+1;
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,UINT64,Kinah_Cache;
+
+#IF=%Var[ItemsDefined],>1;
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Mode],%Var[SearchMode_%Var[Index]],BYTE; // Set SearchMode to "Exact Match" or "Keyword"
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Sort],%Var[Vendor_SortMode],BYTE; // Sort items
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_SearchBtn],7,BYTE; // Enable Search Btn
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Text],%Var[ItemName_%Var[Index]],WCHAR[64];
+Mouse=%Var[Vendor_SearchBtn_MouseX],%Var[Vendor_SearchBtn_MouseY]; // Search Button
+#2DO=1000;
+_2UNTILMemPtrRead=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_SearchCancelBtn],BYTE,=7; // loading completed
+Delay=5;
+#ELSE
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_RefreshBtn],7,BYTE; // Enable Refresh Bt
+Mouse=%Var[Vendor_RefreshBtn_MouseX],%Var[Vendor_RefreshBtn_MouseY]; // Refresh Button
+Delay=5; // Delay for loading items
+#ENDIF
+
+Mouse=%Var[Vendor_FirstItem_MouseX],%Var[Vendor_FirstItem_MouseY],Right; // First Item
+
+#2DO=175;
+_IFFrameVisibleByName=vendor_buy_each_dialog;
+_SetVar2=1;
+#ENDIF
+_IFFrameVisibleByName=vendor_single_buy_dialog;
+_SetVar2=1;
+#ENDIF
+#2UNTIL=%Var2,=1;
+
+#IF=%Var2,=1; // If buy window poped up
+_MemPtrReadVar=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_ItemAmount],DWORD,ItemAmount;
+#EXECUTE=RestoreKinah; // Restore Kinah so we can buy for entire stack
+Delay=%Var[BuyDelay];
+SendKey=0x0D;
+Command=;
+#EXECUTE=CheckSuccess;
+#ENDIF
+
+_IFMemPtrRead=%TargetBase,%OffsetName,WCHAR[128],=%Var[Broker_Name];
+#ELSE
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+_IFFrameVisibleByName=vendor_dialog;
+#ELSE
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+#IF=%Var[BuyAttempts],>2000; // Reset broker window after 2000 attempts
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+#UNTIL=1,=2;
+
+end_Main;
+
+
+
+
+start_CheckSuccess;
+
+#DO=2000;
+Delay=10;
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,UINT64,CurrentKinah;
+#UNTIL=%Var[CurrentKinah],<%Var[Kinah_Cache];
+
+#IF=%Var[CurrentKinah],<%Var[Kinah_Cache];
+_Calc[Kinah_Spend]=%Var[Kinah_Cache]-%Var[CurrentKinah];
+_Calc[UnitPrice_Spend]=%Var[Kinah_Spend]/%Var[ItemAmount];
+_SetVar=MSG,has spend %Var[Kinah_Spend] Kinah for <%Var[ItemName_%Var[Index]]> (%Var[ItemAmount]x %Var[UnitPrice_Spend] Kinah);
+#EXECUTE=Log;
+#IF=%Var[Sell_%Var[Index]],=1;
+#EXECUTE=CheckSell;
+#ENDIF
+
+end_CheckSuccess;
+
+
+start_CheckSell;
+
+#2DO=99999999;
+
+_IFInventoryContains=%Var[Sell_ItemID_%Var[Index]]; // If has item in inventory
+#ELSE
+#Return
+#ENDIF
+
+_IFInventoryContains=%Var[Sell_ItemID_%Var[Index]],%Var[Sell_stack_%Var[Index]]; // If has enough items for selling as required stack size
+#ELSE
+#IF=%Var[Sell_stack_%Var[Index]],>0;
+#Return
+#ENDIF
+
+#EXECUTE=RestoreKinah;
+
+Mouse=%Var[Vendor_SellTab_MouseX],%Var[Vendor_SellTab_MouseY]; // Sell Tab
+Delay=650;
+FrameActionByName=inventory_dialog,STATE,SHOW;
+
+_SetVar=SearchedItemID,%Var[Sell_ItemID_%Var[Index]];
+#EXECUTE=CheckInvSlot;
+Mouse=%Var[Item_Coord_X],%Var[Item_Coord_Y],Right; // Rightclick on Item
+
+#IF=%ClientID,10-13; // Not 4.6
+_SetVar=WaitForFrame_Name,item_price_dialog;
+#ELSE
+_SetVar=WaitForFrame_Name,vendor_sell_stack_dialog;
+#ENDIF
+#DO=3000;
+_SetVar=WaitForFrame_Timeout,5000;
+#EXECUTE=WaitForFrame;
+#UNTIL=%Var[t_WaitForFrame],=1;
+#IF=%Var[t_WaitForFrame],=1;
+#ELSE
+#EXECUTE=Reset_Broker;
+#Return
+#ENDIF
+
+#EXECUTE=SetSellMode;
+#IF=%Var[Sell_stack_%Var[Index]],>0;
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_ItemAmount],%Var[Sell_stack_%Var[Index]],DWORD;
+_SetVar=Sell_Amount,%Var[Sell_stack_%Var[Index]];
+#ELSE
+_MemPtrReadVar=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_ItemAmount],DWORD,Sell_Amount;
+#ENDIF
+
+
+#IF=%Var[Sell_UnitPrice_%Var[Index]],>0; // Sell price is not negative
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Price],%Var[Sell_UnitPrice_%Var[Index]],DWORD;
+_Calc[Sell_StackPrice]=%Var[Sell_Amount]*%Var[Sell_UnitPrice_%Var[Index]];
+_SetVar=MSG,did put %Var[Sell_Amount]x <%Var[Sell_ItemName]> for %Var[Sell_UnitPrice_%Var[Index]] Kinah each for sale (%Var[Sell_StackPrice] Kinah total);
+#EXECUTE=Log;
+#ELSE
+#EXECUTE=GetCurrentLowestPrice;
+#IF=%Var[Broker_Sell_CurrentLowestPrice],>0; // Lowest price found
+_Calc[t_Sell_UnitPrice]=%Var[Broker_Sell_CurrentLowestPrice]+%Var[Sell_UnitPrice_%Var[Index]];
+#IF=%Var[t_Sell_UnitPrice],>0;
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Price],%Var[t_Sell_UnitPrice],DWORD;
+_Calc[Sell_StackPrice]=%Var[Sell_Amount]*%Var[t_Sell_UnitPrice];
+_SetVar=MSG,did put %Var[Sell_Amount]x <%Var[Sell_ItemName]> for %Var[t_Sell_UnitPrice] Kinah each for sale (%Var[Sell_StackPrice] Kinah total - the lowest price was %Var[Broker_Sell_CurrentLowestPrice] Kinah);
+#EXECUTE=Log;
+#ENDIF
+
+
+Delay=225;
+SendKey=0x0D; // Enter
+Delay=1250;
+SendKey=0x0D; // Enter
+Delay=650;
+Mouse=%Var[Vendor_BuyTab_MouseX],%Var[Vendor_BuyTab_MouseY]; // Buy Tab
+Delay=650;
+Command=;
+
+FrameActionByName=inventory_dialog,STATE,HIDE;
+
+#2UNTIL=1,=2;
+
+end_CheckSell;
+
+
+start_SetSellMode;
+
+#IF=%ClientID,%ARRAY3; // 4.6
+#Return
+#ENDIF
+
+#IF=%ClientID,%ARRAY2; // Classic
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Mode],%Var[Sell_mode_%Var[Index]],DWORD;
+#Return
+#ENDIF
+
+#IF=%ClientID,%ARRAY1; // Retail
+#IF=%Var[Sell_mode_%Var[Index]],=1; // Sell Each
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Total],0,BYTE; // Uncheck
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Each],4,BYTE; // Check
+#Return
+#ENDIF
+#IF=%ClientID,%ARRAY1; // Retail
+#IF=%Var[Sell_mode_%Var[Index]],=0; // Sell Total
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Total],4,BYTE; // Check
+MemPtrWrite=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_Each],0,BYTE; // Uncheck
+#Return
+#ENDIF
+
+end_SetSellMode;
+
+
+start_CollectKinah;
+
+#IF=%Var[Sell_Collect],=0;
+#Return
+#ENDIF
+
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,UINT64,Kinah_Cache;
+
+Mouse=%Var[Vendor_SoldTab_MouseX],%Var[Vendor_SoldTab_MouseY]; // Sold Tab
+Delay=1250;
+Mouse=%Var[Vendor_Sold_Collect_MouseX],%Var[Vendor_Sold_Collect_MouseY]; // Collect Kinah
+Delay=1250;
+Mouse=%Var[Vendor_BuyTab_MouseX],%Var[Vendor_BuyTab_MouseY]; // Buy Tab
+Delay=1250;
+
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,UINT64,CurrentKinah;
+
+#IF=%Var[CurrentKinah],>%Var[Kinah_Cache];
+_Calc[Kinah_Gained]=%Var[CurrentKinah]-%Var[Kinah_Cache];
+_SetVar=MSG,has collected %Var[Kinah_Gained] Kinah;
+#EXECUTE=Log;
+#ENDIF
+
+end_CollectKinah;
+
+
+start_Reset_Broker;
+
+_SetVar=BuyAttempts,0;
+
+#DO=45000;
+#EXECUTE=CloseWindows;
+Delay=850;
+Command=/select %Var[Broker_Name];
+Delay=150;
+Command=/attack;
+_SetVar=WaitForFrame_Name,dlg_dialog;
+_SetVar=WaitForFrame_Timeout,5000;
+#EXECUTE=WaitForFrame;
+#UNTIL=%Var[t_WaitForFrame],=1;
+
+_IFFrameVisibleByName=dlg_dialog;
+DialogClick=;
+Delay=1500;
+#ELSE
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+_IFFrameVisibleByName=vendor_dialog;
+#ELSE
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Frame_XPos],0,FLOAT;
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+
+Mouse=%Var[Vendor_BuyTab_MouseX],%Var[Vendor_BuyTab_MouseY]; // Buy Tab
+
+_IFMemPtrRead=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Space],BYTE,<64;
+Mouse=%Var[Vendor_Search_MouseX],%Var[Vendor_Search_MouseY]; // Search field
+Delay=100;
+Mouse=%Var[Vendor_Search_MouseX],%Var[Vendor_Search_MouseY]; // Search field
+Delay=750;
+SendKey=1234567890123456789012345678901234567890123456789012345678901234; // Allocate space for search string
+Delay=6500;
+#ENDIF
+_IFMemPtrRead=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Space],BYTE,<64;
+#EXECUTE=Reset_Broker;
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Mode],%Var[SearchMode_1],BYTE; // Set SearchMode to "Exact Match" or "Keyword"
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_SearchBtn],7,BYTE; // Enable Search Btn
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Search_Text],%Var[ItemName_1],WCHAR[64];
+MemPtrWrite=%AddrFrameName[vendor_dialog],%Var[Offset_Vendor_Sort],%Var[Vendor_SortMode],BYTE; // Sort items
+Delay=150;
+Mouse=%Var[Vendor_SearchBtn_MouseX],%Var[Vendor_SearchBtn_MouseY]; // Search Button
+Delay=800;
+
+end_Reset_Broker;
+
+
+
+start_Setup;
+
+TrayInfo=Target the Broker NPC and press "Delete";
+#EXECUTE=GetBrokerName;
+
+Ask=Load last settings?;
+#EXECUTE=Load_Session;
+#Return
+#ENDIF
+
+#SetVar=User_BuyDelay,Enter a delay offset if some payments are not registered correctly/n/nRecommended values: 0-300;
+_Calc[BuyDelay]=300+%Var[User_BuyDelay];
+
+_SetVar=Index,0;
+#DO=99999999;
+_Calc[Index]=%Var[Index]+1;
+
+#SetVar=ItemName_%Var[Index],[%Var[Index]]/n/nEnter the Item Name the bot should buy/n/nEnter nothing to stop defining items;
+_IFRegExp=%Var[ItemName_%Var[Index]],.+;
+#SetVar=UnitPrice_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nHow much kinah is the bot allowed to spend (Unit price)?;
+#SetVar=SearchMode_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nChange to search mode to "Exact Match" or leave it on "Keyword"?/n/n1 = Exact Match/n0 = Keyword;
+#SetVar=Sell_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nShould the item be sold again when it got bought?/n/n1 = Yes/n0 = No;
+#IF=%Var[Sell_%Var[Index]],=1;
+#SetVar=Sell_ItemID_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nHow is the Item ID of the Item it should sell?/n/nYou get the item ID while no script runs when you/ncheck "Show IDs" on the Script Editor and hover/nabove the item ingame;
+#SetVar=Sell_UnitPrice_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nHow should the unit price be when selling it?/n/nYou can also enter a negative number as an offset from the cheapest price/nLike "-1" would sell for 599 Kinah if the cheapest price was 600 Kinah/nNegative offsets do not work on Aion Nova;
+#SetVar=Sell_stack_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nShould it wait till it has a certain amount before selling?/n/nEnter the Amount it should wait for or "0" for selling right away;
+#IF=%ClientID,<10; // Not 4.6
+#SetVar=Sell_mode_%Var[Index],[%Var[Index] - %Var[ItemName_%Var[Index]]]/n/nHow should it sell it?/n/n1 = Sell Separately/n0 = Sell all;
+#ENDIF
+
+#UNTIL=%Var[ItemName_%Var[Index]],=;
+_Calc[ItemsDefined]=%Var[Index]-1;
+
+#SetVar=Sell_Collect,Should it collect the kinah from selling items?/n/n1 = Yes/n0 = No;
+#SetVar=DiscordURL,Enter your Discord Webhook URL for Discord messages/notherwise enter 0/n/n( more information at https://vanillatool.com/discord );
+
+Ask=Save current settings for next time?;
+#EXECUTE=Save_Session;
+#ENDIF
+
+end_Setup;
+
+
+
+start_Save_Session;
+
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,Created,1;
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,User_BuyDelay,%Var[User_BuyDelay];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,Sell_Collect,%Var[Sell_Collect];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,DiscordURL,%Var[DiscordURL];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,ItemsDefined,%Var[ItemsDefined];
+
+_SetVar=Index,0;
+#DO=99999999;
+_Calc[Index]=%Var[Index]+1;
+
+_IFRegExp=%Var[ItemName_%Var[Index]],.+;
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],ItemName,%Var[ItemName_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],UnitPrice,%Var[UnitPrice_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],SearchMode,%Var[SearchMode_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell,%Var[Sell_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_ItemID,%Var[Sell_ItemID_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_UnitPrice,%Var[Sell_UnitPrice_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_stack,%Var[Sell_stack_%Var[Index]];
+IniWrite=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_mode,%Var[Sell_mode_%Var[Index]];
+#ENDIF
+
+#UNTIL=%Var[Index],>%Var[ItemsDefined];
+
+WaitForResponse=Settings saved under/n/n\[Vanillatool Folder]\Logs\BrokerBot Session\LastSession.ini;
+
+end_Save_Session;
+
+
+start_Load_Session;
+
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,Created,Created;
+#IF=%Var[Created],=1;
+#ELSE
+WaitForResponse=No settings found;
+#Return
+#ENDIF
+
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,User_BuyDelay,User_BuyDelay;
+_Calc[BuyDelay]=300+%Var[User_BuyDelay];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,Sell_Collect,Sell_Collect;
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,DiscordURL,DiscordURL;
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,Main,ItemsDefined,ItemsDefined;
+
+_SetVar=Index,0;
+#DO=99999999;
+_Calc[Index]=%Var[Index]+1;
+
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],ItemName,Temp;
+_IFRegExp=%Var[Temp],.+;
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],ItemName,ItemName_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],UnitPrice,UnitPrice_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],SearchMode,SearchMode_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell,Sell_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_ItemID,Sell_ItemID_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_UnitPrice,Sell_UnitPrice_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_stack,Sell_stack_%Var[Index];
+IniRead=%VANILLATOOL\Logs\BrokerBot Session\LastSession.ini,%Var[Index],Sell_mode,Sell_mode_%Var[Index];
+#ENDIF
+
+#UNTIL=%Var[Index],>%Var[ItemsDefined];
+
+end_Load_Session;
+
+
+start_GetBrokerName;
+
+GetEntity=%OffsetData/%Var[Offset_Base_Family],DWORD,=350419,%Distance,FLOAT,<12,Broker_Addr;
+#IF=%Var[Broker_Addr_Elements],>0;
+_MemPtrReadVar=%Var[Broker_Addr_1],%OffsetName,WCHAR[128],Broker_Name;
+TrayInfo=Found NPC: %Var[Broker_Name];
+#ELSE
+// Target the Broker NPC and press "Delete"
+WaitForKey=2E,1; // Press/Hold Delete
+#EXECUTE=WaitForRelease;
+_MemPtrReadVar=%TargetBase,%OffsetName,WCHAR[128],Broker_Name;
+TrayInfo=Recorded NPC: %Var[Broker_Name];
+#ENDIF
+
+end_GetBrokerName;
+
+
+start_GetCurrentLowestPrice;
+
+_IFMemPtrRead=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_CurrentSellPrice]/0x29,BYTE,=0;
+_IFMemPtrRead=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_CurrentSellPrice]/0x2B,BYTE,=0;
+_IFMemPtrRead=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_CurrentSellPrice]/0x2D,BYTE,=0;
+_MemPtrReadVar=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_CurrentSellPrice]/0x28,WCHAR[8],r_Price;
+#ELSE
+_MemPtrReadVar=%AddrFrameName[vendor_sell_stack_dialog],%Var[Offset_Vendor_Sell_CurrentSellPrice]/0x28/0x0,WCHAR[64],r_Price;
+#ENDIF
+
+_IFRegExp=%Var[r_Price],^([0-9\.\|||\'\ \ ]+) ;
+#ELSE
+_SetVar=Broker_Sell_CurrentLowestPrice,0; // no price available
+#Return
+#ENDIF
+
+_RegExp=%Var[r_Price],^([0-9\.\|||\'\ \ ]+) ,t_Price;
+
+StringSplit=temp,,,%Var[t_Price];
+#IF=%Var[temp_Elements],>0;
+_SetVar=t_Price,;
+_SetVar=i,0;
+#DO=5000;
+_Calc[i]=%Var[i]+1;
+_SetVar=t_Price,%Var[t_Price]%Var[temp_%Var[i]];
+#UNTIL=%Var[i],=%Var[temp_Elements];
+#ENDIF
+
+StringSplit=temp,.,%Var[t_Price];
+#IF=%Var[temp_Elements],>0;
+_SetVar=t_Price,;
+_SetVar=i,0;
+#DO=5000;
+_Calc[i]=%Var[i]+1;
+_SetVar=t_Price,%Var[t_Price]%Var[temp_%Var[i]];
+#UNTIL=%Var[i],=%Var[temp_Elements];
+#ENDIF
+
+StringSplit=temp,',%Var[t_Price];
+#IF=%Var[temp_Elements],>0;
+_SetVar=t_Price,;
+_SetVar=i,0;
+#DO=5000;
+_Calc[i]=%Var[i]+1;
+_SetVar=t_Price,%Var[t_Price]%Var[temp_%Var[i]];
+#UNTIL=%Var[i],=%Var[temp_Elements];
+#ENDIF
+
+StringSplit=temp, ,%Var[t_Price];
+#IF=%Var[temp_Elements],>0;
+_SetVar=t_Price,;
+_SetVar=i,0;
+#DO=5000;
+_Calc[i]=%Var[i]+1;
+_SetVar=t_Price,%Var[t_Price]%Var[temp_%Var[i]];
+#UNTIL=%Var[i],=%Var[temp_Elements];
+#ENDIF
+
+StringSplit=temp, ,%Var[t_Price];
+#IF=%Var[temp_Elements],>0;
+_SetVar=t_Price,;
+_SetVar=i,0;
+#DO=5000;
+_Calc[i]=%Var[i]+1;
+_SetVar=t_Price,%Var[t_Price]%Var[temp_%Var[i]];
+#UNTIL=%Var[i],=%Var[temp_Elements];
+#ENDIF
+
+_SetVar=Broker_Sell_CurrentLowestPrice,%Var[t_Price];
+
+end_GetCurrentLowestPrice;
+
+
+start_SetKinah;
+
+MemPtrWrite=%AddrKinah,0x120,%Var[Kinah],UINT64;
+
+end_SetKinah;
+
+
+start_RestoreKinah;
+
+_MemPtrReadVar=%AddrKinah,%OffsetKinah,UINT64,CurrentKinah;
+MemPtrWrite=%AddrKinah,0x120,%Var[CurrentKinah],UINT64;
+
+end_RestoreKinah;
+
+
+start_Init;
+
+_SetArray1=1,2; // Retail Clients
+_SetArray2=5,6,15; // Classic Clients
+_SetArray3=10,11,12,13,14; // 4.x Clients
+
+#IF=%ClientID,=1; // NA
+_SetVar=KinahRedirect_Pattern,C3488B05........488B80........C3;
+_SetVar=KinahRedirect_Offset,0xB;
+_SetVar=Vendor_SortMode,6; // Unit price smallest
+_SetVar=Vendor_SearchBtn_MouseX,460;
+_SetVar=Vendor_SearchBtn_MouseY,57;
+_SetVar=Vendor_Search_MouseX,411;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,504;
+_SetVar=Vendor_RefreshBtn_MouseY,68;
+_SetVar=Vendor_FirstItem_MouseX,310;
+_SetVar=Vendor_FirstItem_MouseY,109;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,24;
+_SetVar=Vendor_SellTab_MouseX,62;
+_SetVar=Vendor_SellTab_MouseY,24;
+_SetVar=Vendor_SoldTab_MouseX,105;
+_SetVar=Vendor_SoldTab_MouseY,24;
+_SetVar=Vendor_Sold_Collect_MouseX,499;
+_SetVar=Vendor_Sold_Collect_MouseY,345;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_SetVar=KinahRedirect_Pattern,C3488B05........488B80........C3;
+_SetVar=KinahRedirect_Offset,0xB;
+_SetVar=Vendor_SortMode,6; // Unit price smallest
+_SetVar=Vendor_SearchBtn_MouseX,568;
+_SetVar=Vendor_SearchBtn_MouseY,57;
+_SetVar=Vendor_Search_MouseX,150;
+_SetVar=Vendor_Search_MouseY,87;
+_SetVar=Vendor_RefreshBtn_MouseX,639;
+_SetVar=Vendor_RefreshBtn_MouseY,65;
+_SetVar=Vendor_FirstItem_MouseX,448;
+_SetVar=Vendor_FirstItem_MouseY,131;
+_SetVar=Vendor_BuyTab_MouseX,23;
+_SetVar=Vendor_BuyTab_MouseY,26;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,26;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,26;
+_SetVar=Vendor_Sold_Collect_MouseX,634;
+_SetVar=Vendor_Sold_Collect_MouseY,369;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_SetVar=KinahRedirect_Pattern,EB10488B00488BCEFF5068;
+_SetVar=KinahRedirect_Offset,0x15;
+_SetVar=Vendor_SortMode,6; // Unit price smallest
+_SetVar=Vendor_SearchBtn_MouseX,468;
+_SetVar=Vendor_SearchBtn_MouseY,53;
+_SetVar=Vendor_Search_MouseX,389;
+_SetVar=Vendor_Search_MouseY,50;
+_SetVar=Vendor_RefreshBtn_MouseX,422;
+_SetVar=Vendor_RefreshBtn_MouseY,374;
+_SetVar=Vendor_FirstItem_MouseX,185;
+_SetVar=Vendor_FirstItem_MouseY,96;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,34;
+_SetVar=Vendor_SellTab_MouseX,66;
+_SetVar=Vendor_SellTab_MouseY,34;
+_SetVar=Vendor_SoldTab_MouseX,118;
+_SetVar=Vendor_SoldTab_MouseY,34;
+_SetVar=Vendor_Sold_Collect_MouseX,509;
+_SetVar=Vendor_Sold_Collect_MouseY,374;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_SetVar=KinahRedirect_Pattern,EB10488B00488BCEFF5068;
+_SetVar=KinahRedirect_Offset,0x15;
+_SetVar=Vendor_SortMode,6; // Unit price smallest
+_SetVar=Vendor_SearchBtn_MouseX,472;
+_SetVar=Vendor_SearchBtn_MouseY,59;
+_SetVar=Vendor_Search_MouseX,334;
+_SetVar=Vendor_Search_MouseY,58;
+_SetVar=Vendor_RefreshBtn_MouseX,481;
+_SetVar=Vendor_RefreshBtn_MouseY,363;
+_SetVar=Vendor_FirstItem_MouseX,365;
+_SetVar=Vendor_FirstItem_MouseY,98;
+_SetVar=Vendor_BuyTab_MouseX,22;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,25;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,25;
+_SetVar=Vendor_Sold_Collect_MouseX,544;
+_SetVar=Vendor_Sold_Collect_MouseY,360;
+#ENDIF
+
+#IF=%ClientID,=10; // EuroAion
+_SetVar=KinahRedirect_Pattern,0F84F3000000488B06488B9B;
+_SetVar=KinahRedirect_Offset,0xC;
+_SetVar=Vendor_SortMode,4; // Total price smallest
+_SetVar=Vendor_SearchBtn_MouseX,353;
+_SetVar=Vendor_SearchBtn_MouseY,43;
+_SetVar=Vendor_Search_MouseX,134;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,515;
+_SetVar=Vendor_RefreshBtn_MouseY,362;
+_SetVar=Vendor_FirstItem_MouseX,368;
+_SetVar=Vendor_FirstItem_MouseY,102;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,25;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,25;
+_SetVar=Vendor_Sold_Collect_MouseX,542;
+_SetVar=Vendor_Sold_Collect_MouseY,362;
+#ENDIF
+
+#IF=%ClientID,=11; // Aion America
+_SetVar=KinahRedirect_Pattern,0F84F3000000488B06488B9B;
+_SetVar=KinahRedirect_Offset,0xC;
+_SetVar=Vendor_SortMode,4; // Total price smallest
+_SetVar=Vendor_SearchBtn_MouseX,353;
+_SetVar=Vendor_SearchBtn_MouseY,43;
+_SetVar=Vendor_Search_MouseX,134;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,515;
+_SetVar=Vendor_RefreshBtn_MouseY,362;
+_SetVar=Vendor_FirstItem_MouseX,368;
+_SetVar=Vendor_FirstItem_MouseY,102;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,25;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,25;
+_SetVar=Vendor_Sold_Collect_MouseX,542;
+_SetVar=Vendor_Sold_Collect_MouseY,362;
+#ENDIF
+
+#IF=%ClientID,=12; // Destiny
+_SetVar=KinahRedirect_Pattern,0F84F3000000488B06488B9B;
+_SetVar=KinahRedirect_Offset,0xC;
+_SetVar=Vendor_SortMode,4; // Total price smallest
+_SetVar=Vendor_SearchBtn_MouseX,353;
+_SetVar=Vendor_SearchBtn_MouseY,43;
+_SetVar=Vendor_Search_MouseX,134;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,515;
+_SetVar=Vendor_RefreshBtn_MouseY,362;
+_SetVar=Vendor_FirstItem_MouseX,368;
+_SetVar=Vendor_FirstItem_MouseY,102;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,25;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,25;
+_SetVar=Vendor_Sold_Collect_MouseX,542;
+_SetVar=Vendor_Sold_Collect_MouseY,362;
+#ENDIF
+
+#IF=%ClientID,=14; // 4.8
+_SetVar=KinahRedirect_Pattern,0F84........4889B424........4889BC24........488B3D;
+_SetVar=KinahRedirect_Offset,0x20;
+_SetVar=Vendor_SortMode,4; // Total price smallest
+_SetVar=Vendor_SearchBtn_MouseX,353;
+_SetVar=Vendor_SearchBtn_MouseY,43;
+_SetVar=Vendor_Search_MouseX,134;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,515;
+_SetVar=Vendor_RefreshBtn_MouseY,362;
+_SetVar=Vendor_FirstItem_MouseX,368;
+_SetVar=Vendor_FirstItem_MouseY,102;
+_SetVar=Vendor_BuyTab_MouseX,24;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,61;
+_SetVar=Vendor_SellTab_MouseY,25;
+_SetVar=Vendor_SoldTab_MouseX,106;
+_SetVar=Vendor_SoldTab_MouseY,25;
+_SetVar=Vendor_Sold_Collect_MouseX,542;
+_SetVar=Vendor_Sold_Collect_MouseY,362;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_SetVar=KinahRedirect_Pattern,49BEABAAAAAAAAAAAA2A33F6488BD9;
+_SetVar=KinahRedirect_Offset,0x12;
+_SetVar=Vendor_SortMode,6; // Unit price smallest
+_SetVar=Vendor_SearchBtn_MouseX,449;
+_SetVar=Vendor_SearchBtn_MouseY,43;
+_SetVar=Vendor_Search_MouseX,412;
+_SetVar=Vendor_Search_MouseY,43;
+_SetVar=Vendor_RefreshBtn_MouseX,442;
+_SetVar=Vendor_RefreshBtn_MouseY,347;
+_SetVar=Vendor_FirstItem_MouseX,275;
+_SetVar=Vendor_FirstItem_MouseY,80;
+_SetVar=Vendor_BuyTab_MouseX,22;
+_SetVar=Vendor_BuyTab_MouseY,25;
+_SetVar=Vendor_SellTab_MouseX,58;
+_SetVar=Vendor_SellTab_MouseY,24;
+_SetVar=Vendor_SoldTab_MouseX,102;
+_SetVar=Vendor_SoldTab_MouseY,24;
+_SetVar=Vendor_Sold_Collect_MouseX,486;
+_SetVar=Vendor_Sold_Collect_MouseY,346;
+#ENDIF
+
+_MemPattern=%Var[KinahRedirect_Pattern],%Var[KinahRedirect_Offset],False,True; // Kinah Access
+#IF=%Var[PatternFound],>0;
+_SetVar=AddrKinahRedirect,%Var[PatternRet_1];
+_MemReadVar=%Var[AddrKinahRedirect],DWORD,KinahRedirect_Default;
+MemWrite=%Var[AddrKinahRedirect],0x120,DWORD; // Redirect Kinah Access
+#ELSE
+WaitForResponse=ERROR 1;
+#EndScript
+#ENDIF
+
+end_Init;
+
+
+start_Log;
+
+_IFMemPtrRead=%PlayerBase,%OffsetType,CHAR[16],=Player;
+_MemPtrReadVar=%PlayerBase,%OffsetName,WCHAR[32],PlayerName;
+_RegExp=%Var[PlayerName],^([a-zA-Z0-9]*),PlayerName;
+#ELSE
+_SetVar=PlayerName,[Unknown];
+#ENDIF
+
+LogWrite=%VANILLATOOL\Logs\%DAY-%MONTH-%YEAR--%Var[ScriptTitle].txt,%HOUR:%MIN:%SEC -- [%AionTitle::%Var[PlayerName]] %Var[MSG]/n,+;
+
+_IFRegExp=%Var[DiscordURL],^http;
+_HTTPPost=https://subvanillatool.com/discord.php,url=%Var[DiscordURL]&message=__**[%Var[ScriptTitle]] [%AionTitle::%Var[PlayerName]]**__ [%THour:%TMin:%TSec] %Var[MSG];
+#ENDIF
+
+end_Log;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+start_WaitForFrameClosed;
+
+#DO=%Var[WaitForFrame_Timeout];
+_IFFrameVisibleByName=%Var[WaitForFrame_Name];
+_SetVar=t_WaitForFrame,0;
+#ELSE
+_SetVar=t_WaitForFrame,1;
+#ENDIF
+#UNTIL=%Var[t_WaitForFrame],=1;
+Delay=150;
+
+end_WaitForFrameClosed;
+
+
+start_WaitForFrame;
+
+#DO=%Var[WaitForFrame_Timeout];
+_IFFrameVisibleByName=%Var[WaitForFrame_Name];
+_SetVar=t_WaitForFrame,1;
+#ELSE
+_SetVar=t_WaitForFrame,0;
+#ENDIF
+#UNTIL=%Var[t_WaitForFrame],=1;
+Delay=150;
+
+end_WaitForFrame;
+
+
+
+start_CheckInvSlot;
+
+_SetVar=Item_Coord_X,0;
+_SetVar=Item_Coord_Y,0;
+
+_IFInventoryContains=%Var[SearchedItemID];
+#ELSE
+#Return
+#ENDIF
+
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_XPos],4.032836914,FLOAT;
+MemPtrWrite=%AddrFrameName[inventory_dialog],%Var[Offset_Frame_YPos],0,FLOAT;
+
+_Calc[CubeAmount]=%InventoryMaxSlots/27;
+_RegExp=%Var[CubeAmount],^([0-9]*?)(?:\.[0-9]*?$|$),CubeAmount;
+_Calc[RemainingSlots]=%Var[CubeAmount]*27;
+_Calc[RemainingSlots]=%InventoryMaxSlots-%Var[RemainingSlots];
+
+_SetVar=DynamicCubeOffsetBase,%Var[Offset_Inv_Cube];
+_SetVar=tResult,0;
+_SetVar=tSlot,0;
+_SetVar=CubeCount,0;
+_SetVar=DynamicSlotOffset,0x0;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+
+#DO=90000;
+_IFMemPtrRead=%AddrFrameName[inventory_dialog],%Var[DynamicCubeOffset]/%Var[Offset_Inv_Item]/%Var[DynamicSlotOffset]/%Var[Offset_Inv_ItemID],DWORD,=%Var[SearchedItemID];
+_Calc[tResult]=%Var[tResult]+1;
+#IF=%Var[tResult],>%Var[SecondResult];
+_MemPtrReadVar=%AddrFrameName[inventory_dialog],%Var[DynamicCubeOffset]/%Var[Offset_Inv_Item]/%Var[DynamicSlotOffset]/%Var[Offset_Inv_ItemName],WCHAR[128],Sell_ItemName;
+#EXECUTE=InvSlotToCoord;
+#Return
+#ENDIF
+_Calc[tSlot]=%Var[tSlot]+1;
+_Calc[DynamicSlotOffset]=%Var[tSlot]*0x8;
+#IF=%Var[tSlot],=27;
+_SetVar=tSlot,0;
+_SetVar=DynamicSlotOffset,0x0;
+_Calc[CubeCount]=%Var[CubeCount]+1;
+_Calc[DynamicCubeOffset]=%Var[CubeCount]*0x8;
+_Calc[DynamicCubeOffset]=%Var[DynamicCubeOffsetBase]+%Var[DynamicCubeOffset];
+#ENDIF
+#UNTIL=%Var[CubeCount],=%Var[CubeAmount];
+#UNTIL=%Var[tSlot],=%Var[RemainingSlots];
+
+end_CheckInvSlot;
+
+
+start_InvSlotToCoord;
+
+#IF=%ClientID,5-6;
+_SetVar=FirstSlot_X,569;
+_SetVar=FirstSlot_Y,57;
+_SetVar=Icon_Width,30;
+_SetVar=Icon_Height,30;
+_SetVar=Cube_Height,20;
+#ELSE
+_SetVar=FirstSlot_X,563;
+_SetVar=FirstSlot_Y,48;
+_SetVar=Icon_Width,27;
+_SetVar=Icon_Height,27;
+_SetVar=Cube_Height,21;
+#ENDIF
+
+_Calc[tRow]=%Var[tSlot]/9;
+_RegExp=%Var[tRow],^([0-9]*?)(?:\.[0-9]*?$|$),tRow;
+_Calc[rSlots]=%Var[tRow]*9;
+_Calc[cSlot]=%Var[tSlot]-%Var[rSlots];
+
+_Calc[Cube_Distance]=%Var[CubeCount]*%Var[Cube_Height];
+_Calc[Row_Distance]=%Var[CubeCount]*3;
+_Calc[Row_Distance]=%Var[Row_Distance]+%Var[tRow];
+_Calc[Row_Distance]=%Var[Row_Distance]*%Var[Icon_Height];
+_Calc[Item_Coord_Y]=%Var[Cube_Distance]+%Var[Row_Distance];
+_Calc[Item_Coord_Y]=%Var[FirstSlot_Y]+%Var[Item_Coord_Y];
+
+_Calc[Slot_Distance]=%Var[cSlot]*%Var[Icon_Width];
+_Calc[Item_Coord_X]=%Var[FirstSlot_X]+%Var[Slot_Distance];
+
+end_InvSlotToCoord;
+
+
+start_WaitForRelease;
+
+#DO=5000;
+
+_IFKey=2E,1; // Press/Hold Delete
+#ELSE
+#Return
+#ENDIF
+
+#UNTIL=1,=2;
+
+end_WaitForRelease;
+
+
+start_OnScriptExit;
+
+MemPtrWrite=%PlayerBase,%OffsetActionID,0,DWORD;
+Console=\g_maxfps 120;
+MemWrite=%Var[AddrKinahRedirect],%OffsetKinah,DWORD;
+MemPtrWrite=%AddrKinah,0x120,0,UINT64;
+
+end_OnScriptExit;
+
+
+start_GetOffsets;
+
+#DO=60000;
+
+#IF=%ClientID,=1; // NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[NA\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[NA\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[NA\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[NA\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[NA\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[NA\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[NA\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[NA\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[NA\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[NA\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[NA\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[NA\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[NA\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[NA\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[NA\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[NA\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[NA\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Total,(?m)\[NA\]\n.*?^Vendor_Sell_Total=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Each,(?m)\[NA\]\n.*?^Vendor_Sell_Each=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[NA\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[NA\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[NA\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[NA\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=2; // EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[EU\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[EU\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[EU\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[EU\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[EU\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[EU\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[EU\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[EU\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[EU\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[EU\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[EU\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[EU\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[EU\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[EU\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Total,(?m)\[EU\]\n.*?^Vendor_Sell_Total=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Each,(?m)\[EU\]\n.*?^Vendor_Sell_Each=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[EU\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[EU\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[EU\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[EU\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=5; // Classic NA
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Classic\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Classic\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Classic\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Classic\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[Classic\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[Classic\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[Classic\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[Classic\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[Classic\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[Classic\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[Classic\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[Classic\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[Classic\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[Classic\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Mode,(?m)\[Classic\]\n.*?^Vendor_Sell_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[Classic\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[Classic\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[Classic\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[Classic\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=6; // Classic EU
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Classic EU\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Classic EU\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Classic EU\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Classic EU\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Classic EU\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Classic EU\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Classic EU\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[Classic EU\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[Classic EU\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[Classic EU\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[Classic EU\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[Classic EU\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[Classic EU\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[Classic EU\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[Classic EU\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[Classic EU\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[Classic EU\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Mode,(?m)\[Classic EU\]\n.*?^Vendor_Sell_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[Classic EU\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[Classic EU\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[Classic EU\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[Classic EU\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,10-12; // 4.6
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.6\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.6\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.6\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[4\.6\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[4\.6\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[4\.6\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[4\.6\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[4\.6\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[4\.6\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[4\.6\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[4\.6\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[4\.6\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[4\.6\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[4\.6\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[4\.6\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[4\.6\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[4\.6\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[4\.6\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[4\.6\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[4\.6\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[4\.6\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=14; // 4.8
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.8\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.8\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.8\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[4\.8\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[4\.8\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[4\.8\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[4\.8\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[4\.8\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[4\.8\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[4\.8\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[4\.8\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[4\.8\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[4\.8\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[4\.8\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[4\.8\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[4\.8\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[4\.8\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[4\.8\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[4\.8\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[4\.8\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[4\.8\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%ClientID,=15; // Nova
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[Nova\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[Nova\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[Nova\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[Nova\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[Nova\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[Nova\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[Nova\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemName,(?m)\[Nova\]\n.*?^Inv_ItemName=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Space,(?m)\[Nova\]\n.*?^Vendor_Search_Space=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Text,(?m)\[Nova\]\n.*?^Vendor_Search_Text=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchBtn,(?m)\[Nova\]\n.*?^Vendor_SearchBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_SearchCancelBtn,(?m)\[Nova\]\n.*?^Vendor_SearchCancelBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_RefreshBtn,(?m)\[Nova\]\n.*?^Vendor_RefreshBtn=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sort,(?m)\[Nova\]\n.*?^Vendor_Sort=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_ItemAmount,(?m)\[Nova\]\n.*?^Vendor_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_ItemAmount,(?m)\[Nova\]\n.*?^Vendor_Sell_ItemAmount=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Price,(?m)\[Nova\]\n.*?^Vendor_Sell_Price=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_Mode,(?m)\[Nova\]\n.*?^Vendor_Sell_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Sell_CurrentSellPrice,(?m)\[Nova\]\n.*?^Vendor_Sell_CurrentSellPrice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Notice,(?m)\[Nova\]\n.*?^Vendor_Notice=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Vendor_Search_Mode,(?m)\[Nova\]\n.*?^Vendor_Search_Mode=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Family,(?m)\[Nova\]\n.*?^Base_Family=(.*?)$;
+#ENDIF
+
+#IF=%Var[Offset_Frame_XPos],=0;
+Delay=5000;
+#ENDIF
+
+#UNTIL=%Var[Offset_Frame_XPos],>0;
+
+end_GetOffsets;

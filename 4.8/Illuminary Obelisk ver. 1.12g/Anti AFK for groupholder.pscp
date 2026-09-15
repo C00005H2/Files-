@@ -1,0 +1,13 @@
+#UseLoop
+MoveBy=2,0,0;
+Delay=60000;
+UseID=50000;
+Delay=60000;
+UseID=50001;
+Delay=60000;
+Command=/w %CHARNAME Yes, I'm still there!;
+Delay=60000;
+UseID=50001;
+Delay=60000;
+MoveBy=-2,0,0;
+Delay=60000;

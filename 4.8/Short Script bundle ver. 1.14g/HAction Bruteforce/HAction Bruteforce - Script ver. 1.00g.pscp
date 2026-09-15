@@ -1,0 +1,73 @@
+#IF=%FirstTime,;
+WaitForResponse=This Script tries all given HAction Codes at a certain NPC with the goal to find hidden functions./nI recommend NPCs that once had a function like selling items, teleport inside instance, trading in items... but the dialog option got removed in a later patch/n/n(I predeclared all useful sounding HAction codes)/n/nMake sure you targeted the NPC you want to try some HActions on before you click on OK here;
+#SmoothBackground
+Command=;
+StringSplit=HActionCodes,,,HACTION_TELEPORT_SIMPLE,HACTION_SETPRO1,HACTION_SETPRO2,HACTION_SETPRO3,HACTION_SETPRO4,HACTION_SETPRO5,HACTION_SETPRO6,HACTION_BUY,HACTION_SELL,HACTION_TRADE_IN,HACTION_QUEST_ACCEPT_SIMPLE,HACTION_INSTANCE_ENTRY;
+#SetWindow
+#ENDIF
+
+
+Delay=5000;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Dialog_FirstButton_HAction,(?m)\[Classic\]\n.*?^Dlg_FirstButton_HAction=(.*?)$;
+
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+_MemPtrReadVar=%TargetBase,%OffsetName,WCHAR[64],TargetName;
+_MemReadVar=%AddrMap,DWORD,StartMap;
+#EXECUTE=CloseWindows;
+Delay=250;
+#ELSE
+WaitForResponse=No target, exit..;
+#EndScript
+#ENDIF
+
+
+_SetVar1=1;
+#DO=9999999999;
+
+Command=/select %Var[TargetName];
+Delay=150;
+Command=/attack;
+Delay=1000;
+
+_IFFrameVisibleByName=dlg_dialog;
+MemPtrWrite=%AddrFrameName[dlg_dialog],%Var[Offset_Dialog_FirstButton_HAction],%Var[HActionCodes_%Var1],WCHAR[32];
+Delay=150;
+DialogClick=;
+#ENDIF
+
+_SetVar=temp,0;
+_SetVar2=;
+#2DO=7500;
+_IFMemRead=%AddrMap,DWORD,=%Var[StartMap];
+#ELSE
+_SetVar2=/n/n(You can leave the Instance fast with this window in case you need it);
+Delay=6500;
+FrameActionByName=idtimeattack_dialog,STATE,SHOW;
+_SetVar=temp,1;
+#ENDIF
+#2UNTIL=%Var[temp],=1;
+
+WaitForResponse={%Var1/%Var[HActionCodes_Elements]}/n/nTried %Var[HActionCodes_%Var1]/nClick OK to try the next HAction Code if nothing happend./n(Make sure you're infront of the NPC again)%Var2;
+_Calc1=%Var1+1;
+FrameActionByName=idtimeattack_dialog,STATE,HIDE;
+#EXECUTE=CloseWindows;
+Delay=250;
+
+#UNTIL=%Var1,>%Var[HActionCodes_Elements];
+
+
+WaitForResponse=Tried all given HAction codes.;
+
+
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;

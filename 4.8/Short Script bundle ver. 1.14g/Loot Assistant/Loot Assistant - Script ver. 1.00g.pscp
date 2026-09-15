@@ -1,0 +1,158 @@
+#IF=%FirstTime,;
+WaitForResponse=This script loots all mobs nearby/n/nMake sure "C" is bound to "Attack/Chat"/n/nMake sure "F9" is bound to "Select Nearest Target";
+#SetVar=Region,Which Client are you playing at?/n/n1 = Retail/n2 = Classic; // Retail = 1 | Classic = 2
+#SmoothBackground
+#UseLoop
+UseSpeed=1;
+_SetVar1=999; // Ignore This
+_SetArray=999,999; // Ignore This
+Command=;
+CreateTimer=997;
+#EXECUTE=GetOffsets;
+_MemPtrReadVar=%PlayerBase,%OffsetPosX,FLOAT,StartPosX;
+_MemPtrReadVar=%PlayerBase,%OffsetPosY,FLOAT,StartPosY;
+_MemPtrReadVar=%PlayerBase,%OffsetPosZ,FLOAT,StartPosZ;
+MemWrite=%AddrCamY,85,FLOAT;
+MemPtrWrite=%AddrPiercingCam,%OffsetPiercingCam,1,DWORD;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,61.5,FLOAT;
+Delay=50;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,61.5,FLOAT;
+#ENDIF
+
+
+#IF=%Position,%Var[StartPosX]/%Var[StartPosY]/%Var[StartPosZ];
+#ELSE
+FlySmooth=%Var[StartPosX],%Var[StartPosY],%Var[StartPosZ];
+#ENDIF
+
+MemWrite=%AddrCamY,85,FLOAT;
+MemPtrWrite=%AddrPiercingCam,%OffsetPiercingCam,1,DWORD;
+MemPtrWrite=%AddrCamMax,%OffsetCamMax,61.5,FLOAT;
+MemPtrWrite=%AddrThirdPerson,%OffsetThirdPerson,61.5,FLOAT;
+
+SendKey=0x78; // F9 key
+Delay=25;
+#EXECUTE=IsMob;
+#IF=%Var[IsMob],=1; // Is mob
+_IFMemPtrRead=%TargetBase,%OffsetHP,DWORD,=0; // Is dead
+_IFMemPtrRead=%TargetBase,%OffsetLootable,DWORD,=1; // Is lootable
+_IFMemPtrRead=%TargetBase,%OffsetLooted,DWORD,=0; // Was not looted yet
+#EXECUTE=Loot;
+#ENDIF
+
+
+
+
+
+
+
+
+start_Loot;
+
+_IFMemPtrRead=%TargetBase,%OffsetData,DWORD,%ARRAY1; // already looted
+#Return
+#ENDIF
+
+_MemReadVar=%AddrTargetID,WORD,TargetID;
+_MemPtrReadVar=%TargetBase,%OffsetData,DWORD,TargetPtr;
+_SetVar1=%Var1,%Var[TargetPtr];
+_SetArray1=999,%Var1;
+
+#IF=%TargetDistance,>2.5;
+GoTowardsTarget=<2.5,8000;
+#ENDIF
+
+#IF=%Var[Region],=1; // Retail
+MemPtrWrite=%PlayerBase,%OffsetActionID,0x15000000010000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,BYTE[232];
+#ENDIF
+#IF=%Var[Region],=2; // Classic
+MemPtrWrite=%PlayerBase,%OffsetActionID,0x1500000001000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,BYTE[176];
+#ENDIF
+
+#DO=750;
+_SetVar=temp,0;
+_IFMemPtrRead=%PlayerBase,%Var[Offset_Base_ActionID_0],DWORD,=15;
+_SetVar=temp,1;
+#ENDIF
+_IFMemPtrRead=%PlayerBase,%Var[Offset_Base_ActionID_3],DWORD,=15;
+#ELSE
+_SetVar=temp,1;
+#ENDIF
+#UNTIL=%Var[temp],=0;
+
+_IFMemRead=%AddrTargetID,WORD,=%Var[TargetID];
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+#DO=5000;
+SendKey=0x43; // C Key
+Delay=25;
+_UNTILMemPtrRead=%AddrFrameName[loot_dialog],%Var[Offset_Frame_State],BYTE,=175;
+_IFMemPtrRead=%AddrFrameName[loot_dialog],%Var[Offset_Frame_State],BYTE,=175;
+#DO=5000;
+SendKey=0x43; // C Key
+Delay=25;
+SendKey=0x0D; // Enter key
+Delay=25;
+#UNTIL=1,=2;
+Delay=150;
+Command=;
+#ENDIF
+
+#EXECUTE=CloseWindows;
+
+end_Loot;
+
+
+
+start_IsMob;
+
+_SetVar=IsMob,0;
+
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+_IFMemPtrRead=%TargetBase,%OffsetData/0x38,BYTE,=0;
+_SetVar=IsMob,1;
+#ENDIF
+_IFMemPtrRead=%TargetBase,%OffsetType,CHAR[32],=NPC;
+_IFMemPtrRead=%TargetBase,%OffsetData/0x38,BYTE,=8;
+_SetVar=IsMob,1;
+#ENDIF
+
+end_IsMob;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=1;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=15;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+
+start_GetOffsets;
+
+#DO=5000;
+Delay=250;
+#UNTIL=%Timer=997,5000;
+
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Display,(?m)\[4\.8\]\n.*?^Channel_Display=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Writeable,(?m)\[4\.8\]\n.*?^Channel_Writeable=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Channel_Button,(?m)\[4\.8\]\n.*?^Channel_Button=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_DP,(?m)\[4\.8\]\n.*?^Base_DP=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Base_Animation,(?m)\[4\.8\]\n.*?^Base_Animation=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_ID,(?m)\[4\.8\]\n.*?^Morph_ID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Morph_CraftAll,(?m)\[4\.8\]\n.*?^Morph_CraftAll=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_XPos,(?m)\[4\.8\]\n.*?^Frame_XPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_YPos,(?m)\[4\.8\]\n.*?^Frame_YPos=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Frame_State,(?m)\[4\.8\]\n.*?^Frame_State=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Cube,(?m)\[4\.8\]\n.*?^Inv_Cube=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_Item,(?m)\[4\.8\]\n.*?^Inv_Item=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemID,(?m)\[4\.8\]\n.*?^Inv_ItemID=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Inv_ItemHandle,(?m)\[4\.8\]\n.*?^Inv_ItemHandle=(.*?)$;
+_HTTPGetVar=http://subvanillatool.com/Offsets.txt,,Offset_Confirm_ItemHandle,(?m)\[4\.8\]\n.*?^Confirm_ItemHandle=(.*?)$;
+CreateTimer=997;
+
+end_GetOffsets;

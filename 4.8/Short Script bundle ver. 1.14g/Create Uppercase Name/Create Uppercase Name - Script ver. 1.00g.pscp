@@ -1,0 +1,18 @@
+#IF=%FirstTime,;
+#SmoothBackground
+#SetWindow
+#SetVar=Name,Enter your desired name/n/n(Uppercase supported everywhere);
+#ENDIF
+
+
+_IFMemRead=%AddrCharacterScene,BYTE,=13;<-CharacterScene
+Mouse=196,88;
+Delay=500;
+SendKey=%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd%WRnd;
+Delay=4000;
+MemPtrWrite=%AddrFrameName[create_char_name_dialog],0x530/0x378/0x0,%Var[Name],WCHAR[16];
+Delay=200;
+Mouse=364,572;
+#ELSE
+WaitForResponse=Make sure you're in the character creation screen;
+#ENDIF

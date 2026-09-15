@@ -1,0 +1,116 @@
+#IF=%FirstTime,;
+#SmoothBackground
+Console=\g_maxfps 30;
+UseSpeed=1;
+Command=;
+Print=;
+#EXECUTE=Setup;
+#ENDIF
+
+#EXECUTE=Main;
+
+
+start_Main;
+
+#DO=999999999;
+#EXECUTE=CloseWindows;
+Delay=225;
+Command=/select %Var[NPC_Name];
+Delay=125;
+Command=/attack;
+Delay=1000;
+#EXECUTE=MouseClicks;
+#UNTIL=1,=2;
+
+end_Main;
+
+
+start_Setup;
+
+Print=Target the NPC you want to talk to and press "Delete";
+#EXECUTE=GetNPCName;
+Print=Hover above where it should click and press "Delete"/n/nWhen all necessary clicks are recorded you can start playing it with "End";
+#EXECUTE=GetMouseCoordinate;
+
+end_Setup;
+
+
+start_MouseClicks;
+
+_SetVar=Counter,1;
+
+#DO=99999999;
+Mouse=%Var[Mouse_X_%Var[Counter]],%Var[Mouse_Y_%Var[Counter]];
+Delay=750;
+_Calc[Counter]=%Var[Counter]+1;
+#UNTIL=%Var[Counter],>%Var[Counter_Max];
+
+end_MouseClicks;
+
+
+start_GetMouseCoordinate;
+
+_SetVar=SubElement,0;
+
+#DO=99999999;
+
+_IFKey=2E,1; // Press/Hold Delete
+#EXECUTE=WaitForRelease;
+_Calc[SubElement]=%Var[SubElement]+1;
+_MemReadVar=%AddrMouseX,WORD,Mouse_X_%Var[SubElement];
+_MemReadVar=%AddrMouseY,WORD,Mouse_Y_%Var[SubElement];
+TrayInfo=Recorded Mouseclick %Var[SubElement]. at X: %Var[Mouse_X_%Var[SubElement]] | Y: %Var[Mouse_Y_%Var[SubElement]];
+#ENDIF
+
+_IFKey=23,1; // Press/Hold End
+_SetVar=Counter_Max,%Var[SubElement];
+#Return
+#ENDIF
+
+#UNTIL=1,=2;
+
+end_GetMouseCoordinate;
+
+
+start_GetNPCName;
+
+WaitForKey=2E,1; // Press/Hold Delete
+#EXECUTE=WaitForRelease;
+_MemPtrReadVar=%TargetBase,%OffsetName,WCHAR[128],NPC_Name;
+TrayInfo=Recorded NPC: %Var[NPC_Name];
+
+end_GetNPCName;
+
+
+start_WaitForRelease;
+
+#DO=5000;
+
+_IFKey=2E,1; // Press/Hold Delete
+#ELSE
+#Return
+#ENDIF
+
+#UNTIL=1,=2;
+
+end_WaitForRelease;
+
+
+start_CloseWindows;
+
+#DO=1500;
+SendKey=0x1B;
+Delay=20;
+_UNTILMemPtrRead=%AddrESChwnd,%OffsetESChwnd,BYTE,=175;
+Delay=25;
+MemPtrWrite=%AddrESChwnd,%OffsetESChwnd,142,BYTE;
+
+end_CloseWindows;
+
+
+start_OnScriptExit;
+
+MemPtrWrite=%PlayerBase,%OffsetActionID,0,DWORD;
+Console=\g_maxfps 120;
+
+end_OnScriptExit;

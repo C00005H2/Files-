@@ -1,0 +1,43 @@
+#SmoothBackground
+Console=\g_maxfps 30;
+#EXECUTE=SelectItem;
+
+#DO=9999999;
+_IFInventoryContains=%Var[Selected_ItemID];
+#EXECUTE=OpenItemBundle;
+#ELSE
+#EndScript
+#ENDIF
+#UNTIL=1,=2;
+
+
+
+
+start_OpenItemBundle;
+
+UseID=%Var[Selected_ItemID];
+Delay=150;
+_IFMemPtrRead=%PlayerBase,%OffsetCastTime,DWORD,>0;
+_IFMemPtrRead=%PlayerBase,%OffsetCurrentItemID,DWORD,>0;
+#2DO=10000;
+Delay=250;
+_2UNTILMemPtrRead=%PlayerBase,%OffsetCastTime,DWORD,=0;
+#ENDIF
+
+end_OpenItemBundle;
+
+
+start_SelectItem;
+
+TrayInfo=Hover above the item you want to open and press "Delete";
+WaitForKey=2E,1; // Press/Hold Delete
+_MemReadVar=%AddrMouseID,DWORD,Selected_ItemID;
+
+end_SelectItem;
+
+
+start_OnScriptExit;
+
+Console=\g_maxfps 120;
+
+end_OnScriptExit;

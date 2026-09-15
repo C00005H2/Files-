@@ -1,0 +1,61 @@
+------------------------------------------------------
+BUY THE MATERIALS YOU NEED BEFORE YOU START THE SCRIPT (BUY ~10% MORE TO BE SAFE)
+------------------------------------------------------
+
+####1-99 Lesser Handicrafting####
+
+Dull Plane Blade x 702 = 19,824 Kinah
+Waterproof Agent x 101 = 5,959 Kinah
+Gypsum for Casting x 184 = 10,856 Kinah
+Polisher x 164 = 4,592 Kinah
+Wooden Nail x 422 = 12,238 Kinah
+
+Skill Costs: 3,702 Kinah
+Total Costs: 56,835 Kinah
+
+
+------------------------------------
+
+####100-199 Regular Handicrafting####
+
+Dull Plane Blade x 1,524 = 42,672 Kinah
+Polisher x 1,191 = 33,348 Kinah
+Strong Glue x 321 = 28,569 Kinah
+Waterproof Agent x 649 = 38,291 Kinah
+Gypsum for Casting x 440 = 25,960 Kinah
+Wooden Nail x 508 = 14,732 Kinah
+
+Skill Costs: 18,176 Kinah
+Total Costs: 201,748 Kinah
+
+
+------------------------------------
+
+####200-299 Greater Handicrafting####
+
+Dull Plane Blade x 280 = 7,840 Kinah
+Sharp Plane Blade x 1,447 = 85,373 Kinah
+Polisher x 1,224 = 34,272 Kinah
+Strong Glue x 2,567 = 228,463 Kinah
+Waterproof Agent x 1,213 = 71,567 Kinah
+Gypsum for Casting x 340 = 20,060 Kinah
+Wooden Nail x 459 = 13,311 Kinah
+
+Skill Costs: 121,179 Kinah
+Total Costs: 582,062 Kinah
+
+
+------------------------------------
+
+####300-399 Expert Handicrafting####
+
+Sharp Plane Blade x 3,713 = 219,067 Kinah
+Polisher x 3,367 = 94,276 Kinah
+Strong Glue x 4,170 = 371,130 Kinah
+Waterproof Agent x 1,152 = 67,968 Kinah
+Gypsum for Casting x 1,628 = 96,052 Kinah
+Wooden Nail x 2,143 = 62,147 Kinah
+
+Skill Costs: 484,924 Kinah
+Total Costs: 1,399,518 Kinah
+Total Cost 1-399: 2,237,562 Kinah
