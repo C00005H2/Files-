@@ -73,3 +73,25 @@ print(DEFAULT_STATIC_KEY.hex())
 print(encrypt_client_field("0123456789ABCDEF0123456789ABCDEF"))
 PY
 ```
+
+## Injection analysis and recovery tooling
+
+`analysis/vanillatool-injection.md` answers a different question from the emulator:
+**why the ESP injection fails** (pressing `Insert` in game does nothing). It maps all
+four layers of the executable, reconstructs the three injection methods with line
+references into the de-obfuscated script, shows that `VanillaEsp_v1.3.8.dll` (dropped
+as `%TEMP%\d3dx9_30.dll`) cannot load without `d3dx9_43.dll`, and explains why the
+auth emulator is *not* the cause.
+
+`tools/recover/` holds the static pipeline used to produce that analysis:
+UPX/LZMA unpack, AutoIt `EA06` container parsing, LAME+LZSS entry decoding
+(`autodec.c`), token-stream disassembly, and the two-pass SecureAu3 de-obfuscator.
+
+```sh
+pip install autoit-ripper pefile
+python3 tools/recover/recover.py "Para's Vanillatool -Rework- 11.31.exe" /tmp/vt
+```
+
+The service emulator (`vanillatool_emulator/`) and the injection path are
+independent: the injection performs no network I/O, so emulating auth never affects
+it.
