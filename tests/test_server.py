@@ -48,7 +48,9 @@ class ServerTests(unittest.TestCase):
         marker = payload.decode("ascii").strip()
         self.assertTrue(marker.startswith("C:") and marker.endswith(";"))
         ciphertext = marker[2:-1]
-        self.assertEqual(decrypt_response(ciphertext, "17123456", identity), b"ORythm=1;PRythm=1;")
+        # The default PRythm is 2 (smallest value that enables the named
+        # region checkboxes without tripping the >7 expiry check).
+        self.assertEqual(decrypt_response(ciphertext, "17123456", identity), b"ORythm=1;PRythm=2;")
 
     def test_version_health_and_logging_routes(self) -> None:
         status, payload = self.request("GET", "/Updateless/Version.txt")
