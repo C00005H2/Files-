@@ -311,6 +311,29 @@ loaded modules. Compare the in-memory exports against the three coherent EAT ent
 not install the embedded COM registration, alter the hosts file, disable driver protections, or
 run the Account Manager as part of ordinary triage.
 
+
+### A.12 Dynamic-analysis harness and current scope
+
+The Arena workspace is Linux x86-64 and has no Windows runtime, Wine/QEMU, Windows debugger, or
+matching AION dependency set. Consequently, no DLL code was executed here and this report contains
+no fabricated runtime observations. A real dynamic run must occur in an isolated Windows x64 VM:
+
+* `analysis/dynamic/GameDllProbe.ps1` is a safe **load-time** harness. It launches a separate
+  64-bit PowerShell child, invokes only `LoadLibraryExW`, resolves (but does not call) the two
+  coherent exports, and records module/process/TCP/file snapshots. It kills the child on a load
+  hang and keeps partial JSON output on failure.
+* `analysis/dynamic/README.md` contains the VM safety requirements, exact command line, dependency
+  caveats, and Procmon/Sysmon capture guidance.
+* The probe refuses to run unless the operator explicitly supplies `-NetworkIsolated` or
+  `-AllowNetwork`; the former records an assertion but does not configure Windows Firewall.
+
+The probe is deliberately limited to TLS/DllMain and loader behavior. Calling `CreateGameInstance`
+or `CryModuleGetMemoryInfo` without the matching AION ABI could corrupt the host or trigger game
+logic, so those exports are resolved only. A complete behavioral run requires the matching AION
+client and exact dependencies, plus Procmon/Sysmon/ETW capture for registry, file, network, image,
+thread, and child-process activity. Until such a Windows trace exists, the findings in sections
+A.1–A.11 remain static/protected-loader inferences rather than dynamic facts.
+
 ---
 
 ## Existing Account Manager and VanillaTool report
@@ -682,6 +705,8 @@ Identical to the protocol implemented by the repo's own `vanillatool_emulator/pr
 | `analysis/embedded_files/AM/` | AM payloads: `*.dec` (decoded, exact sizes), `*.raw` (LAME-decrypted streams), `aut42D.tmp.tok.tok` (script tokens) |
 | `analysis/embedded_files/VT/` | VT stage-1 script tokens (`autDF73.tmp.tok`, 34,657,599 B) |
 | `analysis/embedded_files/VT_stage2/` | VT stage-2 payloads (main tokens, VanillaEsp DLL, skills inis, tbl, helpers) |
+| `analysis/dynamic/GameDllProbe.ps1` | Windows x64 load-time probe; invokes only `LoadLibraryExW`, resolves exports without calling them, and records module/process/TCP/file snapshots |
+| `analysis/dynamic/README.md` | Disposable-VM safety requirements, runbook, dependency caveats, and Procmon/Sysmon capture guidance |
 
 Regeneration scripts (in `/tmp`, ephemeral): UPX/LZMA unpacker, `parse_a3x.py` (a3x record
 parser), `resolve3.py` (`$OS` inliner + variable resolver), `eval_au3.py`/`eval_globals.py`
