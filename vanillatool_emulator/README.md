@@ -24,6 +24,8 @@ python -m vanillatool_emulator.interop check --device-name <fHide_UDK name>
 
 # Prove YOUR game client matches AM's hardcoded patch slots (read-only, needs the client installed)
 python -m vanillatool_emulator.clientcheck --game-dir "D:\EuroAion"
+# Definitive verdict for packed clients: read the RUNNING client's memory like AM does
+python -m vanillatool_emulator.clientcheck --live --process aion.bin
 python -m vanillatool_emulator.interop stop     # stop the background emulator
 python -m vanillatool_emulator.driver audit    # read-only driver pre-flight (never changes anything)
 ```
@@ -53,7 +55,7 @@ python -m vanillatool_emulator.driver verify --device-name AbCdEfGhIjK
 | `local.py` | Headless automation library: `RegistryStore` (`HKCU\Software\Para's NoAnimation` mirror), `LoginsStore` (`logins.ini` accounts + 39-key `[Delay]` table), `PayloadStager` (13 recovered drivers/DLLs), `MapperRunner` (real ladder on Windows, faithful simulation elsewhere), NCGuard `Game.dll` prep (`aion.bin+0x863F8` / `CrySystem.dll+0x21A2DB`), `HostsManager`, `ServerSupervisor`, one-click `AutoFlow` (`python -m vanillatool_emulator.local`). |
 | `driver.py` | **Real OS driver loading**: read-only `audit` (admin/build/SecureBoot/HVCI/blocklist/conflicts/payloads), `prepare --apply` (AM's own registry tweaks + backup/restore + reboot notice), `load` (real `udk.bin` ladder on Windows), `verify` (`\\.\<name>` + `QueryDosDevices` + slot check), `cleanup`. |
 | `interop.py` | **Original-EXE interop** (no custom GUI): `setup` (cert `--gen-cert` via openssl, `certutil` trust, hosts), `launch` (TLS emulator on 443 in background + start + monitor the original EXE + teardown), `stop`/`status`, `check` (TCP → TLS → `/healthz` → real encrypted auth round-trip → driver probe). |
-| `clientcheck.py` | **Game-client compatibility** (read-only): parses the installed client's PE sections, reads the two `CHAR[128]` NCGuard slots AM 5.43 overwrites (`aion.bin+0x863F8`, `CrySystem.dll+0x21A2DB`), verdicts match/uncertain/mismatch, reports the per-server bypass dll (`EuroAion → Game.dll`). `python -m vanillatool_emulator.clientcheck --game-dir <client>` |
+| `clientcheck.py` | **Game-client compatibility** (read-only): static mode parses the installed client's PE sections, reads the two `CHAR[128]` NCGuard slots AM 5.43 overwrites (`aion.bin+0x863F8`, `CrySystem.dll+0x21A2DB`), verdicts match/uncertain/mismatch (packed binaries report *inconclusive*, never false-fail); `--live` reads the running client's memory via `ReadProcessMemory` — the definitive verdict. Reports the per-server bypass dll (`EuroAion → Game.dll`). |
 | `am_config.py` / `am_workspace.py` / `am_pipeline.py` | Automatic-lab core (dry-run/read-only by design): 10 server presets, hive/delay mirrors, 12-file recovery, 6-step run (env, workspace, mapper ladder, emulator self-test, target audit, launch plan). |
 | `am_web.py` / `am_gui.py` / `am_cli.py` | Automatic-lab front-ends: browser GUI + JSON API, Windows Tk desktop GUI, headless `--auto`/`--serve`. See `AM_AUTO_README.md`. |
 
