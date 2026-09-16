@@ -10,10 +10,14 @@ The extracted AutoIt client uses the following wire format:
 * The response contains ``C:<hex-ciphertext>;``.  Its decrypted text is
   matched for ``ORythm=...`` and ``PRythm=...``.
 
-The constants below are recovered from the executable's CryptoAPI wrapper.
-The key seed is derived from the 16 bytes at the wrapper's offset used by
-``A61CA706314``.  In the supplied 11.31 executable those bytes are zero, so
-its arithmetic produces the byte sequence 0..14.
+The values below are recovered from the executable's CryptoAPI wrapper.
+``A61CA706314`` reads the binary *inner* executable produced by the outer
+loader.  AutoIt's binary-to-string conversion exposes hexadecimal text, so
+its ``StringTrimLeft(..., 1602)`` selects byte offset 800.  The first fifteen
+selected bytes are decremented by one to form the seed used twice in the
+32-byte AES key.  Keeping the derived bytes here (rather than the old
+placeholder ``00 01 ... 0e``) is important: it is what makes the emulator
+interoperate with live ``aN`` and ``aC`` fields from 11.31.
 """
 
 from __future__ import annotations
@@ -25,13 +29,31 @@ from urllib.parse import parse_qs
 
 from .crypto import decrypt, encrypt
 
-# A61CA706314 reads 16 pairs from the wrapper and A211751270D turns the first
-# 15 into Chr(0)..Chr(14).  The two one-character separators are literal '0'.
-DEFAULT_STATIC_KEY = bytes(range(15)) + b"0" + bytes(range(15)) + b"0"
+# At byte offset 800 in the extracted inner PE, A61CA706314 sees:
+#     49 6c 31 79 50 31 50 31 31 47 47 32 31 50 50 00
+# A211751270D applies Chr(byte - 1) to the first fifteen bytes, yielding
+# ``Hk0xO0O00FF10OO``.  The source then inserts a literal ``0`` between two
+# copies of that 15-byte seed.
+STATIC_KEY_SEED = b"Hk0xO0O00FF10OO"
+DEFAULT_STATIC_KEY = STATIC_KEY_SEED + b"0" + STATIC_KEY_SEED + b"0"
 CRYPTO_IV = b"9324463837711294"
+# A04BAF03F31 reverses the four bytes at the next marker and returns this
+# decimal client/build identifier as aU.  The server does not need to reject
+# other aU values, but exposing the recovered value makes fixtures faithful.
+CLIENT_IDENTIFIER = "781769"
 
 _AUTH_MARKER = re.compile(r"C:(.*?);")
 _HEX_RE = re.compile(r"^[0-9a-fA-F]+$")
+_PROFILE_ASSIGNMENT = re.compile(r"^(?P<prefix>[%_]?)(?P<name>[A-Za-z][A-Za-z0-9_]*)=(?P<value>.*)$")
+_PROFILE_FEATURE_HINTS = {
+    # These names are the first memory fields used by the extracted client;
+    # the diagnostic is intentionally a presence check, not an offset parser.
+    "inject": ("Name",),
+    "profile_validation": ("%ProfileName",),
+    "radar": ("Users", "RadarZoom", "RadarRotation", "RadarViewAngle"),
+    "target_info": ("TargetName", "TargetID"),
+    "script_memory": ("SkillCDASM", "SkillActive"),
+}
 
 
 class ProtocolError(ValueError):
@@ -99,7 +121,10 @@ def encrypt_client_field(value: bytes | str, static_key: bytes = DEFAULT_STATIC_
     """Create a hex field in the same form as AutoIt's ``0x`` binary value."""
     if isinstance(value, str):
         value = value.encode("latin-1")
-    return encrypt(value, static_key, CRYPTO_IV).hex()
+    # AutoIt's string representation of a Binary value uses upper-case
+    # hexadecimal digits.  Hex case is not cryptographic, but matching it
+    # keeps generated request fixtures byte-for-byte faithful on the wire.
+    return encrypt(value, static_key, CRYPTO_IV).hex().upper()
 
 
 def response_key(timestamp: str, identity_prefix: bytes | str) -> bytes:
@@ -116,7 +141,7 @@ def encrypt_response(plaintext: bytes | str, timestamp: str, identity_prefix: by
     """Encrypt an auth response and return the hex payload for ``C:...;``."""
     if isinstance(plaintext, str):
         plaintext = plaintext.encode("latin-1")
-    return encrypt(plaintext, response_key(timestamp, identity_prefix), CRYPTO_IV).hex()
+    return encrypt(plaintext, response_key(timestamp, identity_prefix), CRYPTO_IV).hex().upper()
 
 
 def decrypt_response(value: str, timestamp: str, identity_prefix: bytes | str) -> bytes:
@@ -125,6 +150,75 @@ def decrypt_response(value: str, timestamp: str, identity_prefix: bytes | str) -
         return decrypt(_ciphertext_from_field(value), response_key(timestamp, identity_prefix), CRYPTO_IV)
     except (ValueError, TypeError) as exc:
         raise ProtocolError(f"unable to decrypt response: {exc}") from exc
+
+
+def inspect_response_profile(plaintext: str | None) -> dict[str, object]:
+    """Return safe diagnostics for the decrypted client response.
+
+    The live client uses capability markers and a separate line-oriented
+    offset profile.  The emulator must not expose profile values in health
+    output because they are process-memory addresses; this function reports
+    only presence, counts, and blockers.
+    """
+    if plaintext is None:
+        return {
+            "status": "missing",
+            "line_count": 0,
+            "offset_key_count": 0,
+            "prefix_counts": {},
+            "missing_for_inject": ["Name"],
+            "missing_profile_key": True,
+            "feature_hints": {name: "blocked" for name in _PROFILE_FEATURE_HINTS},
+            "warnings": ["no decrypted auth response is configured"],
+        }
+
+    assignments: dict[str, str] = {}
+    prefix_counts: dict[str, int] = {}
+    malformed: list[str] = []
+    lines = plaintext.splitlines()
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("ORythm=") or line.startswith("PRythm="):
+            continue
+        match = _PROFILE_ASSIGNMENT.match(line)
+        if not match:
+            # Capability markers may share one semicolon-delimited line; only
+            # report non-empty lines that look like profile data but cannot be
+            # parsed as assignments.
+            if "=" in line:
+                malformed.append(line.split("=", 1)[0][:64])
+            continue
+        prefix = match.group("prefix")
+        name = match.group("name")
+        key = prefix + name
+        assignments[key] = match.group("value").strip()
+        prefix_counts[prefix or "plain"] = prefix_counts.get(prefix or "plain", 0) + 1
+
+    present = set(assignments)
+    missing_for_inject = [key for key in ("Name",) if key not in present or not assignments[key]]
+    feature_hints: dict[str, str] = {}
+    for feature, keys in _PROFILE_FEATURE_HINTS.items():
+        missing = [key for key in keys if key not in present or not assignments.get(key, "")]
+        feature_hints[feature] = "ready" if not missing else "missing: " + ", ".join(missing)
+
+    warnings: list[str] = []
+    if missing_for_inject:
+        warnings.append("the client cannot calculate the target Name address; Inject will retry and then fail")
+    if "%ProfileName" not in present:
+        warnings.append("the region-specific ProfileName offset is absent")
+    if malformed:
+        warnings.append(f"{len(malformed)} non-empty profile line(s) could not be parsed")
+
+    return {
+        "status": "offset-profile" if not missing_for_inject else "capabilities-only",
+        "line_count": len(lines),
+        "offset_key_count": len(assignments),
+        "prefix_counts": prefix_counts,
+        "missing_for_inject": missing_for_inject,
+        "missing_profile_key": "%ProfileName" not in present,
+        "feature_hints": feature_hints,
+        "warnings": warnings,
+    }
 
 
 def response_text(orythm: str = "1", prythm: str = "1") -> str:
