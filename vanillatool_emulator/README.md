@@ -25,6 +25,7 @@ python -m vanillatool_emulator.interop check --device-name <fHide_UDK name>
 # Prove YOUR game client matches AM's hardcoded patch slots (read-only, needs the client installed)
 python -m vanillatool_emulator.clientcheck --game-dir "D:\EuroAion"
 # Definitive verdict for packed clients: read the RUNNING client's memory like AM does
+# (run ELEVATED — GameGuard blocks non-elevated readers; --rva-aion/--rva-cry probe relocated candidates)
 python -m vanillatool_emulator.clientcheck --live --process aion.bin
 python -m vanillatool_emulator.interop stop     # stop the background emulator
 python -m vanillatool_emulator.driver audit    # read-only driver pre-flight (never changes anything)

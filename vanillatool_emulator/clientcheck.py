@@ -124,6 +124,14 @@ def rva_to_raw(sections: list[dict[str, Any]], rva: int) -> int | None:
     return None
 
 
+def raw_to_rva(sections: list[dict[str, Any]], raw: int) -> int | None:
+    """Convert a file offset back to an RVA via the section table."""
+    for section in sections:
+        if section["rawptr"] <= raw < section["rawptr"] + section["rawsz"]:
+            return section["vaddr"] + (raw - section["rawptr"])
+    return None
+
+
 def packer_indicators(pe: dict[str, Any]) -> list[str]:
     """Section names that suggest a packer/protector (possibly empty)."""
     hits = []
@@ -289,6 +297,91 @@ def _win() -> Any | None:
         return None
 
 
+def enable_debug_privilege() -> tuple[bool, str]:
+    """Enable SeDebugPrivilege for this process (best effort, never raises).
+
+    4.6-era GameGuard often permits memory reads from processes holding the
+    debug privilege; without it even elevated readers get code 5.
+    """
+    mods = _win()
+    if mods is None:
+        return False, "windows-only"
+    ctypes, wintypes = mods
+    try:
+        advapi32 = ctypes.windll.advapi32
+        kernel32 = ctypes.windll.kernel32
+
+        class LUID(ctypes.Structure):
+            _fields_ = [("LowPart", wintypes.DWORD),
+                        ("HighPart", wintypes.LONG)]
+
+        class TOKEN_PRIVILEGES(ctypes.Structure):
+            _fields_ = [("PrivilegeCount", wintypes.DWORD),
+                        ("Luid", LUID),
+                        ("Attributes", wintypes.DWORD)]
+
+        token = wintypes.HANDLE()
+        if not advapi32.OpenProcessToken(kernel32.GetCurrentProcess(),
+                                         0x0020, ctypes.byref(token)):
+            return False, "OpenProcessToken failed"
+        try:
+            luid = LUID()
+            if not advapi32.LookupPrivilegeValueW(None, "SeDebugPrivilege",
+                                                  ctypes.byref(luid)):
+                return False, "SeDebugPrivilege not present in token"
+            privs = TOKEN_PRIVILEGES(1, luid, 0x00000002)
+            if not advapi32.AdjustTokenPrivileges(token, False,
+                                                  ctypes.byref(privs),
+                                                  ctypes.sizeof(privs),
+                                                  None, None):
+                return False, "AdjustTokenPrivileges failed"
+            if kernel32.GetLastError() != 0:
+                return False, "privilege not assigned to this account"
+            return True, "SeDebugPrivilege enabled"
+        finally:
+            kernel32.CloseHandle(token)
+    except (OSError, ValueError, AttributeError) as exc:
+        return False, f"unexpected: {exc}"
+
+
+def process_exe_path(pid: int) -> str | None:
+    """Best-effort full image path of a process (None if shielded)."""
+    mods = _win()
+    if mods is None:
+        return None
+    ctypes, wintypes = mods
+    try:
+        kernel32 = ctypes.windll.kernel32
+        kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+
+        class MODULEENTRY32(ctypes.Structure):
+            _fields_ = [("dwSize", wintypes.DWORD),
+                        ("th32ModuleID", wintypes.DWORD),
+                        ("th32ProcessID", wintypes.DWORD),
+                        ("GlblcntUsage", wintypes.DWORD),
+                        ("ProccntUsage", wintypes.DWORD),
+                        ("modBaseAddr", ctypes.c_void_p),
+                        ("modBaseSize", wintypes.DWORD),
+                        ("hModule", wintypes.HMODULE),
+                        ("szModule", ctypes.c_char * 256),
+                        ("szExePath", ctypes.c_char * 260)]
+
+        snapshot = kernel32.CreateToolhelp32Snapshot(0x00000018, pid)
+        if snapshot == wintypes.HANDLE(-1).value:
+            return None
+        try:
+            entry = MODULEENTRY32()
+            entry.dwSize = ctypes.sizeof(MODULEENTRY32)
+            if kernel32.Module32First(snapshot, ctypes.byref(entry)):
+                return entry.szExePath.split(b"\x00", 1)[0].decode(
+                    "ascii", "replace")
+            return None
+        finally:
+            kernel32.CloseHandle(snapshot)
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
 def find_process_id(process_name: str) -> tuple[int | None, str]:
     """Locate a running process by exe name.  ``(pid|None, detail)``."""
     mods = _win()
@@ -343,6 +436,7 @@ def live_read_slots(process_name: str = "aion.bin",
     if mods is None:
         result["supported"] = False
         result["error"] = "live mode is Windows-only"
+        result["remediation"] = "use static --game-dir mode on this OS"
         return result
     if targets is None:
         targets = (("aion.bin", AION_BIN_SLOT_RVA),
@@ -355,16 +449,28 @@ def live_read_slots(process_name: str = "aion.bin",
     pid, detail = find_process_id(process_name)
     if pid is None:
         result["error"] = detail
+        result["remediation"] = (
+            f"start the client ({process_name}) and leave it running, "
+            "then retry")
         return result
     result["pid"] = pid
+    dbg_ok, dbg_detail = enable_debug_privilege()
+    result["debug_privilege"] = {"enabled": dbg_ok, "detail": dbg_detail}
+    exe_path = process_exe_path(pid)
+    if exe_path:
+        result["exe_path"] = exe_path
     handle = kernel32.OpenProcess(0x0400 | 0x0010, False, pid)  # QUERY + VM_READ
     if not handle:
         err = kernel32.GetLastError()
         result["error"] = (
             f"OpenProcess(pid {pid}) failed (code {err}): access denied — "
-            "GameGuard shields the client process; retry elevated, and note "
-            "the definitive test is the original AM flow, whose kernel "
-            "driver reads memory past user-mode handle protection")
+            "GameGuard shields the client process")
+        result["remediation"] = (
+            "re-run this console ELEVATED (right-click -> Run as "
+            "administrator); 4.6-era GameGuard often allows elevated + "
+            "SeDebugPrivilege reads. If still denied, the fallback is the "
+            "original AM flow, whose kernel driver reads memory past "
+            "user-mode handle protection")
         return result
     try:
         # Bitness guard: a 32-bit Python cannot address a 64-bit target.
@@ -374,7 +480,8 @@ def live_read_slots(process_name: str = "aion.bin",
             target_wow64 = bool(wow64.value)
         if sys.maxsize < 2 ** 32 and target_wow64 is False:
             result["error"] = ("bitness mismatch: 32-bit Python cannot read "
-                               "a 64-bit client — re-run with 64-bit Python")
+                               "a 64-bit client")
+            result["remediation"] = "re-run with 64-bit Python"
             return result
         result["target_wow64"] = target_wow64
 
@@ -569,12 +676,20 @@ def check_client(game_dir: Path | str | None, server: str = "EuroAion",
         hits = packer_indicators(pe)
         if hits:
             packer_hits[label] = hits
+        scan = scan_bytes(path)
+        candidates: dict[str, list[int | None]] = {}
+        if isinstance(scan, dict):
+            for needle, found in scan.items():
+                if isinstance(found, list):
+                    candidates[needle] = [raw_to_rva(pe["sections"], h)
+                                          for h in found[:4]]
         diagnostics[label] = {
             "sections": [f"{s['name']}:{s['vsize']:#x}@{s['vaddr']:#x}"
                          for s in pe["sections"]],
             "packer_sections": hits,
             "entropy_sample": round(image_entropy(path), 3),
-            "scan": scan_bytes(path),
+            "scan": scan,
+            "scan_rva_candidates": candidates,
         }
     report["extra"]["diagnostics"] = diagnostics
     if packer_hits:
@@ -585,6 +700,32 @@ def check_client(game_dir: Path | str | None, server: str = "EuroAion",
             "use --live on the running client for the definitive verdict")
     else:
         add("packed?", "ok", "no known packer section names")
+    for label in ("aion.bin", "CrySystem.dll"):
+        diag = diagnostics.get(label, {})
+        sections = diag.get("sections")
+        if not isinstance(sections, list):
+            add(f"diag:{label}", "warn", str(diag.get("pe", "no data")))
+            continue
+        names = ",".join(s.split(":")[0] for s in sections)
+        scan = diag.get("scan", {})
+        cands = diag.get("scan_rva_candidates", {})
+        parts = []
+        for needle in ("NCGuard.dll", "Game.dll"):
+            found = scan.get(needle, []) if isinstance(scan, dict) else []
+            rvas = cands.get(needle, []) if isinstance(cands, dict) else []
+            if found:
+                bits = []
+                for raw, rva in zip(found[:4], (list(rvas) + [None] * 4)[:4]):
+                    bits.append(f"raw0x{raw:X}"
+                                + (f"/rva?0x{rva:X}" if rva is not None else ""))
+                if len(found) > 4:
+                    bits.append(f"+{len(found) - 4}")
+                parts.append(f"{needle}@{','.join(bits)}")
+            else:
+                parts.append(f"{needle}@none")
+        add(f"diag:{label}", "ok",
+            f"sections=[{names}] entropy={diag.get('entropy_sample')} "
+            f"scan: {'; '.join(parts)}")
 
     # The two slots the original EXE overwrites in memory.
     for label, path, rva in (("slot:aion.bin", aion, rva_aion),
@@ -625,15 +766,25 @@ def check_client_live(process_name: str = "aion.bin",
                             ("CrySystem.dll", rva_cry)))
     if not live["supported"]:
         add("live", "fail", str(live["error"]),
-            "live mode needs Windows; use static --game-dir mode elsewhere")
+            str(live.get("remediation") or
+                "use static --game-dir mode on this OS"))
         report["status"] = "Status: Error 16"
         return report
     if live["error"] and not live["modules"]:
         add("process", "fail", str(live["error"]),
-            f"start the client ({process_name}) and leave it running, then retry")
+            str(live.get("remediation") or
+                f"start the client ({process_name}) and leave it running, "
+                "then retry"))
         report["status"] = "Status: Error 16"
         return report
-    add("process", "ok", f"{process_name} pid={live['pid']}")
+    arch = "x64" if sys.maxsize >= 2 ** 32 else "x86"
+    detail = f"{process_name} pid={live['pid']} (this Python: {arch})"
+    if live.get("exe_path"):
+        detail += f" image={live['exe_path']}"
+        report["extra"]["exe_path"] = live["exe_path"]
+    if live.get("debug_privilege"):
+        report["extra"]["debug_privilege"] = live["debug_privilege"]
+    add("process", "ok", detail)
     report["extra"]["pid"] = live["pid"]
     for label, module in (("slot:aion.bin", "aion.bin"),
                           ("slot:CrySystem.dll", "CrySystem.dll")):
@@ -659,6 +810,15 @@ def check_client_live(process_name: str = "aion.bin",
 # ---------------------------------------------------------------------------
 
 
+def _parse_rva(text: str) -> int:
+    """argparse type: decimal or 0x-hex RVA."""
+    try:
+        return int(text, 0)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"not a number (decimal or 0x-hex): {text!r}") from None
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Check the installed Aion client against Account "
@@ -673,6 +833,12 @@ def build_parser() -> argparse.ArgumentParser:
                              "(Windows-only, definitive for packed clients)")
     parser.add_argument("--process", default="aion.bin",
                         help="process name for --live (default aion.bin)")
+    parser.add_argument("--rva-aion", type=_parse_rva, default=None,
+                        help="override the aion.bin slot RVA (decimal or "
+                             "0x-hex; probes relocated candidates)")
+    parser.add_argument("--rva-cry", type=_parse_rva, default=None,
+                        help="override the CrySystem.dll slot RVA (decimal or "
+                             "0x-hex)")
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -694,10 +860,18 @@ def _print(report: dict[str, Any], as_json: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    overrides = None
+    if args.rva_aion is not None or args.rva_cry is not None:
+        overrides = (args.rva_aion if args.rva_aion is not None
+                     else AION_BIN_SLOT_RVA,
+                     args.rva_cry if args.rva_cry is not None
+                     else CRYSYSTEM_SLOT_RVA)
     if args.live:
-        report = check_client_live(args.process, args.server)
+        report = check_client_live(args.process, args.server,
+                                   slot_rvas=overrides)
     else:
-        report = check_client(args.game_dir, args.server)
+        report = check_client(args.game_dir, args.server,
+                              slot_rvas=overrides)
     _print(report, args.json)
     return 0 if report["ok"] else 1
 

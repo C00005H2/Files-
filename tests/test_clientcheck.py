@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import struct
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from vanillatool_emulator import clientcheck as C
 
@@ -186,6 +188,62 @@ class LiveModeTests(unittest.TestCase):
         self.assertEqual(report["checks"][0]["name"], "process")
 
 
+class PrivilegeTests(unittest.TestCase):
+    @unittest.skipIf(sys.platform.startswith("win"), "non-Windows behaviour")
+    def test_debug_privilege_and_exe_path_off_windows(self) -> None:
+        ok, detail = C.enable_debug_privilege()
+        self.assertFalse(ok)
+        self.assertIn("windows", detail.lower())
+        self.assertIsNone(C.process_exe_path(1234))
+
+    @unittest.skipUnless(sys.platform.startswith("win"), "Windows-only")
+    def test_debug_privilege_shape_on_windows(self) -> None:
+        ok, detail = C.enable_debug_privilege()
+        self.assertIsInstance(ok, bool)
+        self.assertIsInstance(detail, str)
+
+
+class DiagTests(unittest.TestCase):
+    def test_diag_checks_expose_sections_scan_entropy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            report = C.check_client(make_fake_client(Path(tmp)),
+                                    slot_rvas=TEST_RVAS)
+            diag = next(c for c in report["checks"]
+                        if c["name"] == "diag:aion.bin")
+            self.assertEqual(diag["status"], "ok")
+            self.assertIn(".rdata", diag["detail"])
+            self.assertIn("NCGuard.dll@raw0x250", diag["detail"])
+            self.assertIn("entropy=", diag["detail"])
+
+    def test_raw_to_rva_round_trip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "aion.bin"
+            make_fake_pe(path, TEST_RVAS[0], b"NCGuard.dll\x00")
+            pe = C.parse_pe(path)
+            raw = C.rva_to_raw(pe["sections"], TEST_RVAS[0])
+            self.assertIsNotNone(raw)
+            assert raw is not None
+            self.assertEqual(C.raw_to_rva(pe["sections"], raw), TEST_RVAS[0])
+            self.assertIsNone(C.raw_to_rva(pe["sections"], 0x0))
+
+    def test_rva_arg_parsing(self) -> None:
+        self.assertEqual(C._parse_rva("0x863F8"), 0x863F8)
+        self.assertEqual(C._parse_rva("549880"), 549880)
+        with self.assertRaises(argparse.ArgumentTypeError):
+            C._parse_rva("nope")
+
+
+class LiveRemediationTests(unittest.TestCase):
+    def test_access_denied_points_at_elevation(self) -> None:
+        denied = {"supported": True, "pid": 7724, "modules": {},
+                  "error": "OpenProcess(pid 7724) failed (code 5): access denied",
+                  "remediation": "re-run this console ELEVATED"}
+        with mock.patch.object(C, "live_read_slots", return_value=denied):
+            report = C.check_client_live("aion.bin")
+        self.assertFalse(report["ok"])
+        self.assertIn("ELEVATED", report["checks"][0]["remediation"])
+
+
 class CliTests(unittest.TestCase):
     def test_cli_json_matches(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -199,6 +257,15 @@ class CliTests(unittest.TestCase):
             payload = json.loads(proc.stdout)
             self.assertEqual(payload["command"], "clientcheck")
             self.assertFalse(payload["ok"])  # tiny fake, real RVAs unmapped
+
+    @unittest.skipIf(sys.platform.startswith("win"), "non-Windows behaviour")
+    def test_cli_live_reports_windows_only(self) -> None:
+        proc = subprocess.run(
+            [sys.executable, "-m", "vanillatool_emulator.clientcheck",
+             "--live", "--process", "aion.bin"],
+            capture_output=True, text=True, timeout=60, cwd=REPO_ROOT)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("Windows-only", proc.stdout)
 
 
 if __name__ == "__main__":
