@@ -24,6 +24,12 @@ packages required (Python ≥ 3.10).
 ## Run
 
 ```bash
+# *** Automatic Account Manager lab: GUI + one-click run (recommended) ***
+python -m vanillatool_emulator.am_web --port 8090     # browser GUI (any OS)
+python -m vanillatool_emulator.am_gui                  # desktop GUI (Windows Tk)
+python -m vanillatool_emulator.am_cli --auto --target-exe game.dll   # headless
+# Full guide: vanillatool_emulator/AM_AUTO_README.md
+
 # HTTP service emulator (listens on 0.0.0.0:8080)
 python -m vanillatool_emulator.server
 python -m vanillatool_emulator.server --account-manager-startup   # AM 5.43 pre-GUI markers
@@ -33,8 +39,14 @@ python -m vanillatool_emulator.server --tls-cert cert.pem --tls-key key.pem
 python -m vanillatool_emulator.mapper -prv 1 -map udk_2.bin --missing 1
 
 # Tests
-python -m unittest discover -s tests
+python -m unittest discover -s tests   # 44 tests: 26 emulator + 18 automatic-lab
 ```
+
+The automatic lab (`am_config` / `am_workspace` / `am_pipeline` / `am_web` /
+`am_gui` / `am_cli`) recovers all 12 local helper files, patches the driver
+copy's device slots, mirrors every original checkbox/delay/server preset, and
+runs emulator + mapper + target audit + launch plan from one button —
+dry-run and read-only by design (see `AM_AUTO_README.md` for honest limits).
 
 Useful server options: `--response-file` (a real decrypted offset profile),
 `--offsets-file` (validated Offsets.txt override), `--resource-archive`/`--resource-tool`
