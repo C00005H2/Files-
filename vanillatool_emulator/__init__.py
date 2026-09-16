@@ -10,6 +10,12 @@ Modules:
   (``python -m vanillatool_emulator.mapper``); kept out of this namespace
   because it doubles as a ``__main__``-style CLI entry point.
 * ``crypto``    -- dependency-free AES-256-CBC codec used by ``protocol``.
+* ``local``     -- Account Manager 5.43 local automation: settings hive,
+  logins.ini, driver/DLL staging + patching, mapper ladder, NCGuard
+  Game.dll prep, hosts redirect, server supervisor and one-click AutoFlow
+  (``python -m vanillatool_emulator.local``); kept out of this namespace
+  for the same ``__main__`` reason as ``mapper``.  The ``gui`` (tkinter
+  desktop) and ``panel`` (browser) front-ends are thin wrappers over it.
 """
 
 from .account_manager import (

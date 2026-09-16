@@ -228,8 +228,8 @@ Identical to the protocol implemented by the repo's own `vanillatool_emulator/pr
 ### 6.2 NCGuard (anti-cheat) bypass — `NCGuardRedirect_v2` (`~line 637`)
 - Waits for `aion.bin` **and** `CrySystem.dll` to be loaded in the game process.
 - Remote-reads two 128-byte char slots that hold the anti-cheat DLL name:
-  - `aion.bin + 549880 (0x86370)`
-  - `CrySystem.dll + 2204379 (0x219CFB)`
+  - `aion.bin + 549880 (0x863F8)`
+  - `CrySystem.dll + 2204379 (0x21A2DB)`
 - Overwrites both with **`Game.dll`** → the client's loader resolves "Game.dll" and loads the
   attacker's `game.dll` (7,249,984 B x64 PE with custom `.aion0`/`.aion1`/`TEXT` sections —
   shipped in the workspace) instead of NCGuard.
@@ -346,7 +346,7 @@ Identical to the protocol implemented by the repo's own `vanillatool_emulator/pr
 
 **License-relevant "offsets"**
 - AM: no game offsets required for its manager role; the injection offsets it *uses* are the
-  NCGuard slots `aion.bin+0x86370` and `CrySystem.dll+0x219CFB` (hard-coded), the driver name
+  NCGuard slots `aion.bin+0x863F8` and `CrySystem.dll+0x21A2DB` (hard-coded), the driver name
   patch sites `0x1FF0`/`0x2020` in `udk_2.bin`, and context-patch magic values `0x10002B`/`77`.
 - VT: **all** game offsets are data-driven from `main v6.75_….tbl` (`%NAME=0x…` entries,
   186 offset variables, per-server blocks) — i.e., the "license offsets" are served/updated via
@@ -403,4 +403,4 @@ ships a dedicated module reproducing it:
   `{5E7D2FEC-DA12-4EF4-8DFC-15AC4BAB2107}`, `HKLM\...\CI\Config!VulnerableDriverBlocklistEnable=0`,
   `HKLM\...\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity!Enabled=0`.
 - `hosts` file modifications; driver `\Device\<random-name>` creation; NCGuard → "Game.dll"
-  string swaps at `aion.bin+0x86370` / `CrySystem.dll+0x219CFB`.
+  string swaps at `aion.bin+0x863F8` / `CrySystem.dll+0x21A2DB`.
