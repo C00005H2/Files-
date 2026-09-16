@@ -23,6 +23,11 @@ Modules:
   hosts ``setup``, TLS emulator + original-EXE ``launch``/``stop``/
   ``status``, end-to-end ``check``
   (``python -m vanillatool_emulator.interop ...``).
+* ``clientcheck`` -- game-client compatibility verdict: reads the installed
+  client's ``aion.bin``/``CrySystem.dll`` NCGuard slots through the real
+  PE section table and reports whether AM 5.43's hardcoded patch RVAs
+  land on the module-name string (read-only)
+  (``python -m vanillatool_emulator.clientcheck --game-dir ...``).
 """
 
 from .account_manager import (
