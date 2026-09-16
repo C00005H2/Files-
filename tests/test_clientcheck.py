@@ -20,16 +20,16 @@ I386 = 0x14C
 
 
 def make_fake_pe(path: Path, slot_rva: int, slot_content: bytes,
-                 machine: int = AMD64) -> None:
-    """Minimal PE: one .rdata section (vaddr 0x1000, raw at 0x200)."""
+                 machine: int = AMD64, section_name: bytes = b".rdata") -> None:
+    """Minimal PE: one section (vaddr 0x1000, raw at 0x200)."""
     dos = bytearray(0x40)
     dos[0:2] = b"MZ"
     struct.pack_into("<I", dos, 0x3C, 0x40)
     coff = struct.pack("<HHIIIHH", machine, 1, 0x5A5A5A5A, 0, 0, 0xF0, 0x22)
     opt = bytearray(0xF0)
     struct.pack_into("<H", opt, 0, 0x20B)
-    section = struct.pack("<8sIIIIIIHHI", b".rdata\x00\x00", 0x200, 0x1000,
-                          0x200, 0x200, 0, 0, 0, 0, 0x40000040)
+    section = struct.pack("<8sIIIIIIHHI", section_name[:8].ljust(8, b"\x00"),
+                          0x200, 0x1000, 0x200, 0x200, 0, 0, 0, 0, 0x40000040)
     image = bytearray(0x400)
     image[0x00:0x40] = dos
     image[0x40:0x44] = b"PE\x00\x00"
@@ -101,6 +101,48 @@ class CheckClientTests(unittest.TestCase):
             self.assertEqual(report["status"], "Status: Error 16")
             self.assertEqual(verdict(report)["slot:aion.bin"], "fail")
 
+    def test_unmapped_rva_is_inconclusive_not_fail(self) -> None:
+        # RVA outside the section table (packed binary / stub): the static
+        # read proves nothing either way -> warn pointing at --live.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_fake_client(Path(tmp))
+            report = C.check_client(root, slot_rvas=(0x300, 0x310))
+            names = verdict(report)
+            self.assertEqual(names["slot:aion.bin"], "warn")
+            slot = next(c for c in report["checks"]
+                        if c["name"] == "slot:aion.bin")
+            self.assertIn("inconclusive", slot["detail"])
+            self.assertIn("--live", slot["remediation"])
+            self.assertTrue(report["ok"])  # warns don't fail the run
+            self.assertEqual(report["status"],
+                             "Status: client uncertain — review warnings")
+
+    def test_packer_sections_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_fake_pe(root / "bin64" / "aion.bin", TEST_RVAS[0],
+                         b"NCGuard.dll\x00", section_name=b".themida")
+            make_fake_pe(root / "bin64" / "CrySystem.dll", TEST_RVAS[1],
+                         b"NCGuard.dll\x00")
+            report = C.check_client(root, slot_rvas=TEST_RVAS)
+            self.assertEqual(verdict(report)["packed?"], "warn")
+            diag = report["extra"]["diagnostics"]["aion.bin"]
+            self.assertEqual(diag["packer_sections"], [".themida"])
+
+    def test_scan_finds_module_strings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_fake_client(Path(tmp))
+            hits = C.scan_bytes(root / "bin64" / "aion.bin")
+            self.assertEqual(hits["NCGuard.dll"], [0x250])
+            self.assertEqual(hits["Game.dll"], [])
+
+    def test_entropy_basics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            flat = Path(tmp) / "flat.bin"
+            flat.write_bytes(b"\x00" * 4096)
+            self.assertEqual(C.image_entropy(flat), 0.0)
+            self.assertEqual(C.image_entropy(Path(tmp) / "nope.bin"), -1.0)
+
     def test_missing_files_fail_fast(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             report = C.check_client(Path(tmp))
@@ -125,6 +167,23 @@ class CheckClientTests(unittest.TestCase):
             retail = C.check_client(root, server="Aion EU", slot_rvas=TEST_RVAS)
             self.assertEqual(verdict(retail)["server-dll"], "warn")
             self.assertIn("assumed", retail["extra"]["bypass_dll"])
+
+
+class LiveModeTests(unittest.TestCase):
+    @unittest.skipIf(sys.platform.startswith("win"), "non-Windows behaviour")
+    def test_live_is_windows_only_off_windows(self) -> None:
+        live = C.live_read_slots("definitely-not-running-12345.exe")
+        self.assertFalse(live["supported"])
+        report = C.check_client_live("definitely-not-running-12345.exe")
+        self.assertFalse(report["ok"])
+        self.assertIn("windows-only", report["checks"][0]["detail"].lower())
+        json.dumps(report)
+
+    @unittest.skipUnless(sys.platform.startswith("win"), "Windows-only")
+    def test_live_missing_process_fails_cleanly(self) -> None:
+        report = C.check_client_live("definitely-not-running-12345.exe")
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["checks"][0]["name"], "process")
 
 
 class CliTests(unittest.TestCase):
