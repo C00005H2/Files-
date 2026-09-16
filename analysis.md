@@ -1,8 +1,322 @@
-# Para's Account Manager 5.43 & Para's VanillaTool -Rework- 11.31 — Deep Analysis
+# Reverse-engineering documentation — `game.dll` and the AION tooling
 
-Reverse-engineering report for the two AutoIt-compiled tools shipped in this workspace.
+This document contains the deep static analysis of the workspace's `game.dll`, followed by the
+pre-existing analysis of the two AutoIt tools. The `game.dll` conclusions below are based on the
+exact file currently present in the repository, not on its filename or on assumptions about the
+surrounding launcher. No executable code was run during this analysis.
+
+---
+
+## A. `game.dll` — deep static analysis
+
+### A.1 Bottom line
+
+`game.dll` is very likely a renamed, protected NCSoft AION game module rather than a custom
+VanillaTool payload. The strongest indicators are:
+
+* the raw version metadata identifies it as **AION GameClient**, internal name `NcSoft`, and
+  original filename `NcSoft.DLL`;
+* it exports the CryEngine-style `CreateGameInstance` and `CryModuleGetMemoryInfo` entry points;
+* its resources contain NCSoft's `NcSoft.MacInfo` COM registration and type library;
+* the file contains an Authenticode/PKCS#7 signature whose signed content hash matches the file
+  exactly and whose leaf certificate subject is **NCsoft Corp.**;
+* the PE timestamp, version, VC8 manifest, Bink/Awesomium dependencies, and import set are
+  consistent with an old Windows AION client component.
+
+This does **not** mean that loading the file is safe in an arbitrary directory. It is executable
+native code with dynamic loading, networking, process enumeration, input hooks, anti-debugging
+components, and a writable/executable custom section. It also does not prove that the surrounding
+Account Manager is benign. It does mean that the evidence does not support describing this
+particular file as an attacker-authored cheat DLL. A signed original DLL can still be deliberately
+renamed and used by another loader.
+
+**Confidence:** high for file identity, hashes, PE metadata, resources, imports, and signature;
+medium for the protected-loader interpretation; low for exact post-unpack behavior because the
+main code is not represented in ordinary raw PE sections.
+
+### A.2 File identity, provenance, and integrity
+
+| Property | Observed value |
+|---|---|
+| Workspace path | `game.dll` |
+| Size | 7,249,984 bytes (6.91 MiB) |
+| SHA-256 | `c4b5ad116928685c0cd443bdb301e9fe04655d1129e9f9acad8254f68cc1846d` |
+| MD5 | `5cdfe531f964b5ab50d6ad4d772fcaf9` |
+| PE format | PE32+, x86-64 (`IMAGE_FILE_MACHINE_AMD64`, `0x8664`) DLL |
+| COFF timestamp | `0x54B3A055` — 2015-01-12 10:22:13 UTC |
+| Export-directory timestamp | `0x54B39F30` — 2015-01-12 10:17:20 UTC |
+| Image base | `0x10000000` |
+| Entry point | RVA `0x195D94A`, preferred VA `0x1195D94A` |
+| Linker | MSVC 8-era layout; manifest requests Microsoft VC80 CRT and ATL `8.0.50608.0` |
+| Raw version | `FileDescription=AION GameClient`; `FileVersion=4515.0319.0112.8880` |
+| Original filename | `NcSoft.DLL` |
+| Company/copyright | `NCSoft`; `2006 (C) Copyright NCSoft Corporation. All Rights Reserved.` |
+| PE checksum | Header value `0x006F52C9`; independently recomputed value matches |
+
+The original filename is metadata, not a filesystem guarantee. Renaming `NcSoft.DLL` to
+`game.dll` does not change the bytes and therefore does not invalidate an Authenticode signature.
+It does, however, change how a game or loader resolves the module.
+
+#### Authenticode evidence
+
+The security directory is at file offset `0x6E9400`, size `0xC40`, with a PKCS#7 signed-data
+blob. Its certificate chain contains:
+
+* leaf: `C=KR, ... O=NCsoft Corp., CN=NCsoft Corp.`;
+* issuer: `C=KR, O=SGssl, CN=SGTRUST CODE SIGNING CA`;
+* issuer of that CA: `The USERTRUST Network / UTN-USERFirst-Object`.
+
+The leaf is marked for code signing and has validity dates 2014-02-11 through 2017-02-10. The
+certificate is therefore historical and expired as of the date of this report (2026-09-16); that
+is a trust/validity issue, not evidence that the original bytes were modified. The SHA-1
+Authenticode digest recovered from the signed content is
+`4aae5354749087d629801d06376ddceb30ed4e8f`, and an independent PE Authenticode hash over the
+file (excluding the checksum field and certificate table) produced the same value. The signature
+is consequently internally consistent with this file.
+
+### A.3 PE layout and the protected image model
+
+The header declares 11 sections, but the first seven have no raw bytes on disk. The physically
+present program material is concentrated in `.aion1`:
+
+| Section | RVA | Virtual size | Raw offset | Raw size | Characteristics |
+|---|---:|---:|---:|---:|---|
+| `.text` | `0x001000` | `0xAAEA4C` | `0` | `0` | RX code |
+| `TEXT` | `0xAB0000` | `0x0005C1` | `0` | `0` | RX code |
+| `.rdata` | `0xAB1000` | `0x2E01F2` | `0` | `0` | read-only data |
+| `.data` | `0xD92000` | `0x51DA60` | `0` | `0` | read/write data |
+| `.pdata` | `0x12B0000` | `0x0957D8` | `0` | `0` | read-only exception data |
+| `.tls` (virtual) | `0x1346000` | `0x000800` | `0` | `0` | read/write TLS area |
+| `.aion0` | `0x1347000` | `0x1298C9` | `0` | `0` | RX custom code |
+| `.tls` (raw) | `0x1471000` | `0x000030` | `0x400` | `0x200` | read/write TLS data |
+| `.aion1` | `0x1472000` | `0x6E7870` | `0x600` | `0x6E7A00` | **RWX** custom section |
+| `.reloc` | `0x1B5A000` | `0x74` | `0x6E8000` | `0x200` | relocation data |
+| `.rsrc` | `0x1B5B000` | `0x1110` | `0x6E8200` | `0x1200` | resource data |
+
+The header reports a virtual image size of `0x1B5D000` (28,692,480 bytes), versus the
+7,249,984-byte file. `.aion1` alone has whole-section entropy about 7.926 bits/byte, with only
+about 0.6% zero bytes. It contains short readable strings and import metadata interleaved with
+high-entropy regions, which is consistent with a custom protection/packing layer rather than a
+normal compiler-produced code section.
+
+The result is important for reverse engineering: a normal file-to-RVA disassembler sees the
+exported function RVAs `0x135500` and `0x11D950` inside virtual-only zero-backed sections, while
+the entry point and TLS callback are in `.aion1`. The likely model is a loader/protected image that
+runs from `.aion1`, reconstructs or decrypts code/data into the virtual-only ranges, and only then
+makes the exported game routines usable. This is an inference from the section layout and control
+flow, not a claim that every virtual-only byte is necessarily decrypted at runtime.
+
+Additional protection indicators:
+
+* `.aion1` is simultaneously readable, writable, and executable (`0xE0000060`), which is unusual
+  for a normal game DLL and permits an unpacker or virtual machine to modify its own code;
+* the PE has a TLS directory at RVA `0x195D080`, and its callback array contains one callback at
+  preferred VA `0x11B503FD` followed by a null pointer; TLS code executes before the normal DLL
+  entry point;
+* the entry point begins with an indirect-looking jump graph and opaque/high-entropy data rather
+  than a conventional MSVC prologue; the callback has the same protected layout;
+* `SecureEngineSDK64.dll` is an explicit dependency (two ordinal imports), supporting a
+  commercial protection/licensing/anti-tamper layer;
+* `DllCharacteristics` is `0`, so this old build does not advertise modern `DYNAMIC_BASE`,
+  `NX_COMPAT`, or Control Flow Guard flags, although it does carry a small relocation directory.
+
+The exception directory claims a `.pdata` range of `0x957D8` bytes, but that section is also
+raw-zero. This is another reason not to treat on-disk exception/unwind metadata as complete until
+the image has been observed after its initialization path.
+
+### A.4 Entry point, TLS, and directories
+
+The relevant PE data directories are:
+
+| Directory | RVA/offset | Size | Interpretation |
+|---|---:|---:|---|
+| Export | RVA `0x1B508C8` | `0xCC9` | export table in `.aion1` |
+| Import | RVA `0x1B45218` | `0x1F4` | 24 import descriptors |
+| Resource | RVA `0x1B5B000` | `0x1110` | registry/type-library resources and protected/irregular resource records |
+| Exception | RVA `0x12B0000` | `0x957D8` | points into raw-zero `.pdata` |
+| Security | **file offset `0x6E9400`** | `0xC40` | Authenticode certificate table; not an RVA |
+| Base relocation | RVA `0x1B5A000` | `0x74` | 23 `DIR64` fixups plus alignment entries |
+| TLS | RVA `0x195D080` | `0x38` | raw TLS pointers and callback list |
+| IAT | RVA `0x19FD000` | `0x1800` | imported function address slots |
+
+The TLS directory contains raw-data pointers for the second `.tls` section and an address-of-
+callbacks pointer at `0x1195D0A8`. That array points to `0x11B503FD`. A static disassembly of
+that address is intentionally unreliable because it immediately enters the protected jump/data
+layout; it should be treated as an initialization callback, not as ordinary compiler output.
+
+### A.5 Exports
+
+The export table claims four entries and four names, but only three are coherent:
+
+| Ordinal | RVA | Name | Assessment |
+|---:|---:|---|---|
+| 1 | `0xA5BC20` | `??4_Init_locks@std@@QEAAAEAV01@AEBV01@@Z` | MSVC C++ runtime helper |
+| 2 | `0x135500` | `CreateGameInstance` | CryEngine-style game-module factory |
+| 3 | `0x11D950` | `CryModuleGetMemoryInfo` | CryEngine-style memory-information API |
+| 4 | `0x000000` | malformed binary-looking name | invalid/unused export record |
+
+`CreateGameInstance` and `CryModuleGetMemoryInfo` are strong identity signals for a CryEngine
+AION game component. The first export is a C++ runtime symbol, not a user-facing API. The fourth
+name pointer lands in high-entropy bytes and its address is zero; it is best documented as a
+malformed/protection artifact rather than a real callable export.
+
+Because the first three function RVAs lie in sections with zero raw size, a static call to one of
+them cannot be recovered from the file by simply seeking to `RVA == file offset`. The protected
+initializer must be considered part of the load contract.
+
+### A.6 Imported capability map
+
+The binary has **24 import descriptors and 744 imported slots**. There are three separate
+`KERNEL32.dll` descriptors. The counts below are descriptor totals, not proof that every API is
+called on every execution path.
+
+| Dependency | Imported slots | Capabilities suggested by the names |
+|---|---:|---|
+| `MSVCR80.dll` / `MSVCP80.dll` | 230 / 109 | VC8 C/C++ runtime, strings, streams, allocation, math, C++ exceptions, threads |
+| `KERNEL32.dll` (three descriptors) | 126 + 1 + 6 | processes/threads, files, heaps, virtual memory, DLL loading, INI files, IO completion ports, locale/time, debug/error handling |
+| `USER32.dll` / `IMM32.dll` / `GDI32.dll` | 47 / 18 / 7 | window/message loop, keyboard and mouse, clipboard, IME input, hooks, device contexts and bitmap rendering |
+| `WS2_32.dll` / `MSWSOCK.dll` | 43 / 1 | sockets, overlapped/event networking, `AcceptEx`, send/receive and network event handling |
+| `WININET.dll` | 14 | HTTP/Internet sessions, request headers, uploads, downloads, response queries |
+| `CRYPT32.dll` / `LIBEAY32.dll` | 7 / 8 ordinal | certificate/object inspection and OpenSSL-style cryptographic services; ordinal names require the matching library build |
+| `PSAPI.DLL` | 5 | enumerate processes and inspect process/module names and module lists |
+| `ADVAPI32.dll` | 9 | registry read/write/create operations |
+| `iphlpapi.dll` | 4 | adapter, IP-address, and TCP-table enumeration |
+| `Awesomium.dll` | 70 | embedded browser, JavaScript objects/callbacks, rendering, cookies/cache, resource uploads and file chooser |
+| `binkw64.dll` | 14 | Bink video/audio playback and frame rendering |
+| `WINMM.dll` | 13 | waveform and mixer device enumeration/control |
+| `SHELL32.dll` / `SHLWAPI.dll` | 3 / 1 | shell file operations, special folders, path existence |
+| `ole32.dll` | 5 | COM initialization, object creation, task memory |
+| `SecureEngineSDK64.dll` | 2 ordinal | protection/licensing SDK entry points |
+| `sfc.dll` | 1 | `SfcIsFileProtected` system-file protection query |
+
+Notable individual imports include `LoadLibraryA/W`, `GetProcAddress`, `VirtualAlloc`,
+`CreateProcessA/W`, `OpenProcess`, `DeviceIoControl`, `SetWindowsHookExA`, `GetAsyncKeyState`,
+clipboard functions, `EnumProcesses`, `GetModuleBaseName[A/W]`, and `IsDebuggerPresent`.
+These are capabilities available to the module; the protected code may resolve additional APIs
+at runtime.
+
+Static negative evidence is also useful. The normal import table does **not** contain
+`ReadProcessMemory`, `WriteProcessMemory`, `VirtualProtect`, `CreateRemoteThread`, an SCM driver
+installation API, `WinHTTP`, or `URLDownloadToFile`. That lowers confidence in a conventional
+user-mode injector or driver loader implemented directly through ordinary imports, but it is not
+proof of absence because `GetProcAddress`, the protector, or device I/O can change the picture.
+`OpenProcess`, PSAPI enumeration, keyboard hooks, and `DeviceIoControl` should not be interpreted
+as malicious on their own; games, launchers, anti-cheat modules, and hardware-identification
+components all use them.
+
+### A.7 Resources and embedded identity
+
+The resource area and raw resource payloads contain several unusually useful identity markers:
+
+* `REGISTRY` is an `.rgs` script registering `NcSoft.MacInfo` and `NcSoft.MacInfo.1` under
+  CLSID `{0F3B5FD9-0EB1-408B-8DD5-A3E98954BCC1}`, with `InprocServer32=%MODULE%` and apartment
+  threading;
+* `TYPELIB` begins with the `MSFT` type-library signature, names `NCSOFTLib`, `MacInfo`, and
+  `IMacInfo`, and exposes the method names `GetMacInfo` and `GetPCInfo`; it was generated by
+  MIDL 6.00.0366 on 2010-08-20;
+* raw version data contains `AION GameClient`, `4515.0319.0112.8880`, `NcSoft.DLL`, `AION`, and
+  `NCSoft`;
+* the embedded assembly manifest requests the VC80 CRT and ATL assemblies, both version
+  `8.0.50608.0`, for `amd64`;
+* the signature contains NCSoft's company certificate as described above.
+
+The custom section layout leaves some resource-directory pointers and raw resource blobs in an
+unusual arrangement: ordinary `objdump` resource walking reports the named registry/type-library
+records and an ID-6 record, while the raw version and manifest payloads are present at nearby
+locations. This is consistent with the same protection/section-repacking issue seen elsewhere.
+It is safer to record both the formal directory view and the raw payload evidence than to assume
+that a generic resource parser has reconstructed the intended runtime tree.
+
+### A.8 Reconstructed behavior model
+
+The most defensible static model is:
+
+1. Windows maps the PE, including the RWX `.aion1` section, the import table, and TLS data.
+2. The TLS callback runs before the normal DLL entry point. Its code is in the protected custom
+   region, so it likely performs protection checks and/or image initialization.
+3. The entry point at `0x195D94A` enters a large jump-dispatch/opaque-predicate region. The
+   `.aion1` stream mixes short jump fragments, symbol strings, import metadata, and high-entropy
+   blocks rather than presenting a linear compiler code section.
+4. Missing `.text`, `.rdata`, `.data`, `.pdata`, and `.aion0` raw bytes are likely reconstructed,
+   decrypted, or otherwise materialized by that initialization path. This explains why the
+   standard exports point into otherwise empty virtual ranges.
+5. Once initialized, the module provides the CryEngine factory/memory exports and its AION game
+   functionality: UI/browser support, video/audio, configuration, network communication,
+   hardware/process inspection, and likely anti-tamper/licensing checks.
+
+The import list and resources support steps 1, 2, and 5. Steps 3 and 4 are a high-confidence
+explanation of the image layout, but exact algorithms, checks, URLs, and control-flow decisions
+require a Windows memory snapshot after initialization or a controlled debugger trace. A raw
+`objdump -D` of `.aion1` is not a valid semantic disassembly because data and protected code are
+interleaved.
+
+### A.9 Relationship to the Account Manager's `Game.dll` redirect
+
+The AutoIt analysis later in this file documents an Account Manager routine that waits for AION
+modules and overwrites two in-process NCGuard name slots with the literal `Game.dll`:
+
+* `aion.bin + 0x863F8`;
+* `CrySystem.dll + 0x21A2DB`.
+
+That is behavior of the **loader/manager**, not provenance evidence for this DLL. For the exact
+workspace artifact analyzed here, the more precise statement is:
+
+* the manager attempts to cause the client to resolve a module named `Game.dll` instead of the
+  original NCGuard name;
+* this file is a 2015 x64 AION/NCSoft-signed game module with CryEngine-style exports, not a
+  VanillaTool `d3dx9_30.dll` proxy or a kernel driver;
+* successful use would depend on the target client's exact build, loader expectations, export ABI,
+  and the presence of `Awesomium.dll`, `binkw64.dll`, VC80 runtimes, `LIBEAY32.dll`, and
+  `SecureEngineSDK64.dll`;
+* substituting it into an NCGuard resolution path can still be unsafe or incompatible. The signed
+  identity of the file does not make the surrounding redirection or bypass safe.
+
+This distinction corrects the shorthand description in the older section 6.2 below: calling the
+workspace copy “the attacker's game.dll” is not supported by the file's own signature and version
+metadata.
+
+### A.10 Static risk assessment
+
+| Observation | Security meaning |
+|---|---|
+| NCSoft Authenticode content hash matches | Strong evidence the bytes originated as a signed NCSoft artifact; certificate is expired today |
+| RWX `.aion1`, high entropy, TLS callback, `SecureEngineSDK64.dll` | Significant protection/packing and anti-tamper complexity; static tools will under-report behavior |
+| Networking, HTTP, sockets, crypto/cert APIs | The module can communicate and handle protected web/auth flows; no plain-text toolkit C2 domain was found |
+| Process/module enumeration and debugger query | Could support client integration, anti-cheat, or anti-debug behavior; intent is not determined by imports |
+| Hooks, clipboard, keyboard/mouse, Awesomium | Consistent with game UI/browser/input features, but warrants monitoring if loaded outside the game |
+| `LoadLibrary*`, `GetProcAddress`, `VirtualAlloc`, `DeviceIoControl` | Dynamic extensibility and device interaction; inspect runtime calls before trusting deployment |
+| No ordinary remote-memory-write/remote-thread imports | No static proof of a conventional injector in the visible import table; protected/dynamic code remains unresolved |
+
+**Classification:** authentic-looking, protected AION/NCSoft user-mode DLL; operationally high risk to
+load from a path controlled by an untrusted tool; not independently classified as malware or as the
+VanillaTool payload from static evidence alone.
+
+### A.11 Reproducibility and recommended next steps
+
+The core observations can be reproduced without executing the DLL:
+
+```text
+sha256sum game.dll
+objdump -f game.dll
+objdump -h game.dll
+objdump -p game.dll
+strings -a -el -n 3 game.dll
+openssl pkcs7 -inform DER -in extracted-certificate.der -print_certs -text -noout
+```
+
+For a complete behavioral report, use an isolated Windows VM and capture the module after its TLS
+callback/entry-point initialization. Record the resolved memory map, changes to the zero-backed
+sections, dynamically resolved APIs, child processes, registry/COM activity, files, sockets, and
+loaded modules. Compare the in-memory exports against the three coherent EAT entries above. Do
+not install the embedded COM registration, alter the hosts file, disable driver protections, or
+run the Account Manager as part of ordinary triage.
+
+---
+
+## Existing Account Manager and VanillaTool report
+
 All findings below were derived from the binaries themselves; extracted/deobfuscated sources and
-payloads are preserved under `analysis/`.
+payloads are preserved under `analysis/`. The separate static analysis of `game.dll` is in section A.
 
 ---
 
@@ -230,9 +544,11 @@ Identical to the protocol implemented by the repo's own `vanillatool_emulator/pr
 - Remote-reads two 128-byte char slots that hold the anti-cheat DLL name:
   - `aion.bin + 549880 (0x863F8)`
   - `CrySystem.dll + 2204379 (0x21A2DB)`
-- Overwrites both with **`Game.dll`** → the client's loader resolves "Game.dll" and loads the
-  attacker's `game.dll` (7,249,984 B x64 PE with custom `.aion0`/`.aion1`/`TEXT` sections —
-  shipped in the workspace) instead of NCGuard.
+- Overwrites both with **`Game.dll`** → the client's loader resolves `Game.dll` instead of NCGuard.
+  The workspace's 7,249,984 B x64 `game.dll` has custom `.aion0`/`.aion1`/`TEXT` sections, but its
+  own metadata and matching Authenticode digest identify it as an NCSoft-signed AION GameClient
+  module (see section A), not an attacker-authored payload. The manager's redirection behavior is
+  still a separate, high-risk bypass operation.
 - **NCGuard thread patching**: enumerates game threads ("Thread within NCGuard: …"), applies
   register-state patches logged as `+> Changed register from X to Y` with magic values
   `1048587 (0x10002B)` and `77` (thread-context patching to neutralize the guard thread).
